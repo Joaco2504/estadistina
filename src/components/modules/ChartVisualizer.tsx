@@ -27,21 +27,113 @@ import {
   Activity
 } from 'lucide-react';
 
-// Paleta de colores vibrante, moderna y accesible para Higiene y Seguridad
+// Paleta cromática luminosa, vibrante y de alto contraste (sin colores oscuros para evitar conflictos de lectura)
 const DYNAMIC_CHART_COLORS = [
   '#1B8A5A', // Verde Seguridad Primario
-  '#0F2942', // Azul Marino Técnico
+  '#2563EB', // Azul Eléctrico
   '#E67E22', // Ámbar Alerta
-  '#3B82F6', // Azul Eléctrico
-  '#8B5CF6', // Púrpura Radiación
+  '#8B5CF6', // Púrpura
   '#EC4899', // Rosa
-  '#14B8A6', // Turquesa
-  '#F59E0B', // Amarillo Precaución
-  '#6366F1', // Índigo
-  '#10B981', // Verde Esmeralda
   '#06B6D4', // Cian
+  '#F59E0B', // Amarillo Precaución
+  '#10B981', // Verde Esmeralda
+  '#6366F1', // Índigo
   '#F97316', // Naranja Industrial
+  '#14B8A6', // Turquesa
+  '#D946EF', // Magenta
 ];
+
+/**
+ * Tooltip personalizado de alto contraste para Gráfico Circular (Torta)
+ */
+const CustomPieTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0];
+    const categoryName = data.name || data.payload?.variableValue || data.payload?.intervalLabel || 'Categoría';
+    const percent = Number(data.value).toFixed(2);
+    const count = data.payload?.fa ?? data.payload?.frecuenciaAbsoluta ?? data.payload?.value ?? 0;
+    const color = data.payload?.fill || data.color || '#1B8A5A';
+
+    return (
+      <div className="bg-[#0A1D30] text-white px-4 py-3 rounded-xl border border-[#1C4874] shadow-2xl text-xs space-y-1.5 min-w-[160px]">
+        <div className="flex items-center gap-2 border-b border-slate-700 pb-1.5">
+          <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: color }} />
+          <span className="font-bold text-white text-xs leading-snug">{categoryName}</span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3 font-mono">
+          <span className="text-slate-300 text-[11px]">Porcentaje:</span>
+          <span className="text-emerald-300 font-extrabold text-sm">{percent}%</span>
+        </div>
+        <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
+          <span className="text-slate-400">Recuento exacto:</span>
+          <span className="text-white font-bold">{count} casos</span>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
+
+/**
+ * Tooltip personalizado de alto contraste para Histogramas, Barras y Líneas
+ */
+const CustomCartesianTooltip = ({ active, payload, label, isCumulative }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-[#0A1D30] text-white px-4 py-3 rounded-xl border border-[#1C4874] shadow-2xl text-xs space-y-1.5 min-w-[170px]">
+        <p className="font-bold text-slate-200 border-b border-slate-700 pb-1 text-xs">
+          {label}
+        </p>
+        {payload.map((item: any, idx: number) => {
+          const itemColor = item.color || item.payload?.fill || '#1B8A5A';
+          const val = typeof item.value === 'number' ? item.value : item.value;
+          return (
+            <div key={idx} className="flex items-center justify-between gap-3 font-mono">
+              <span className="flex items-center gap-1.5 text-slate-300 text-[11px]">
+                <span style={{ color: itemColor }}>●</span>
+                {item.name || 'Frecuencia'}:
+              </span>
+              <span className="text-emerald-300 font-extrabold text-xs">
+                {val} {isCumulative ? 'casos acumulados' : 'observaciones'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+  return null;
+};
+
+/**
+ * Determina el título contextual del Eje Y según la variable y modo
+ */
+function getDescriptiveYLabel(variableName: string, mode: 'absolute' | 'cumulative' | 'percentage'): string {
+  if (mode === 'percentage') {
+    return 'Porcentaje del total (%)';
+  }
+  if (mode === 'cumulative') {
+    return 'Total acumulado de casos (Fa)';
+  }
+
+  const lower = (variableName || '').toLowerCase();
+  if (lower.includes('trabajador') || lower.includes('operario') || lower.includes('ocupac') || lower.includes('personal')) {
+    return 'Cantidad de trabajadores';
+  }
+  if (lower.includes('accidente') || lower.includes('incidente') || lower.includes('lesión') || lower.includes('lesion') || lower.includes('desvío')) {
+    return 'Número de casos registrados';
+  }
+  if (lower.includes('ruido') || lower.includes('sonoro') || lower.includes('iluminac') || lower.includes('lux') || lower.includes('co') || lower.includes('tgbh') || lower.includes('polvo')) {
+    return 'Número de mediciones observadas';
+  }
+  if (lower.includes('puesto') || lower.includes('área') || lower.includes('sector')) {
+    return 'Cantidad de sectores / puestos';
+  }
+  if (lower.includes('epp') || lower.includes('equipo') || lower.includes('permiso')) {
+    return 'Cantidad de elementos inspeccionados';
+  }
+  return 'Número de observaciones registradas';
+}
 
 /* -------------------------------------------------------------------------- */
 /* 1. VISUALIZADOR DE DATOS AGRUPADOS MULTI-TIPO                              */
@@ -49,8 +141,10 @@ const DYNAMIC_CHART_COLORS = [
 /* -------------------------------------------------------------------------- */
 interface GroupedChartProps {
   title: string;
-  xLabel: string;
-  yLabel: string;
+  variableName: string;
+  unit: string;
+  xLabel?: string;
+  yLabel?: string;
   data: {
     intervalLabel: string;
     marcaDeClase: number;
@@ -62,6 +156,8 @@ interface GroupedChartProps {
 
 export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   title,
+  variableName,
+  unit,
   xLabel,
   yLabel,
   data,
@@ -73,11 +169,14 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
     setIsMounted(true);
   }, []);
 
-  const dynamicYLabel = yLabel && yLabel !== 'Frecuencia Absoluta (fa)'
-    ? yLabel
-    : chartType === 'ogive'
-    ? 'Total Acumulado de Casos (Fa)'
-    : 'Cantidad de Observaciones Registradas';
+  // Eje X: Nombre claro de la variable y unidad obligatoria entre paréntesis
+  const formattedXLabel = xLabel || (unit ? `${variableName} (${unit})` : variableName);
+  
+  // Eje Y: Lenguaje cotidiano y descriptivo
+  const dynamicYLabel = yLabel || getDescriptiveYLabel(
+    variableName, 
+    chartType === 'ogive' ? 'cumulative' : chartType === 'pie' ? 'percentage' : 'absolute'
+  );
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
@@ -88,10 +187,10 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {title}
           </h3>
           <p className="text-xs text-slate-500">
-            {chartType === 'histogram' && 'Histograma de Frecuencias por Intervalo de Clase'}
-            {chartType === 'polygon' && 'Polígono de Frecuencias (Marcas de Clase Mc)'}
-            {chartType === 'pie' && 'Distribución Porcentual Relativa (Torta %)'}
-            {chartType === 'ogive' && 'Ojiva de Frecuencias Acumuladas (Fa)'}
+            {chartType === 'histogram' && `Histograma: Distribución de ${variableName}`}
+            {chartType === 'polygon' && `Polígono de Frecuencias: Marcas de Clase Mc (${unit})`}
+            {chartType === 'pie' && `Distribución Porcentual Relativa (%)`}
+            {chartType === 'ogive' && `Ojiva de Frecuencias Acumuladas`}
           </p>
         </div>
 
@@ -163,7 +262,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {chartType === 'histogram' && (
               <BarChart
                 data={data}
-                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
+                margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
                 barCategoryGap={0}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -171,7 +270,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   dataKey="intervalLabel"
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: xLabel,
+                    value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
                     fill: '#0F2942',
@@ -185,18 +284,15 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
-                    offset: 0,
+                    offset: 10,
                     fill: '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
+                    style: { textAnchor: 'middle' }
                   }}
                   allowDecimals={false}
                 />
-                <Tooltip
-                  formatter={(val: any) => [`${val} observaciones`, 'Conteo Registrado (fa)']}
-                  labelFormatter={(lbl: any) => `Intervalo: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
-                />
+                <Tooltip content={<CustomCartesianTooltip />} />
                 <Bar dataKey="fa" name="Observaciones Registradas" stroke="#0F2942" strokeWidth={1}>
                   {data.map((_, idx) => (
                     <Cell 
@@ -212,7 +308,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {chartType === 'polygon' && (
               <AreaChart
                 data={data}
-                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
+                margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
               >
                 <defs>
                   <linearGradient id="polyGradient" x1="0" y1="0" x2="0" y2="1">
@@ -225,7 +321,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   dataKey="marcaDeClase"
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: `Marca de Clase (Mc) [${xLabel}]`,
+                    value: `Marca de Clase (Mc) [${unit ? `${variableName} (${unit})` : variableName}]`,
                     position: 'insideBottom',
                     offset: -15,
                     fill: '#0F2942',
@@ -239,18 +335,15 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
-                    offset: 0,
+                    offset: 10,
                     fill: '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
+                    style: { textAnchor: 'middle' }
                   }}
                   allowDecimals={false}
                 />
-                <Tooltip
-                  formatter={(val: any) => [`${val} observaciones`, 'Conteo Registrado (fa)']}
-                  labelFormatter={(lbl: any) => `Marca de Clase (Mc): ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomCartesianTooltip />} />
                 <Area
                   type="monotone"
                   dataKey="fa"
@@ -263,20 +356,14 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
               </AreaChart>
             )}
 
-            {/* 3. GRÁFICO CIRCULAR (TORTA %) */}
+            {/* 3. GRÁFICO CIRCULAR (TORTA %) CON TOOLTIP CLARO Y TEXTO TOTALMENTE LEGIBLE */}
             {chartType === 'pie' && (
               <PieChart>
-                <Tooltip
-                  formatter={(val: any, name: any, item: any) => [
-                    `${val}% (${item.payload.fa} observaciones)`,
-                    'Porcentaje Relativo'
-                  ]}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomPieTooltip />} />
                 <Legend 
                   verticalAlign="bottom" 
                   height={36} 
-                  formatter={(value: string) => <span className="text-xs font-medium text-slate-700">{value}</span>}
+                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700">{value}</span>}
                 />
                 <Pie
                   data={data}
@@ -287,13 +374,15 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   outerRadius={95}
                   innerRadius={35}
                   paddingAngle={3}
-                  label={(props: any) => `${Number(props.percent ? props.percent * 100 : props.value || 0).toFixed(1)}%`}
-                  labelLine={false}
+                  label={(props: any) => `${Number(props.value || 0).toFixed(1)}%`}
+                  labelLine={true}
                 >
                   {data.map((_, idx) => (
                     <Cell 
                       key={`pie-cell-${idx}`} 
                       fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                      stroke="#FFFFFF"
+                      strokeWidth={2}
                     />
                   ))}
                 </Pie>
@@ -304,14 +393,14 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {chartType === 'ogive' && (
               <LineChart
                 data={data}
-                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
+                margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
                   dataKey="intervalLabel"
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: xLabel,
+                    value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
                     fill: '#0F2942',
@@ -322,21 +411,18 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 <YAxis
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: 'Total Acumulado de Casos (Fa)',
+                    value: 'Total acumulado de casos (Fa)',
                     angle: -90,
                     position: 'insideLeft',
-                    offset: 0,
+                    offset: 10,
                     fill: '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
+                    style: { textAnchor: 'middle' }
                   }}
                   allowDecimals={false}
                 />
-                <Tooltip
-                  formatter={(val: any) => [`${val} casos acumulados`, 'Frec. Acumulada (Fa)']}
-                  labelFormatter={(lbl: any) => `Intervalo: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomCartesianTooltip isCumulative={true} />} />
                 <Line
                   type="monotone"
                   dataKey="Fa"
@@ -358,7 +444,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
       {/* Pie Institucional */}
       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
-        <span className="font-mono text-[11px] text-slate-400">Visualización Dinámica</span>
+        <span className="font-mono text-[11px] text-slate-400">Visualización Didáctica</span>
       </div>
     </div>
   );
@@ -370,8 +456,11 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
 /* -------------------------------------------------------------------------- */
 interface SimpleChartProps {
   title: string;
-  xLabel: string;
-  yLabel: string;
+  variableName: string;
+  unit: string;
+  variableType?: 'quantitative' | 'qualitative';
+  xLabel?: string;
+  yLabel?: string;
   data: {
     variableValue: number | string;
     fa: number;
@@ -381,6 +470,9 @@ interface SimpleChartProps {
 
 export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
   title,
+  variableName,
+  unit,
+  variableType = 'quantitative',
   xLabel,
   yLabel,
   data,
@@ -392,9 +484,22 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
     setIsMounted(true);
   }, []);
 
-  const dynamicYLabel = yLabel && yLabel !== 'Frecuencia Absoluta (fa)'
-    ? yLabel
-    : 'Cantidad de Casos Registrados';
+  const isQualitative = variableType === 'qualitative';
+
+  // Eje X: Si es cuantitativa, unidad obligatoria entre paréntesis. Si es cualitativa, solo el nombre.
+  const formattedXLabel = xLabel || (
+    isQualitative 
+      ? variableName 
+      : unit 
+      ? `${variableName} (${unit})` 
+      : variableName
+  );
+
+  // Eje Y: Título cotidiano y descriptivo
+  const dynamicYLabel = yLabel || getDescriptiveYLabel(
+    variableName, 
+    chartType === 'pie' ? 'percentage' : 'absolute'
+  );
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
@@ -405,9 +510,9 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
             {title}
           </h3>
           <p className="text-xs text-slate-500">
-            {chartType === 'bar' && 'Diagrama de Barras por Categoría / Valor'}
-            {chartType === 'pie' && 'Distribución Porcentual (Torta %)'}
-            {chartType === 'line' && 'Gráfico de Tendencia de Frecuencias'}
+            {chartType === 'bar' && `Diagrama de Barras: ${formattedXLabel}`}
+            {chartType === 'pie' && `Distribución Porcentual (%) de ${variableName}`}
+            {chartType === 'line' && `Gráfico de Frecuencias`}
           </p>
         </div>
 
@@ -462,14 +567,14 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
             {chartType === 'bar' && (
               <BarChart 
                 data={data} 
-                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
+                margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
                   dataKey="variableValue"
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: xLabel,
+                    value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
                     fill: '#0F2942',
@@ -483,18 +588,15 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
-                    offset: 0,
+                    offset: 10,
                     fill: '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
+                    style: { textAnchor: 'middle' }
                   }}
                   allowDecimals={false}
                 />
-                <Tooltip
-                  formatter={(val: any) => [`${val} casos`, 'Frecuencia Observada']}
-                  labelFormatter={(lbl: any) => `Categoría: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomCartesianTooltip />} />
                 <Bar 
                   dataKey="fa" 
                   name="Cantidad de Casos" 
@@ -510,20 +612,14 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
               </BarChart>
             )}
 
-            {/* 2. CIRCULAR (TORTA %) */}
+            {/* 2. CIRCULAR (TORTA %) CON TOOLTIP CLARO Y TEXTO TOTALMENTE VISIBLE */}
             {chartType === 'pie' && (
               <PieChart>
-                <Tooltip
-                  formatter={(val: any, name: any, item: any) => [
-                    `${val}% (${item.payload.fa} casos)`,
-                    'Porcentaje Relativo'
-                  ]}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomPieTooltip />} />
                 <Legend 
                   verticalAlign="bottom" 
                   height={36} 
-                  formatter={(value: string) => <span className="text-xs font-medium text-slate-700">{value}</span>}
+                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700">{value}</span>}
                 />
                 <Pie
                   data={data}
@@ -534,13 +630,15 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   outerRadius={95}
                   innerRadius={35}
                   paddingAngle={3}
-                  label={(props: any) => `${Number(props.percent ? props.percent * 100 : props.value || 0).toFixed(1)}%`}
-                  labelLine={false}
+                  label={(props: any) => `${Number(props.value || 0).toFixed(1)}%`}
+                  labelLine={true}
                 >
                   {data.map((_, idx) => (
                     <Cell 
                       key={`pie-simple-${idx}`} 
                       fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                      stroke="#FFFFFF"
+                      strokeWidth={2}
                     />
                   ))}
                 </Pie>
@@ -549,13 +647,13 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 
             {/* 3. LÍNEAS */}
             {chartType === 'line' && (
-              <LineChart data={data} margin={{ top: 15, right: 25, left: 15, bottom: 25 }}>
+              <LineChart data={data} margin={{ top: 15, right: 25, left: 60, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
                   dataKey="variableValue"
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: xLabel,
+                    value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
                     fill: '#0F2942',
@@ -569,18 +667,15 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
-                    offset: 0,
+                    offset: 10,
                     fill: '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
+                    style: { textAnchor: 'middle' }
                   }}
                   allowDecimals={false}
                 />
-                <Tooltip
-                  formatter={(val: any) => [`${val} casos`, 'Frecuencia Observada']}
-                  labelFormatter={(lbl: any) => `Categoría: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-                />
+                <Tooltip content={<CustomCartesianTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="fa"
@@ -614,8 +709,10 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 /* -------------------------------------------------------------------------- */
 interface ContingencyChartProps {
   title: string;
-  xLabel: string;
-  yLabel: string;
+  variableX: string;
+  variableY: string;
+  xLabel?: string;
+  yLabel?: string;
   categoriesX: string[];
   categoriesY: string[];
   chartData: any[];
@@ -623,6 +720,8 @@ interface ContingencyChartProps {
 
 export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
   title,
+  variableX,
+  variableY,
   xLabel,
   yLabel,
   categoriesX,
@@ -636,9 +735,8 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
     setIsMounted(true);
   }, []);
 
-  const dynamicYLabel = yLabel && yLabel !== 'Frecuencia Conjunta (fa)'
-    ? yLabel
-    : 'Cantidad de Casos Conjuntos';
+  const formattedXLabel = xLabel || variableX;
+  const dynamicYLabel = yLabel || 'Número de casos observados';
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
@@ -650,8 +748,8 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
           </h3>
           <p className="text-xs text-slate-500">
             {chartMode === 'grouped'
-              ? 'Distribución Conjunta: Barras Agrupadas por Categoría'
-              : 'Distribución Acumulada: Barras Apiladas por Categoría'}
+              ? `Distribución Conjunta: ${variableX} vs. ${variableY} (Barras Agrupadas)`
+              : `Distribución Acumulada: ${variableX} vs. ${variableY} (Barras Apiladas)`}
           </p>
         </div>
 
@@ -689,13 +787,13 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
       <div className="h-72 sm:h-88 w-full min-h-[260px]">
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 15, right: 25, left: 15, bottom: 25 }}>
+            <BarChart data={chartData} margin={{ top: 15, right: 25, left: 60, bottom: 25 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
               <XAxis
                 dataKey="categoryX"
                 tick={{ fontSize: 11, fill: '#475569' }}
                 label={{
-                  value: xLabel,
+                  value: formattedXLabel,
                   position: 'insideBottom',
                   offset: -15,
                   fill: '#0F2942',
@@ -709,17 +807,15 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
                   value: dynamicYLabel,
                   angle: -90,
                   position: 'insideLeft',
-                  offset: 0,
+                  offset: 10,
                   fill: '#0F2942',
                   fontWeight: 700,
                   fontSize: 11,
+                  style: { textAnchor: 'middle' }
                 }}
                 allowDecimals={false}
               />
-              <Tooltip
-                formatter={(val: any, name: any) => [`${val} casos`, name]}
-                contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
-              />
+              <Tooltip content={<CustomCartesianTooltip />} />
               <Legend 
                 verticalAlign="top" 
                 height={36} 

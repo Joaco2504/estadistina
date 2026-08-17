@@ -557,6 +557,8 @@ export const ContingencyTableModule: React.FC = () => {
       {/* 3. GRÁFICO AUTOMÁTICO BIVARIADO */}
       <ContingencyBarVisualizer
         title={`Distribución Bivariada: ${variableX} según ${variableY}`}
+        variableX={variableX}
+        variableY={variableY}
         xLabel={variableX}
         yLabel="Cantidad de Casos Registrados"
         categoriesX={rowCategories}

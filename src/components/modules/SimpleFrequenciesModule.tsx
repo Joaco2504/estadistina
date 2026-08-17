@@ -91,8 +91,8 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#E67E22]" />
               <span>
-                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow?.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow?.frecuenciaRelativa.toFixed(4)}`}
-                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(4)}) × 100 = ${selectedRow?.porcentaje.toFixed(2)}%`}
+                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow?.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow?.frecuenciaRelativa.toFixed(2)}`}
+                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(2)}) × 100 = ${selectedRow?.porcentaje.toFixed(2)}%`}
                 {hoveredStep === 'acum' && `💡 Iluminando: Frecuencia Acumulada Fa = Suma de frecuencias anteriores (fa) hasta la fila ${selectedRow?.index} = ${selectedRow?.frecuenciaAbsolutaAcumulada}`}
               </span>
             </div>
@@ -157,13 +157,13 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                       {row.frecuenciaAbsoluta}
                     </td>
 
-                    {/* fr */}
+                    {/* fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
                       isSelected && (hoveredStep === 'fr' || hoveredStep === 'p') 
                         ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-500' 
                         : 'text-slate-700'
                     }`}>
-                      {row.frecuenciaRelativa.toFixed(4)}
+                      {row.frecuenciaRelativa.toFixed(2)}
                     </td>
 
                     {/* p */}
@@ -184,13 +184,13 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                       {row.frecuenciaAbsolutaAcumulada}
                     </td>
 
-                    {/* Fr */}
+                    {/* Fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
                       isSelected && hoveredStep === 'acum' 
                         ? 'bg-purple-100 text-purple-950 font-bold ring-1 ring-purple-400' 
                         : 'text-slate-700'
                     }`}>
-                      {row.frecuenciaRelativaAcumulada.toFixed(4)}
+                      {row.frecuenciaRelativaAcumulada.toFixed(2)}
                     </td>
 
                     {/* P */}
@@ -231,7 +231,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                   {data.totals.totalFa}
                 </td>
                 <td className="font-mono font-bold text-slate-800">
-                  {data.totals.totalFr.toFixed(4)}
+                  {data.totals.totalFr.toFixed(2)}
                 </td>
                 <td className="font-mono font-bold text-slate-800">
                   {data.totals.totalP.toFixed(2)}%
@@ -310,8 +310,9 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
       {/* Gráfico Estadístico Multi-Tipo */}
       <SimpleBarVisualizer
         title={`Gráfico Estadístico: ${data.variableName}`}
-        xLabel={isQualitative ? 'Categorías Observadas' : `Valores de la Variable (${data.unit})`}
-        yLabel="Cantidad de Casos Registrados"
+        variableName={data.variableName}
+        unit={data.unit}
+        variableType={data.variableType}
         data={chartData}
       />
     </div>

@@ -158,8 +158,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
               <Sparkles className="w-4 h-4 text-[#E67E22]" />
               <span>
                 {hoveredStep === 'mc' && `💡 Iluminando: Marca de Clase Mc = (${selectedRow.intervalLabel}) / 2 = ${selectedRow.marcaDeClase}`}
-                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow.frecuenciaRelativa.toFixed(4)}`}
-                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow.frecuenciaRelativa.toFixed(4)}) × 100 = ${selectedRow.porcentaje.toFixed(2)}%`}
+                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow.frecuenciaRelativa.toFixed(2)}`}
+                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow.frecuenciaRelativa.toFixed(2)}) × 100 = ${selectedRow.porcentaje.toFixed(2)}%`}
                 {hoveredStep === 'acum' && `💡 Iluminando: Frecuencia Acumulada Fa = Suma de frecuencias anteriores (fa) hasta la fila ${selectedRow.index} = ${selectedRow.frecuenciaAbsolutaAcumulada}`}
               </span>
             </div>
@@ -240,13 +240,13 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                       {row.frecuenciaAbsoluta}
                     </td>
 
-                    {/* fr */}
+                    {/* fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
                       isSelected && (hoveredStep === 'fr' || hoveredStep === 'p') 
                         ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-500' 
                         : 'text-slate-700'
                     }`}>
-                      {row.frecuenciaRelativa.toFixed(4)}
+                      {row.frecuenciaRelativa.toFixed(2)}
                     </td>
 
                     {/* p */}
@@ -267,13 +267,13 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                       {row.frecuenciaAbsolutaAcumulada}
                     </td>
 
-                    {/* Fr */}
+                    {/* Fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
                       isSelected && hoveredStep === 'acum' 
                         ? 'bg-purple-100 text-purple-950 font-bold ring-1 ring-purple-400' 
                         : 'text-slate-700'
                     }`}>
-                      {row.frecuenciaRelativaAcumulada.toFixed(4)}
+                      {row.frecuenciaRelativaAcumulada.toFixed(2)}
                     </td>
 
                     {/* P */}
@@ -314,7 +314,7 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                   {data.totals.totalFa}
                 </td>
                 <td className="font-mono font-bold text-slate-800">
-                  {data.totals.totalFr.toFixed(4)}
+                  {data.totals.totalFr.toFixed(2)}
                 </td>
                 <td className="font-mono font-bold text-slate-800">
                   {data.totals.totalP.toFixed(2)}%
@@ -376,14 +376,14 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 }`}
               >
                 <div className="flex items-center justify-between text-[10px] font-bold uppercase text-emerald-800 mb-1">
-                  <span>2. Frecuencia Relativa (fr)</span>
+                  <span>2. Frec. Relativa (fr)</span>
                   <span className="text-[9px] bg-emerald-100 text-emerald-900 px-1.5 py-0.2 rounded font-mono">Paso 2</span>
                 </div>
                 <div className="bg-slate-50 p-1.5 rounded text-center text-xs">
                   <MathFormula formula={selectedRow.stepExplanations.fr} />
                 </div>
                 <span className="text-[10px] text-slate-500 block text-center mt-1">
-                  Proporción: fa / n
+                  Proporción: fa / n (2 dec.)
                 </span>
               </div>
 
@@ -440,8 +440,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
       {/* 4. MÓDULO GRÁFICO AUTOMÁTICO MULTI-TIPO */}
       <HistogramVisualizer
         title={`Gráfico Estadístico: ${data.variableName}`}
-        xLabel={`Intervalos de Clase [${data.unit}]`}
-        yLabel="Frecuencia Absoluta (fa)"
+        variableName={data.variableName}
+        unit={data.unit}
         data={chartData}
       />
     </div>

@@ -151,6 +151,7 @@ export function calculateIntervalParameters(
 
 /**
  * MÓDULO 1: Generación de Tabla de Frecuencias Agrupadas
+ * Las frecuencias relativas (fr) y acumuladas (Fr) se redondean a 2 decimales.
  */
 export function generateGroupedFrequencyTable(
   variableName: string,
@@ -191,12 +192,13 @@ export function generateGroupedFrequencyTable(
       }
     }
 
-    const fr = roundTo(fa / n, 4);
-    const p = roundTo(fr * 100, 2);
+    // Redondeo exacto a 2 decimales para fr y Fr
+    const fr = roundTo(fa / n, 2);
+    const p = roundTo((fa / n) * 100, 2);
 
     accumulatedFa += fa;
-    accumulatedFr = roundTo(accumulatedFa / n, 4);
-    accumulatedP = roundTo(accumulatedFr * 100, 2);
+    accumulatedFr = roundTo(accumulatedFa / n, 2);
+    accumulatedP = roundTo((accumulatedFa / n) * 100, 2);
 
     const intervalLabel = isLast
       ? `[${lower} - ${upper}]`
@@ -205,14 +207,14 @@ export function generateGroupedFrequencyTable(
     const stepExplanations = {
       mc: `Mc_${i} = \\frac{${lower} + ${upper}}{2} = ${mc}`,
       fa: `fa_${i} = ${fa}`,
-      fr: `fr_${i} = \\frac{fa_${i}}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
-      p: `p_${i} = fr_${i} \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
+      fr: `fr_${i} = \\frac{fa_${i}}{n} = \\frac{${fa}}{${n}} \\approx ${fr.toFixed(2)}`,
+      p: `p_${i} = fr_${i} \\cdot 100 = ${fr.toFixed(2)} \\cdot 100 = ${p.toFixed(2)}\\%`,
       faAcum: i === 1 
         ? `Fa_1 = fa_1 = ${fa}`
         : `Fa_${i} = Fa_${i-1} + fa_${i} = ${accumulatedFa - fa} + ${fa} = ${accumulatedFa}`,
       frAcum: i === 1
-        ? `Fr_1 = fr_1 = ${fr.toFixed(4)}`
-        : `Fr_${i} = Fr_${i-1} + fr_${i} = ${(accumulatedFr - fr).toFixed(4)} + ${fr.toFixed(4)} = ${accumulatedFr.toFixed(4)}`,
+        ? `Fr_1 = fr_1 = ${fr.toFixed(2)}`
+        : `Fr_${i} = Fr_${i-1} + fr_${i} = ${(accumulatedFr - fr).toFixed(2)} + ${fr.toFixed(2)} = ${accumulatedFr.toFixed(2)}`,
       pAcum: i === 1
         ? `P_1 = p_1 = ${p.toFixed(2)}\\%`
         : `P_${i} = P_${i-1} + p_${i} = ${(accumulatedP - p).toFixed(2)}\\% + ${p.toFixed(2)}\\% = ${accumulatedP.toFixed(2)}\\%`,
@@ -258,7 +260,7 @@ export function generateGroupedFrequencyTable(
         kFormula: `k = \\sqrt{n}`,
         kValue: `k = \\sqrt{${n}} \\approx ${sqrtVal.toFixed(2)} \\rightarrow k = ${params.k} (Redondeo: ${kNearest === kCeil ? `${params.k}` : `más próximo = ${kNearest}, superior = ${kCeil}`})`,
         amplitudFormula: `A = \\frac{R}{k}`,
-        amplitudValue: `A = \\frac{${params.rango}}{${params.k}} = ${(params.rango / params.k).toFixed(4)} \\approx ${params.amplitud}`,
+        amplitudValue: `A = \\frac{${params.rango}}{${params.k}} = ${(params.rango / params.k).toFixed(2)} \\approx ${params.amplitud}`,
       }
     : undefined;
 
@@ -271,7 +273,7 @@ export function generateGroupedFrequencyTable(
     rows,
     totals: {
       totalFa: totalFa,
-      totalFr: roundTo(totalFr, 4),
+      totalFr: roundTo(totalFr, 2),
       totalP: roundTo(totalP, 2),
       label: 'Suma total',
     },
@@ -281,6 +283,7 @@ export function generateGroupedFrequencyTable(
 
 /**
  * MÓDULO 2: Generación de Tabla de Frecuencias Simples (Cuantitativas y Cualitativas)
+ * Las frecuencias relativas (fr) y acumuladas (Fr) se redondean a 2 decimales.
  */
 export function generateSimpleFrequencyTable(
   variableName: string,
@@ -322,25 +325,24 @@ export function generateSimpleFrequencyTable(
 
   for (const val of sortedKeys) {
     const fa = frequencyMap.get(val) || 0;
-    const fr = roundTo(fa / n, 4);
-    const p = roundTo(fr * 100, 2);
+    // Redondeo exacto a 2 decimales
+    const fr = roundTo(fa / n, 2);
+    const p = roundTo((fa / n) * 100, 2);
 
     accumulatedFa += fa;
-    accumulatedFr = roundTo(accumulatedFa / n, 4);
-    accumulatedP = roundTo(accumulatedFr * 100, 2);
-
-    const valLabel = String(val);
+    accumulatedFr = roundTo(accumulatedFa / n, 2);
+    accumulatedP = roundTo((accumulatedFa / n) * 100, 2);
 
     const stepExplanations = {
       fa: `fa_${index} = ${fa}`,
-      fr: `fr_${index} = \\frac{fa_${index}}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
-      p: `p_${index} = fr_${index} \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
+      fr: `fr_${index} = \\frac{fa_${index}}{n} = \\frac{${fa}}{${n}} \\approx ${fr.toFixed(2)}`,
+      p: `p_${index} = fr_${index} \\cdot 100 = ${fr.toFixed(2)} \\cdot 100 = ${p.toFixed(2)}\\%`,
       faAcum: index === 1
         ? `Fa_1 = fa_1 = ${fa}`
         : `Fa_${index} = Fa_${index-1} + fa_${index} = ${accumulatedFa - fa} + ${fa} = ${accumulatedFa}`,
       frAcum: index === 1
-        ? `Fr_1 = fr_1 = ${fr.toFixed(4)}`
-        : `Fr_${index} = Fr_${index-1} + fr_${index} = ${(accumulatedFr - fr).toFixed(4)} + ${fr.toFixed(4)} = ${accumulatedFr.toFixed(4)}`,
+        ? `Fr_1 = fr_1 = ${fr.toFixed(2)}`
+        : `Fr_${index} = Fr_${index-1} + fr_${index} = ${(accumulatedFr - fr).toFixed(2)} + ${fr.toFixed(2)} = ${accumulatedFr.toFixed(2)}`,
       pAcum: index === 1
         ? `P_1 = p_1 = ${p.toFixed(2)}\\%`
         : `P_${index} = P_${index-1} + p_${index} = ${(accumulatedP - p).toFixed(2)}\\% + ${p.toFixed(2)}\\% = ${accumulatedP.toFixed(2)}\\%`,
@@ -373,13 +375,13 @@ export function generateSimpleFrequencyTable(
 
   return {
     variableName,
-    unit: unit || (variableType === 'qualitative' ? 'Casos' : 'u'),
+    unit: unit || (variableType === 'qualitative' ? '' : 'u'),
     sampleSize: n,
     variableType,
     rows,
     totals: {
       totalFa: totalFa,
-      totalFr: roundTo(totalFr, 4),
+      totalFr: roundTo(totalFr, 2),
       totalP: roundTo(totalP, 2),
       label: 'Suma total',
     },
@@ -480,7 +482,25 @@ export function generateContingencyTable(
  * CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE (CUANTITATIVOS Y CUALITATIVOS)
  */
 export const SAFETY_PRESETS: SafetyPreset[] = [
-  // --- FRECUENCIAS SIMPLES: CUALITATIVAS (NUEVAS) ---
+  // --- FRECUENCIAS SIMPLES: CUALITATIVAS ---
+  {
+    id: 'cualitativa-ocupaciones',
+    title: 'Ocupaciones Declaradas en Planta',
+    category: 'Siniestralidad y Recursos Humanos',
+    variableName: 'Ocupaciones declaradas',
+    unit: 'Trabajadores',
+    variableType: 'qualitative',
+    description: 'Distribución de ocupaciones laborales y puestos de trabajo registrados en la empresa.',
+    sampleSize: 25,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      'Empleado/a', 'Empleado/a', 'Empleado/a', 'Empleado/a', 'Estudiante',
+      'Empleado/a', 'Emprendedora', 'Empleado/a', 'Empleado/a', 'Empleado/a',
+      'Estudiante', 'Empleado/a', 'Empleado/a', 'Emprendedora', 'Empleado/a',
+      'Empleado/a', 'Empleado/a', 'Estudiante', 'Empleado/a', 'Empleado/a',
+      'Empleado/a', 'Emprendedora', 'Empleado/a', 'Empleado/a', 'Empleado/a'
+    ],
+  },
   {
     id: 'cualitativa-lesiones',
     title: 'Tipo de Lesión más Frecuente en Planta',
@@ -572,7 +592,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     title: 'Puntaje de Auditoría 5S',
     category: 'Prevención Operativa',
     variableName: 'Calificación de Orden y Limpieza',
-    unit: 'Puntos (1-10)',
+    unit: 'Puntos',
     variableType: 'quantitative',
     description: 'Calificaciones mensuales de orden y limpieza en células de trabajo.',
     sampleSize: 24,
@@ -767,7 +787,6 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
       return data;
     },
   },
-  // --- 3 NUEVOS EJEMPLOS BIVARIADOS SOLICITADOS ---
   {
     id: 'contingencia-lesion-cuerpo',
     title: 'Naturaleza de Lesión vs. Zona Corporal Afectada',
@@ -891,7 +910,7 @@ export const THEMATIC_UNITS: ThematicUnit[] = [
         summary: 'Cálculo de Frecuencia Absoluta (fa), Relativa (fr = fa / n), Porcentaje (p = fr · 100), y frecuencias acumuladas (Fa, Fr, P).',
         keyFormulas: [
           { name: 'Marca de Clase', formula: 'Mc = \\frac{L_i + L_s}{2}', note: 'Punto medio del intervalo.' },
-          { name: 'Frecuencia Relativa', formula: 'fr = \\frac{fa}{n}', note: 'Proporción de observaciones.' },
+          { name: 'Frecuencia Relativa', formula: 'fr = \\frac{fa}{n}', note: 'Proporción de observaciones redondeada a 2 decimales.' },
           { name: 'Porcentaje', formula: 'p = fr \\cdot 100', note: 'Expresión porcentual.' },
         ]
       }

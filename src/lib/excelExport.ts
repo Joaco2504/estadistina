@@ -36,10 +36,10 @@ export function exportGroupedTableToExcel(data: GroupedFrequencyTableResult) {
       row.intervalLabel,
       row.marcaDeClase,
       row.frecuenciaAbsoluta,
-      Number(row.frecuenciaRelativa.toFixed(4)),
+      Number(row.frecuenciaRelativa.toFixed(2)),
       Number(row.porcentaje.toFixed(2)),
       row.frecuenciaAbsolutaAcumulada,
-      Number(row.frecuenciaRelativaAcumulada.toFixed(4)),
+      Number(row.frecuenciaRelativaAcumulada.toFixed(2)),
       Number(row.porcentajeAcumulado.toFixed(2)),
     ]);
   });
@@ -50,7 +50,7 @@ export function exportGroupedTableToExcel(data: GroupedFrequencyTableResult) {
     'Suma total',
     '',
     data.totals.totalFa,
-    Number(data.totals.totalFr.toFixed(4)),
+    Number(data.totals.totalFr.toFixed(2)),
     Number(data.totals.totalP.toFixed(2)),
     '—',
     '—',
@@ -89,12 +89,12 @@ export function exportSimpleTableToExcel(data: SimpleFrequencyTableResult) {
   wsData.push(['I.E.S. DE BELÉN - TECNICATURA SUPERIOR EN HIGIENE Y SEGURIDAD INDUSTRIAL']);
   wsData.push(['CÁTEDRA: ESTADÍSTICA, CÁLCULO DE LA PROBABILIDAD Y COSTOS DE LA SEGURIDAD']);
   wsData.push([`DOCENTE: Prof. Pacheco E. Joaquín | FECHA: ${new Date().toLocaleDateString('es-AR')}`]);
-  wsData.push([`VARIABLE: ${data.variableName} (${data.unit}) | MUESTRA TOTAL (n): ${data.sampleSize}`]);
+  wsData.push([`VARIABLE: ${data.variableName} ${data.unit ? `(${data.unit})` : ''} | MUESTRA TOTAL (n): ${data.sampleSize}`]);
   wsData.push([]);
 
   wsData.push([
     'N°',
-    `Valor de Variable (${data.unit})`,
+    data.variableType === 'qualitative' ? 'Categoría / Modalidad (xi)' : `Valor de Variable ${data.unit ? `(${data.unit})` : '(xi)'}`,
     'Frecuencia Absoluta (fa)',
     'Frecuencia Relativa (fr)',
     'Porcentaje (p %)',
@@ -108,10 +108,10 @@ export function exportSimpleTableToExcel(data: SimpleFrequencyTableResult) {
       row.index,
       row.variableValue,
       row.frecuenciaAbsoluta,
-      Number(row.frecuenciaRelativa.toFixed(4)),
+      Number(row.frecuenciaRelativa.toFixed(2)),
       Number(row.porcentaje.toFixed(2)),
       row.frecuenciaAbsolutaAcumulada,
-      Number(row.frecuenciaRelativaAcumulada.toFixed(4)),
+      Number(row.frecuenciaRelativaAcumulada.toFixed(2)),
       Number(row.porcentajeAcumulado.toFixed(2)),
     ]);
   });
@@ -120,7 +120,7 @@ export function exportSimpleTableToExcel(data: SimpleFrequencyTableResult) {
     '',
     'Suma total',
     data.totals.totalFa,
-    Number(data.totals.totalFr.toFixed(4)),
+    Number(data.totals.totalFr.toFixed(2)),
     Number(data.totals.totalP.toFixed(2)),
     '—',
     '—',
@@ -131,9 +131,10 @@ export function exportSimpleTableToExcel(data: SimpleFrequencyTableResult) {
   wsData.push(['Fuente: Cátedra de Estadística - I.E.S. Belén']);
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
+
   ws['!cols'] = [
     { wch: 6 },
-    { wch: 22 },
+    { wch: 28 },
     { wch: 22 },
     { wch: 22 },
     { wch: 18 },
@@ -148,35 +149,47 @@ export function exportSimpleTableToExcel(data: SimpleFrequencyTableResult) {
 }
 
 /**
- * Exporta la tabla de contingencia a formato Excel (.xlsx)
+ * Exporta la tabla de contingencia bivariada a formato Excel (.xlsx)
  */
 export function exportContingencyTableToExcel(data: ContingencyTableResult) {
   const wsData: any[][] = [];
 
   wsData.push(['I.E.S. DE BELÉN - TECNICATURA SUPERIOR EN HIGIENE Y SEGURIDAD INDUSTRIAL']);
   wsData.push(['CÁTEDRA: ESTADÍSTICA, CÁLCULO DE LA PROBABILIDAD Y COSTOS DE LA SEGURIDAD']);
-  wsData.push([`TABLA DE CONTINGENCIA BIVARIADA: ${data.variableX} × ${data.variableY}`]);
-  wsData.push([`DOCENTE: Prof. Pacheco E. Joaquín | GRAN TOTAL (n): ${data.grandTotal}`]);
+  wsData.push([`DOCENTE: Prof. Pacheco E. Joaquín | FECHA: ${new Date().toLocaleDateString('es-AR')}`]);
+  wsData.push([`TABLA BIVARIADA: ${data.variableX} × ${data.variableY} | GRAN TOTAL (n): ${data.grandTotal}`]);
   wsData.push([]);
 
-  // Encabezados
-  const headers = [`${data.variableX} \\ ${data.variableY}`, ...data.colCategories, 'Total por fila'];
-  wsData.push(headers);
+  // Fila de encabezados de columnas
+  const headerRow = [`${data.variableX} \\ ${data.variableY}`, ...data.colCategories, 'Total por fila'];
+  wsData.push(headerRow);
 
-  // Filas
+  // Filas con valores y totales marginales
   data.rowCategories.forEach((rowCat, rIdx) => {
-    const row = [rowCat, ...data.matrix[rIdx], data.rowMarginalTotals[rIdx]];
-    wsData.push(row);
+    const rowValues = data.matrix[rIdx];
+    const rowTotal = data.rowMarginalTotals[rIdx];
+    wsData.push([rowCat, ...rowValues, rowTotal]);
   });
 
-  // Fila de totales por columna y gran total
-  wsData.push(['Total por columna', ...data.colMarginalTotals, data.grandTotal]);
+  // Fila de totales marginales por columna
+  wsData.push([
+    'Total por columna',
+    ...data.colMarginalTotals,
+    data.grandTotal,
+  ]);
 
   wsData.push([]);
   wsData.push(['Fuente: Cátedra de Estadística - I.E.S. Belén']);
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  ws['!cols'] = [
+    { wch: 26 },
+    ...data.colCategories.map(() => ({ wch: 20 })),
+    { wch: 20 },
+  ];
+
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Tabla_Contingencia');
-  XLSX.writeFile(wb, `Tabla_Contingencia_${data.variableX}_x_${data.variableY}.xlsx`);
+  XLSX.writeFile(wb, `Tabla_Contingencia_${data.variableX.replace(/[^a-zA-Z0-9]/g, '_')}_vs_${data.variableY.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
 }
