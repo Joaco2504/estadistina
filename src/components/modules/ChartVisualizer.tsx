@@ -27,7 +27,7 @@ import {
   Activity
 } from 'lucide-react';
 
-// Paleta cromática luminosa, vibrante y de alto contraste (sin colores oscuros para evitar conflictos de lectura)
+// Paleta cromática luminosa, vibrante y de alto contraste
 const DYNAMIC_CHART_COLORS = [
   '#1B8A5A', // Verde Seguridad Primario
   '#2563EB', // Azul Eléctrico
@@ -106,14 +106,35 @@ const CustomCartesianTooltip = ({ active, payload, label, isCumulative }: any) =
 };
 
 /**
- * Determina el título contextual del Eje Y según la variable y modo
+ * Determina el título contextual del Eje Y según la variable, el individuo/unidad y el modo
  */
-function getDescriptiveYLabel(variableName: string, mode: 'absolute' | 'cumulative' | 'percentage'): string {
+function getDescriptiveYLabel(variableName: string, unit: string, mode: 'absolute' | 'cumulative' | 'percentage'): string {
   if (mode === 'percentage') {
     return 'Porcentaje del total (%)';
   }
   if (mode === 'cumulative') {
     return 'Total acumulado de casos (Fa)';
+  }
+
+  const unitClean = (unit || '').trim();
+  if (unitClean) {
+    const lowerUnit = unitClean.toLowerCase();
+    if (lowerUnit.startsWith('n°') || lowerUnit.startsWith('numero') || lowerUnit.startsWith('número') || lowerUnit.startsWith('cantidad')) {
+      return unitClean;
+    }
+    if (lowerUnit.includes('trabajador') || lowerUnit.includes('operario') || lowerUnit.includes('persona') || lowerUnit.includes('padre') || lowerUnit.includes('alumno') || lowerUnit.includes('estudiante')) {
+      return `Cantidad de ${unitClean}`;
+    }
+    if (lowerUnit.includes('caso') || lowerUnit.includes('accidente') || lowerUnit.includes('incidente') || lowerUnit.includes('lesion') || lowerUnit.includes('lesión')) {
+      return `Número de ${unitClean}`;
+    }
+    if (lowerUnit.includes('medicion') || lowerUnit.includes('medición') || lowerUnit.includes('observac') || lowerUnit.includes('registro') || lowerUnit.includes('muestra')) {
+      return `Número de ${unitClean}`;
+    }
+    if (lowerUnit.includes('dba') || lowerUnit.includes('lux') || lowerUnit.includes('ppm') || lowerUnit.includes('°c') || lowerUnit.includes('mg/m') || lowerUnit.includes('kg') || lowerUnit.includes('cm') || lowerUnit.includes('segundo') || lowerUnit.includes('días') || lowerUnit.includes('año')) {
+      return `Número de mediciones (${unitClean})`;
+    }
+    return `Cantidad de ${unitClean}`;
   }
 
   const lower = (variableName || '').toLowerCase();
@@ -174,7 +195,8 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   
   // Eje Y: Lenguaje cotidiano y descriptivo
   const dynamicYLabel = yLabel || getDescriptiveYLabel(
-    variableName, 
+    variableName,
+    unit,
     chartType === 'ogive' ? 'cumulative' : chartType === 'pie' ? 'percentage' : 'absolute'
   );
 
@@ -189,7 +211,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
           <p className="text-xs text-slate-500">
             {chartType === 'histogram' && `Histograma: Distribución de ${variableName}`}
             {chartType === 'polygon' && `Polígono de Frecuencias: Marcas de Clase Mc (${unit})`}
-            {chartType === 'pie' && `Distribución Porcentual Relativa (%)`}
+            {chartType === 'pie' && `Distribución Porcentual Relativa (%) de ${variableName}`}
             {chartType === 'ogive' && `Ojiva de Frecuencias Acumuladas`}
           </p>
         </div>
@@ -497,7 +519,8 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 
   // Eje Y: Título cotidiano y descriptivo
   const dynamicYLabel = yLabel || getDescriptiveYLabel(
-    variableName, 
+    variableName,
+    unit,
     chartType === 'pie' ? 'percentage' : 'absolute'
   );
 
@@ -512,7 +535,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
           <p className="text-xs text-slate-500">
             {chartType === 'bar' && `Diagrama de Barras: ${formattedXLabel}`}
             {chartType === 'pie' && `Distribución Porcentual (%) de ${variableName}`}
-            {chartType === 'line' && `Gráfico de Frecuencias`}
+            {chartType === 'line' && `Gráfico de Frecuencias de ${variableName}`}
           </p>
         </div>
 

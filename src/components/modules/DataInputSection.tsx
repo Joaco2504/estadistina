@@ -12,9 +12,7 @@ import {
   Sun,
   ShieldCheck,
   Tag,
-  Hash,
-  ChevronDown,
-  ChevronUp
+  Hash
 } from 'lucide-react';
 import { SAFETY_PRESETS, parseAnyDataString } from '@/lib/statistics';
 
@@ -98,7 +96,9 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const lower = varName.toLowerCase();
       let categories = ['Corte en manos', 'Contusión', 'Quemadura térmica', 'Esguince', 'Fractura'];
       
-      if (lower.includes('epp') || lower.includes('protec') || lower.includes('condic')) {
+      if (lower.includes('ocupac') || lower.includes('puesto') || lower.includes('empleo')) {
+        categories = ['Empleado/a', 'Emprendedora', 'Estudiante', 'Operario de Planta', 'Técnico de Seguridad'];
+      } else if (lower.includes('epp') || lower.includes('protec') || lower.includes('condic')) {
         categories = ['Excelente', 'Bueno', 'Regular', 'Deteriorado'];
       } else if (lower.includes('riesgo') || lower.includes('ergo') || lower.includes('rula')) {
         categories = ['Riesgo Bajo', 'Riesgo Moderado', 'Riesgo Alto', 'Riesgo Crítico'];
@@ -192,20 +192,42 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       setVariableType(newType);
     }
     if (newType === 'qualitative') {
-      setVariableName('Naturaleza de la Lesión');
-      setUnit('Casos');
-      const generated = generateValuesForContext('Naturaleza de la Lesión', customSampleSize, 'qualitative');
+      const newVar = 'Ocupaciones declaradas';
+      const newUnit = 'Trabajadores';
+      setVariableName(newVar);
+      setUnit(newUnit);
+      const generated = generateValuesForContext(newVar, customSampleSize, 'qualitative');
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
-      onCalculateWithValues(dataStr, 'Naturaleza de la Lesión', 'Casos', 'qualitative');
+      onCalculateWithValues(dataStr, newVar, newUnit, 'qualitative');
     } else {
-      setVariableName('Jornadas de Trabajo Perdidas');
-      setUnit('Días corridos');
-      const generated = generateValuesForContext('Jornadas de Trabajo Perdidas', customSampleSize, 'quantitative');
+      const newVar = 'Jornadas de Trabajo Perdidas';
+      const newUnit = 'Días corridos';
+      setVariableName(newVar);
+      setUnit(newUnit);
+      const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative');
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
-      onCalculateWithValues(dataStr, 'Jornadas de Trabajo Perdidas', 'Días corridos', 'quantitative');
+      onCalculateWithValues(dataStr, newVar, newUnit, 'quantitative');
     }
+  };
+
+  // Manejo de cambio reactivo del nombre de variable
+  const handleVariableNameChange = (val: string) => {
+    setVariableName(val);
+    onCalculateWithValues(undefined, val, unit, variableType);
+  };
+
+  // Manejo de cambio reactivo de la unidad/individuo
+  const handleUnitChange = (val: string) => {
+    setUnit(val);
+    onCalculateWithValues(undefined, variableName, val, variableType);
+  };
+
+  // Manejo de cambio reactivo del input en bruto
+  const handleRawInputChange = (val: string) => {
+    setRawInput(val);
+    onCalculateWithValues(val, variableName, unit, variableType);
   };
 
   return (
@@ -225,7 +247,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 : 'Frecuencias Simples: Variable Cuantitativa Discreta'}
             </h2>
             <span className="text-[11px] text-slate-300 hidden sm:inline">
-              Personaliza el tipo de variable, el tamaño de muestra o ingresa tus propios datos
+              Personaliza el tipo de variable, el individuo, la muestra o ingresa tus propios datos
             </span>
           </div>
         </div>
@@ -343,7 +365,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           </div>
         </div>
 
-        {/* Datos de la Variable y Medida */}
+        {/* Datos de la Variable y Medida / Individuo */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2">
             <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
@@ -352,21 +374,21 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
             <input
               type="text"
               value={variableName}
-              onChange={(e) => setVariableName(e.target.value)}
-              placeholder="Ej: Tipo de Lesión, Días Perdidos, Ruido en dBA"
+              onChange={(e) => handleVariableNameChange(e.target.value)}
+              placeholder="Ej: Ocupaciones declaradas, Nivel de Ruido, Días de Licencia"
               className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
 
           <div>
             <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
-              Unidad o Categoría
+              Individuo
             </label>
             <input
               type="text"
               value={unit}
-              onChange={(e) => setUnit(e.target.value)}
-              placeholder="Ej: Casos, dBA, Días, Años"
+              onChange={(e) => handleUnitChange(e.target.value)}
+              placeholder="Ej: Trabajadores, Operarios, Casos, dBA, Días"
               className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
@@ -387,9 +409,9 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           <textarea
             rows={2}
             value={rawInput}
-            onChange={(e) => setRawInput(e.target.value)}
+            onChange={(e) => handleRawInputChange(e.target.value)}
             placeholder={variableType === 'qualitative' 
-              ? 'Ingrese categorías separadas por punto y coma (ej: Corte; Quemadura; Contusión; Corte; Fractura; ...)'
+              ? 'Ingrese categorías separadas por punto y coma (ej: Empleado/a; Emprendedora; Estudiante; Empleado/a; ...)'
               : 'Ingrese números separados por punto y coma (ej: 0; 2; 5; 0; 14; 3; ...)'}
             className="w-full text-xs font-mono p-3 rounded-lg border border-slate-200 bg-white text-slate-800 focus:ring-1 focus:ring-[#0F2942] outline-none leading-relaxed resize-y"
           />
@@ -403,7 +425,6 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
               onClick={() => setShowManualParams(!showManualParams)}
               className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors cursor-pointer"
             >
-              {showManualParams ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
               <span>Personalizar Parámetros Manuales (R, k, A) - Opcional</span>
             </button>
 
