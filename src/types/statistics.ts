@@ -34,8 +34,10 @@ export interface IntervalParameters {
 export interface GroupedFrequencyRow {
   index: number; // Número de intervalo (1, 2, ..., k)
   intervalLabel: string; // ej: "[65.0 - 71.0)"
-  lowerBound: number; // Límite inferior (Li)
-  upperBound: number; // Límite superior (Ls)
+  limiteInferior?: number;
+  limiteSuperior?: number;
+  lowerBound?: number; // Límite inferior (Li)
+  upperBound?: number; // Límite superior (Ls)
   isLastInterval?: boolean; // Para cerrar con corchete [Li - Ls]
   marcaDeClase: number; // Mc = (Li + Ls) / 2
   frecuenciaAbsoluta: number; // fa
@@ -48,7 +50,7 @@ export interface GroupedFrequencyRow {
   // Detalle didáctico del paso a paso de cálculo
   stepExplanations: {
     mc: string;
-    fa: string;
+    fa?: string;
     fr: string;
     p: string;
     faAcum: string;
@@ -72,7 +74,7 @@ export interface SimpleFrequencyRow {
   porcentajeAcumulado: number; // P = Fr * 100
   
   stepExplanations: {
-    fa: string;
+    fa?: string;
     fr: string;
     p: string;
     faAcum: string;
@@ -167,7 +169,7 @@ export interface ContingencyTableResult {
 export interface SafetyDataPreset {
   id: string;
   title: string;
-  category: 'Higiene Industrial' | 'Seguridad Operativa' | 'Medio Ambiente' | 'Costos y Siniestralidad';
+  category: string;
   variableName: string;
   unit: string;
   description: string;
@@ -179,36 +181,44 @@ export interface SafetyDataPreset {
   defaultYName?: string;
 }
 
+export type SafetyPreset = SafetyDataPreset;
+
 /**
- * Unidad temática para la sección de "Apuntes de la Cátedra"
+ * Módulo de Apuntes de la Cátedra
  */
+export interface ThematicTopic {
+  title: string;
+  summary: string;
+  keyFormulas?: { name: string; formula: string; note: string }[];
+}
+
+export interface TheoreticalNote {
+  title: string;
+  fileName: string;
+  fileSize: string;
+  pages: number;
+  summary: string;
+  contentOutline: string[];
+}
+
+export interface PracticalGuide {
+  title: string;
+  tpNumber: string;
+  fileName: string;
+  fileSize: string;
+  exercisesCount: number;
+  summary: string;
+  sampleExercises: { number: number; statement: string; dataSample: string }[];
+}
+
 export interface ThematicUnit {
   id: string;
   number: number;
   title: string;
   subtitle: string;
-  description: string;
   badge: string;
-  topics: {
-    title: string;
-    summary: string;
-    keyFormulas?: { name: string; formula: string; note: string }[];
-  }[];
-  theoreticalNote: {
-    title: string;
-    fileName: string;
-    fileSize: string;
-    pages: number;
-    summary: string;
-    contentOutline: string[];
-  };
-  practicalGuide: {
-    title: string;
-    tpNumber: string;
-    fileName: string;
-    fileSize: string;
-    exercisesCount: number;
-    summary: string;
-    sampleExercises: { number: number; statement: string; dataSample: string }[];
-  };
+  description: string;
+  topics: ThematicTopic[];
+  theoreticalNote: TheoreticalNote;
+  practicalGuide: PracticalGuide;
 }

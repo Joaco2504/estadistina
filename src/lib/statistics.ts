@@ -1,67 +1,68 @@
 // src/lib/statistics.ts
-import {
-  GroupedFrequencyRow,
-  GroupedFrequencyTableResult,
-  IntervalParameters,
-  SimpleFrequencyRow,
-  SimpleFrequencyTableResult,
+import { 
+  GroupedFrequencyRow, 
+  GroupedFrequencyTableResult, 
+  SimpleFrequencyRow, 
+  SimpleFrequencyTableResult, 
   ContingencyTableResult,
-  SafetyDataPreset,
+  SafetyPreset,
   ThematicUnit
 } from '@/types/statistics';
 
 /**
- * Parsea una cadena de texto con datos separados por ';' (o comas/espacios/saltos de línea)
- * y devuelve un array ordenado de números válidos.
+ * Redondeo matemático seguro a N decimales
+ */
+export function roundTo(val: number, decimals: number = 2): number {
+  const factor = Math.pow(10, decimals);
+  return Math.round((val + Number.EPSILON) * factor) / factor;
+}
+
+/**
+ * Parsea un string de datos en bruto separados por punto y coma (;), comas o espacios.
  */
 export function parseRawDataString(input: string): number[] {
-  if (!input || input.trim() === '') return [];
-  
-  // Normalizar separadores: admite ';' principalmente, también comas o saltos de línea
-  const normalized = input.replace(/[\n\r,]/g, ';');
-  const tokens = normalized.split(';');
-  
+  if (!input || !input.trim()) return [];
+
+  // Soporta separadores: punto y coma, comas seguidas de espacios, saltos de línea o tabulaciones
+  const tokens = input
+    .replace(/;/g, ' ')
+    .replace(/,/g, '.') // Convertir coma decimal a punto
+    .split(/[\s\n\t]+/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
   const numbers: number[] = [];
   for (const token of tokens) {
-    const trimmed = token.trim();
-    if (trimmed !== '') {
-      const num = Number(trimmed);
-      if (!isNaN(num)) {
-        numbers.push(num);
-      }
+    const num = parseFloat(token);
+    if (!isNaN(num) && isFinite(num)) {
+      numbers.push(num);
     }
   }
-  
-  return numbers.sort((a, b) => a - b);
+
+  return numbers;
 }
 
 /**
- * Formatea un número decimal a una cantidad fija de decimales
- */
-export function formatNum(num: number, decimals: number = 2): string {
-  if (Number.isInteger(num)) {
-    return num.toString();
-  }
-  return Number(num.toFixed(decimals)).toString();
-}
-
-/**
- * Redondea con precisión a n decimales
- */
-export function roundTo(num: number, decimals: number = 2): number {
-  const factor = Math.pow(10, decimals);
-  return Math.round((num + Number.EPSILON) * factor) / factor;
-}
-
-/**
- * Calcula los parámetros de intervalo aplicando la regla de la raíz cuadrada
- * Regla: k = round(sqrt(n))
+ * Calcula los parámetros didácticos previos para datos agrupados:
+ * - R = Xmax - Xmin
+ * - k = round(sqrt(n)) o ceil(sqrt(n))
+ * - A = R / k
  */
 export function calculateIntervalParameters(
-  values: number[],
-  customParams?: { rango?: number; k?: number; amplitud?: number }
-): IntervalParameters {
-  const n = values.length;
+  sortedValues: number[],
+  customParams?: { rango?: number; k?: number; amplitud?: number },
+  kRoundingMode: 'nearest' | 'ceil' = 'nearest'
+): {
+  userProvided: boolean;
+  xmin: number;
+  xmax: number;
+  rango: number;
+  k: number;
+  amplitud: number;
+  precision: number;
+  kCalculatedRaw: number;
+} {
+  const n = sortedValues.length;
   if (n === 0) {
     return {
       userProvided: false,
@@ -71,21 +72,21 @@ export function calculateIntervalParameters(
       k: 1,
       amplitud: 1,
       precision: 2,
+      kCalculatedRaw: 1,
     };
   }
 
-  const xmin = values[0];
-  const xmax = values[values.length - 1];
-  const naturalRango = roundTo(xmax - xmin, 4);
+  const xmin = sortedValues[0];
+  const xmax = sortedValues[sortedValues.length - 1];
+  const naturalRango = roundTo(xmax - xmin, 2);
+  const sqrtN = Math.sqrt(n);
 
-  // Si el usuario proveyó R, k, A válidos
   if (
     customParams &&
     customParams.rango !== undefined &&
-    customParams.rango > 0 &&
     customParams.k !== undefined &&
-    customParams.k > 0 &&
     customParams.amplitud !== undefined &&
+    customParams.k > 0 &&
     customParams.amplitud > 0
   ) {
     return {
@@ -93,20 +94,22 @@ export function calculateIntervalParameters(
       xmin,
       xmax,
       rango: customParams.rango,
-      k: Math.round(customParams.k),
+      k: customParams.k,
       amplitud: customParams.amplitud,
       precision: 2,
+      kCalculatedRaw: sqrtN,
     };
   }
 
-  // REGLA ESTRICTA DE LA RAÍZ CUADRADA: k = round(sqrt(n))
-  const kCalculado = Math.max(1, Math.round(Math.sqrt(n)));
+  // REGLA DE LA RAÍZ CUADRADA: k = round(sqrt(n)) o ceil(sqrt(n))
+  const kCalculado = kRoundingMode === 'ceil' 
+    ? Math.max(1, Math.ceil(sqrtN))
+    : Math.max(1, Math.round(sqrtN));
   
-  // Amplitud: A = R / k (con ajuste mínimo para cubrir xmax)
+  // Amplitud: A = R / k
   let rawAmplitud = naturalRango / kCalculado;
   if (rawAmplitud === 0) rawAmplitud = 1;
   
-  // Redondeo amigable de la amplitud (a 1 o 2 decimales según los datos)
   const amplitudCalculada = roundTo(rawAmplitud, 2) || 1;
 
   return {
@@ -117,6 +120,7 @@ export function calculateIntervalParameters(
     k: kCalculado,
     amplitud: amplitudCalculada,
     precision: 2,
+    kCalculatedRaw: sqrtN,
   };
 }
 
@@ -128,7 +132,8 @@ export function generateGroupedFrequencyTable(
   variableName: string,
   unit: string,
   rawValues: number[],
-  customParams?: { rango?: number; k?: number; amplitud?: number }
+  customParams?: { rango?: number; k?: number; amplitud?: number },
+  kRoundingMode: 'nearest' | 'ceil' = 'nearest'
 ): GroupedFrequencyTableResult {
   const sortedValues = [...rawValues].sort((a, b) => a - b);
   const n = sortedValues.length;
@@ -137,7 +142,7 @@ export function generateGroupedFrequencyTable(
     throw new Error('El conjunto de datos no puede estar vacío.');
   }
 
-  const params = calculateIntervalParameters(sortedValues, customParams);
+  const params = calculateIntervalParameters(sortedValues, customParams, kRoundingMode);
   const rows: GroupedFrequencyRow[] = [];
 
   let accumulatedFa = 0;
@@ -154,9 +159,7 @@ export function generateGroupedFrequencyTable(
     // Marca de clase: Mc = (Li + Ls) / 2
     const mc = roundTo((lower + upper) / 2, params.precision + 1);
 
-    // Conteo de frecuencia absoluta en el intervalo
-    // Para el último intervalo se incluye el límite superior [Li, Ls]
-    // Para los anteriores se toma semiabierto [Li, Ls)
+    // Conteo de frecuencia absoluta
     let fa = 0;
     for (const val of sortedValues) {
       if (isLast) {
@@ -180,23 +183,27 @@ export function generateGroupedFrequencyTable(
       ? `[${lower} - ${upper}]`
       : `[${lower} - ${upper})`;
 
+    // Fórmulas pedagógicas individuales para el paso a paso
     const stepExplanations = {
-      mc: `Mc = \\frac{${lower} + ${upper}}{2} = \\frac{${roundTo(lower + upper, 2)}}{2} = ${mc}`,
-      fa: `fa = \\text{Cantidad de observaciones en } ${intervalLabel} = ${fa}`,
-      fr: `fr = \\frac{fa}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
-      p: `p = fr \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
+      mc: `Mc_${i} = \\frac{${lower} + ${upper}}{2} = ${mc}`,
+      fr: `fr_${i} = \\frac{fa_${i}}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
+      p: `p_${i} = fr_${i} \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
       faAcum: i === 1 
-        ? `Fa_1 = fa_1 = ${fa}` 
-        : `Fa_${i} = Fa_${i - 1} + fa_${i} = ${accumulatedFa - fa} + ${fa} = ${accumulatedFa}`,
-      frAcum: `Fr_${i} = \\frac{Fa_${i}}{n} = \\frac{${accumulatedFa}}{${n}} = ${accumulatedFr.toFixed(4)}`,
-      pAcum: `P_${i} = Fr_${i} \\cdot 100 = ${accumulatedFr.toFixed(4)} \\cdot 100 = ${accumulatedP.toFixed(2)}\\%`,
+        ? `Fa_1 = fa_1 = ${fa}`
+        : `Fa_${i} = Fa_${i-1} + fa_${i} = ${accumulatedFa - fa} + ${fa} = ${accumulatedFa}`,
+      frAcum: i === 1
+        ? `Fr_1 = fr_1 = ${fr.toFixed(4)}`
+        : `Fr_${i} = Fr_${i-1} + fr_${i} = ${(accumulatedFr - fr).toFixed(4)} + ${fr.toFixed(4)} = ${accumulatedFr.toFixed(4)}`,
+      pAcum: i === 1
+        ? `P_1 = p_1 = ${p.toFixed(2)}\\%`
+        : `P_${i} = P_${i-1} + p_${i} = ${(accumulatedP - p).toFixed(2)}\\% + ${p.toFixed(2)}\\% = ${accumulatedP.toFixed(2)}\\%`,
     };
 
     rows.push({
       index: i,
+      limiteInferior: lower,
+      limiteSuperior: upper,
       intervalLabel,
-      lowerBound: lower,
-      upperBound: upper,
       isLastInterval: isLast,
       marcaDeClase: mc,
       frecuenciaAbsoluta: fa,
@@ -222,12 +229,16 @@ export function generateGroupedFrequencyTable(
     totalP += r.porcentaje;
   }
 
+  const sqrtVal = Math.sqrt(n);
+  const kNearest = Math.round(sqrtVal);
+  const kCeil = Math.ceil(sqrtVal);
+
   const stepByStepDerivation = !params.userProvided
     ? {
         rangoFormula: `R = X_{max} - X_{min}`,
         rangoValue: `R = ${params.xmax} - ${params.xmin} = ${params.rango}`,
         kFormula: `k = \\sqrt{n}`,
-        kValue: `k = \\sqrt{${n}} \\approx ${(Math.sqrt(n)).toFixed(3)} \\rightarrow k = ${params.k} \\text{ (redondeo al entero más cercano)}`,
+        kValue: `k = \\sqrt{${n}} \\approx ${sqrtVal.toFixed(2)} \\rightarrow k = ${params.k} (Redondeo: ${kNearest === kCeil ? `${params.k}` : `más próximo = ${kNearest}, superior = ${kCeil}`})`,
         amplitudFormula: `A = \\frac{R}{k}`,
         amplitudValue: `A = \\frac{${params.rango}}{${params.k}} = ${(params.rango / params.k).toFixed(4)} \\approx ${params.amplitud}`,
       }
@@ -252,7 +263,6 @@ export function generateGroupedFrequencyTable(
 
 /**
  * MÓDULO 2: Generación de Tabla de Frecuencias Simples
- * Columnas: xi, fa, fr, p, Fa, Fr, P
  */
 export function generateSimpleFrequencyTable(
   variableName: string,
@@ -266,7 +276,6 @@ export function generateSimpleFrequencyTable(
     throw new Error('El conjunto de datos no puede estar vacío.');
   }
 
-  // Obtener frecuencias absolutas por valor único
   const frequencyMap = new Map<number, number>();
   for (const val of sortedValues) {
     frequencyMap.set(val, (frequencyMap.get(val) || 0) + 1);
@@ -276,31 +285,36 @@ export function generateSimpleFrequencyTable(
   const rows: SimpleFrequencyRow[] = [];
 
   let accumulatedFa = 0;
+  let accumulatedFr = 0;
+  let accumulatedP = 0;
   let index = 1;
 
-  for (const xi of uniqueValues) {
-    const fa = frequencyMap.get(xi) || 0;
+  for (const val of uniqueValues) {
+    const fa = frequencyMap.get(val) || 0;
     const fr = roundTo(fa / n, 4);
     const p = roundTo(fr * 100, 2);
 
     accumulatedFa += fa;
-    const accumulatedFr = roundTo(accumulatedFa / n, 4);
-    const accumulatedP = roundTo(accumulatedFr * 100, 2);
+    accumulatedFr = roundTo(accumulatedFa / n, 4);
+    accumulatedP = roundTo(accumulatedFr * 100, 2);
 
     const stepExplanations = {
-      fa: `fa = \\text{Cantidad de veces que aparece el valor } ${xi} = ${fa}`,
-      fr: `fr = \\frac{fa}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
-      p: `p = fr \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
+      fr: `fr_${index} = \\frac{fa_${index}}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
+      p: `p_${index} = fr_${index} \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
       faAcum: index === 1
         ? `Fa_1 = fa_1 = ${fa}`
-        : `Fa_${index} = Fa_${index - 1} + fa_${index} = ${accumulatedFa - fa} + ${fa} = ${accumulatedFa}`,
-      frAcum: `Fr_${index} = \\frac{Fa_${index}}{n} = \\frac{${accumulatedFa}}{${n}} = ${accumulatedFr.toFixed(4)}`,
-      pAcum: `P_${index} = Fr_${index} \\cdot 100 = ${accumulatedFr.toFixed(4)} \\cdot 100 = ${accumulatedP.toFixed(2)}\\%`,
+        : `Fa_${index} = Fa_${index-1} + fa_${index} = ${accumulatedFa - fa} + ${fa} = ${accumulatedFa}`,
+      frAcum: index === 1
+        ? `Fr_1 = fr_1 = ${fr.toFixed(4)}`
+        : `Fr_${index} = Fr_${index-1} + fr_${index} = ${(accumulatedFr - fr).toFixed(4)} + ${fr.toFixed(4)} = ${accumulatedFr.toFixed(4)}`,
+      pAcum: index === 1
+        ? `P_1 = p_1 = ${p.toFixed(2)}\\%`
+        : `P_${index} = P_${index-1} + p_${index} = ${(accumulatedP - p).toFixed(2)}\\% + ${p.toFixed(2)}\\% = ${accumulatedP.toFixed(2)}\\%`,
     };
 
     rows.push({
       index,
-      variableValue: xi,
+      variableValue: val,
       frecuenciaAbsoluta: fa,
       frecuenciaRelativa: fr,
       porcentaje: p,
@@ -339,7 +353,6 @@ export function generateSimpleFrequencyTable(
 
 /**
  * MÓDULO 3: Generación de Tabla de Contingencia (Bivariada)
- * Desglose: Frecuencias simples, Frecuencias conjuntas, Totales marginales por fila, Totales marginales por columna, Gran Total
  */
 export function generateContingencyTable(
   variableX: string,
@@ -351,7 +364,6 @@ export function generateContingencyTable(
     throw new Error('El conjunto de datos bivariados no puede estar vacío.');
   }
 
-  // Descubrir categorías únicas
   const rowCategoriesSet = new Set<string>();
   const colCategoriesSet = new Set<string>();
 
@@ -363,12 +375,10 @@ export function generateContingencyTable(
   const rowCategories = Array.from(rowCategoriesSet);
   const colCategories = Array.from(colCategoriesSet);
 
-  // Inicializar matriz de frecuencias conjuntas fa_ij
   const matrix: number[][] = rowCategories.map(() => 
     colCategories.map(() => 0)
   );
 
-  // Frecuencias simples de X e Y
   const varXCountsMap = new Map<string, number>();
   const varYCountsMap = new Map<string, number>();
 
@@ -385,20 +395,16 @@ export function generateContingencyTable(
     }
   }
 
-  // Totales marginales por fila ("Total por fila")
   const rowMarginalTotals: number[] = matrix.map((row) => 
     row.reduce((acc, curr) => acc + curr, 0)
   );
 
-  // Totales marginales por columna ("Total por columna")
   const colMarginalTotals: number[] = colCategories.map((_, cIdx) => 
     matrix.reduce((acc, row) => acc + row[cIdx], 0)
   );
 
-  // Gran Total
   const grandTotal = rowMarginalTotals.reduce((acc, val) => acc + val, 0);
 
-  // Explicaciones didácticas paso a paso
   const didacticSteps = {
     step1SimpleFrequencies: {
       varXCounts: rowCategories.map(cat => ({ category: cat, count: varXCountsMap.get(cat) || 0 })),
@@ -424,7 +430,7 @@ export function generateContingencyTable(
   return {
     variableX,
     variableY,
-    sampleSize: n,
+    sampleSize: grandTotal,
     rowCategories,
     colCategories,
     matrix,
@@ -436,16 +442,17 @@ export function generateContingencyTable(
 }
 
 /**
- * PRESETS TÍPICOS DE HIGIENE, SEGURIDAD Y CONTROL AMBIENTAL
+ * 16 CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE
  */
-export const SAFETY_PRESETS: SafetyDataPreset[] = [
+export const SAFETY_PRESETS: SafetyPreset[] = [
+  // --- FRECUENCIAS AGRUPADAS ---
   {
     id: 'ruido-db',
     title: 'Niveles de Ruido en Taller Metalúrgico',
     category: 'Higiene Industrial',
     variableName: 'Nivel Sonoro Continuo Equivalente',
     unit: 'dBA',
-    description: 'Mediciones de ruido ambiental registradas con decibelímetro integrador clase 1 en diferentes puestos de mecanizado (Límite legal res. SRT 295/03: 85 dBA para 8 hs).',
+    description: 'Mediciones de exposición sonora ocupacional con sonómetro integrador para contrastar con el límite legal de 85 dBA (Res. 295/03 Anexo V).',
     sampleSize: 25,
     recommendedType: 'grouped',
     dataGenerator: () => [
@@ -456,11 +463,11 @@ export const SAFETY_PRESETS: SafetyDataPreset[] = [
   },
   {
     id: 'edades-operarios',
-    title: 'Edades de Trabajadores Expuestos a Cargas',
-    category: 'Seguridad Operativa',
-    variableName: 'Edad del Personal de Planta',
+    title: 'Edades de Trabajadores en Obras',
+    category: 'Ergonomía y Salud',
+    variableName: 'Edad del Personal Operativo',
     unit: 'Años',
-    description: 'Registro etario de operarios del sector de logística y estiba manual para la evaluación de riesgos ergonómicos (Criterio ISO 11228).',
+    description: 'Registro etario de operarios de estiba y montaje para evaluación ergonómica (Criterio ISO 11228).',
     sampleSize: 30,
     recommendedType: 'grouped',
     dataGenerator: () => [
@@ -470,26 +477,12 @@ export const SAFETY_PRESETS: SafetyDataPreset[] = [
     ],
   },
   {
-    id: 'dias-baja',
-    title: 'Jornadas Perdidas por Accidentes de Trabajo',
-    category: 'Costos y Siniestralidad',
-    variableName: 'Días de Licencia Médica por Siniestro',
-    unit: 'Días corridos',
-    description: 'Días de inactividad laboral ocasionados por accidentes con tiempo perdido ocurridos durante el último período anual (cálculo de Índice de Gravedad).',
-    sampleSize: 20,
-    recommendedType: 'simple',
-    dataGenerator: () => [
-      0, 2, 5, 0, 14, 3, 0, 21, 7, 0, 
-      1, 4, 10, 0, 8, 15, 2, 0, 6, 12
-    ],
-  },
-  {
     id: 'iluminacion-lux',
-    title: 'Nivel de Iluminación en Puestos de Ensamblaje',
+    title: 'Nivel de Iluminación en Ensamble',
     category: 'Higiene Industrial',
     variableName: 'Iluminancia en Plano de Trabajo',
     unit: 'Lux',
-    description: 'Evaluación fotométrica con luxómetro para contrastar con los requisitos mínimos de confort y precisión visual (Dec. 351/79 Cap. 12).',
+    description: 'Mediciones de iluminancia con luxómetro calibrado en puestos de control de calidad.',
     sampleSize: 24,
     recommendedType: 'grouped',
     dataGenerator: () => [
@@ -499,12 +492,132 @@ export const SAFETY_PRESETS: SafetyDataPreset[] = [
     ],
   },
   {
+    id: 'co-mineria',
+    title: 'Monóxido de Carbono en Minería',
+    category: 'Toxicología y Ventilación',
+    variableName: 'Concentración de CO en Galerías',
+    unit: 'ppm',
+    description: 'Monitoreo ambiental de gas tóxico en interior de mina (Límite CMP: 25 ppm).',
+    sampleSize: 28,
+    recommendedType: 'grouped',
+    dataGenerator: () => [
+      8.5, 12.0, 15.4, 22.1, 27.5, 18.3, 14.2, 9.8, 24.0, 31.2,
+      19.5, 16.8, 11.2, 25.4, 28.9, 13.6, 17.1, 21.8, 10.4, 15.9,
+      29.0, 33.4, 18.0, 22.7, 14.5, 26.1, 12.8, 20.3
+    ],
+  },
+  {
+    id: 'tgbh-termico',
+    title: 'Estrés Térmico TGBH en Fundición',
+    category: 'Higiene Industrial',
+    variableName: 'Índice TGBH Interior',
+    unit: '°C',
+    description: 'Evaluación de carga térmica por calor radiante y metabólico en fundición metalúrgica.',
+    sampleSize: 20,
+    recommendedType: 'grouped',
+    dataGenerator: () => [
+      26.5, 28.2, 30.1, 31.8, 33.5, 29.4, 27.8, 32.0, 34.2, 30.8,
+      28.9, 31.1, 32.6, 29.8, 33.9, 35.0, 27.2, 30.4, 32.1, 34.6
+    ],
+  },
+  {
+    id: 'polvo-cantera',
+    title: 'Polvo Respirable en Molienda',
+    category: 'Control Ambiental',
+    variableName: 'Fracción Respirable de Polvo',
+    unit: 'mg/m³',
+    description: 'Muestreo gravimétrico con ciclón para determinar exposición a sílice libre cristalina.',
+    sampleSize: 22,
+    recommendedType: 'grouped',
+    dataGenerator: () => [
+      0.8, 1.4, 2.1, 3.5, 4.2, 1.8, 2.9, 3.1, 5.0, 2.4,
+      1.1, 2.7, 3.8, 4.6, 1.9, 3.0, 2.2, 4.0, 1.5, 3.3, 4.8, 2.6
+    ],
+  },
+  {
+    id: 'carga-manual',
+    title: 'Peso en Levantamiento Manual',
+    category: 'Ergonomía Laboral',
+    variableName: 'Masa de Bultos Manipulados',
+    unit: 'kg',
+    description: 'Pesaje de cargas manipuladas manualmente por estibadores (Ecuación NIOSH / Res. 295/03).',
+    sampleSize: 26,
+    recommendedType: 'grouped',
+    dataGenerator: () => [
+      12.5, 15.0, 18.2, 22.0, 24.5, 14.0, 16.8, 19.5, 23.1, 25.0,
+      13.2, 17.4, 20.0, 21.5, 24.8, 15.5, 18.0, 22.4, 25.0, 14.8,
+      16.2, 19.1, 23.8, 13.9, 17.0, 20.5
+    ],
+  },
+
+  // --- FRECUENCIAS SIMPLES ---
+  {
+    id: 'dias-baja',
+    title: 'Días de Licencia por Accidente',
+    category: 'Costos y Siniestralidad',
+    variableName: 'Jornadas de Trabajo Perdidas',
+    unit: 'Días corridos',
+    description: 'Días de inactividad laboral ocasionados por accidentes para el cálculo de Índice de Gravedad.',
+    sampleSize: 20,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      0, 2, 5, 0, 14, 3, 0, 21, 7, 0, 
+      1, 4, 10, 0, 8, 15, 2, 0, 6, 12
+    ],
+  },
+  {
+    id: 'incidentes-mes',
+    title: 'Incidentes Mensuales por Sector',
+    category: 'Siniestralidad',
+    variableName: 'Conteo de Cuasi-Accidentes Mensuales',
+    unit: 'Incidentes',
+    description: 'Registro de desvíos y eventos sin lesión reportados por los delegados de seguridad.',
+    sampleSize: 25,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      1, 0, 3, 2, 0, 4, 1, 2, 0, 1, 
+      3, 5, 2, 1, 0, 2, 4, 1, 3, 0, 
+      2, 1, 0, 3, 2
+    ],
+  },
+  {
+    id: 'auditorias-5s',
+    title: 'Puntaje de Auditoría 5S',
+    category: 'Prevención Operativa',
+    variableName: 'Calificación de Orden y Limpieza',
+    unit: 'Puntos (1-10)',
+    description: 'Calificaciones mensuales de orden y limpieza en células de trabajo.',
+    sampleSize: 24,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      7, 8, 6, 9, 8, 7, 10, 6, 8, 9, 
+      7, 8, 5, 9, 8, 10, 7, 6, 8, 9, 
+      8, 7, 9, 10
+    ],
+  },
+  {
+    id: 'simulacros-anuales',
+    title: 'Simulacros de Evacuación Realizados',
+    category: 'Planes de Emergencia',
+    variableName: 'Ejercicios de Evacuación por Planta',
+    unit: 'Simulacros/Año',
+    description: 'Conteo anual de ejercicios prácticos de rol de emergencias y evacuación.',
+    sampleSize: 20,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      1, 2, 2, 3, 1, 4, 2, 3, 1, 2, 
+      3, 2, 1, 4, 2, 3, 2, 1, 3, 2
+    ],
+  },
+
+  // --- CONTINGENCIA (BIVARIADAS) ---
+  {
     id: 'contingencia-epp',
-    title: 'Sector Productivo vs. Cumplimiento de Uso de EPP',
+    title: 'Sector vs. Cumplimiento de EPP',
     category: 'Seguridad Operativa',
     variableName: 'Sector vs. Uso de EPP',
     unit: 'Observaciones',
-    description: 'Auditoría de comportamiento seguro cruzando el sector de planta con el grado de adhesión al uso reglamentario de Elementos de Protección Personal.',
+    description: 'Auditoría de comportamiento seguro cruzando el sector con la adhesión al uso de EPP.',
     sampleSize: 45,
     recommendedType: 'contingency',
     defaultXName: 'Sector de Planta',
@@ -514,20 +627,16 @@ export const SAFETY_PRESETS: SafetyDataPreset[] = [
       const data: { x: string; y: string }[] = [];
       const sectors = ['Mecanizado', 'Soldadura', 'Pintura', 'Depósito'];
       const compliance = ['Cumple Siempre', 'Uso Parcial', 'No Cumple'];
-      
       const counts: Record<string, Record<string, number>> = {
         'Mecanizado': { 'Cumple Siempre': 12, 'Uso Parcial': 3, 'No Cumple': 1 },
         'Soldadura': { 'Cumple Siempre': 9, 'Uso Parcial': 4, 'No Cumple': 2 },
         'Pintura': { 'Cumple Siempre': 7, 'Uso Parcial': 2, 'No Cumple': 0 },
         'Depósito': { 'Cumple Siempre': 3, 'Uso Parcial': 1, 'No Cumple': 1 },
       };
-
       for (const s of sectors) {
         for (const c of compliance) {
           const count = counts[s][c];
-          for (let i = 0; i < count; i++) {
-            data.push({ x: s, y: c });
-          }
+          for (let i = 0; i < count; i++) data.push({ x: s, y: c });
         }
       }
       return data;
@@ -535,11 +644,11 @@ export const SAFETY_PRESETS: SafetyDataPreset[] = [
   },
   {
     id: 'contingencia-turnos',
-    title: 'Turno de Trabajo vs. Gravedad del Incidente',
+    title: 'Turno vs. Gravedad del Incidente',
     category: 'Costos y Siniestralidad',
     variableName: 'Turno vs. Gravedad',
     unit: 'Incidentes',
-    description: 'Estudio de accidentología laboral para evaluar si la fatiga y el trabajo nocturno inciden en la severidad de los eventos no deseados.',
+    description: 'Estudio de accidentología laboral para evaluar si la fatiga nocturna incide en la severidad.',
     sampleSize: 40,
     recommendedType: 'contingency',
     defaultXName: 'Turno de Trabajo',
@@ -549,95 +658,119 @@ export const SAFETY_PRESETS: SafetyDataPreset[] = [
       const data: { x: string; y: string }[] = [];
       const turnos = ['Turno Mañana', 'Turno Tarde', 'Turno Noche'];
       const severidades = ['Leve (Sin Baja)', 'Moderado (1 a 10 días)', 'Grave (>10 días)'];
-
       const counts: Record<string, Record<string, number>> = {
         'Turno Mañana': { 'Leve (Sin Baja)': 11, 'Moderado (1 a 10 días)': 4, 'Grave (>10 días)': 1 },
         'Turno Tarde': { 'Leve (Sin Baja)': 8, 'Moderado (1 a 10 días)': 5, 'Grave (>10 días)': 2 },
         'Turno Noche': { 'Leve (Sin Baja)': 3, 'Moderado (1 a 10 días)': 4, 'Grave (>10 días)': 2 },
       };
-
       for (const t of turnos) {
         for (const s of severidades) {
           const count = counts[t][s];
-          for (let i = 0; i < count; i++) {
-            data.push({ x: t, y: s });
-          }
+          for (let i = 0; i < count; i++) data.push({ x: t, y: s });
         }
       }
       return data;
     },
-  }
+  },
+  {
+    id: 'contingencia-permisos',
+    title: 'Tarea Crítica vs. Estado de Permiso ATS',
+    category: 'Control de Riesgos',
+    variableName: 'Tarea vs. Autorización ATS',
+    unit: 'Trabajos',
+    description: 'Cruce entre tipos de tareas de alto riesgo y cumplimiento de Análisis de Trabajo Seguro.',
+    sampleSize: 35,
+    recommendedType: 'contingency',
+    defaultXName: 'Tipo de Tarea Crítica',
+    defaultYName: 'Estado de Permiso ATS',
+    dataGenerator: () => [],
+    bivariateDataGenerator: () => {
+      const data: { x: string; y: string }[] = [];
+      const tareas = ['Trabajo en Altura', 'Espacios Confinados', 'Corte y Soldadura', 'Alta Tensión'];
+      const estados = ['ATS Aprobado y Firmado', 'ATS En Revisión', 'Sin ATS (No Conforme)'];
+      const counts: Record<string, Record<string, number>> = {
+        'Trabajo en Altura': { 'ATS Aprobado y Firmado': 10, 'ATS En Revisión': 2, 'Sin ATS (No Conforme)': 0 },
+        'Espacios Confinados': { 'ATS Aprobado y Firmado': 6, 'ATS En Revisión': 1, 'Sin ATS (No Conforme)': 1 },
+        'Corte y Soldadura': { 'ATS Aprobado y Firmado': 8, 'ATS En Revisión': 3, 'Sin ATS (No Conforme)': 0 },
+        'Alta Tensión': { 'ATS Aprobado y Firmado': 4, 'ATS En Revisión': 0, 'Sin ATS (No Conforme)': 0 },
+      };
+      for (const t of tareas) {
+        for (const e of estados) {
+          const count = counts[t][e];
+          for (let i = 0; i < count; i++) data.push({ x: t, y: e });
+        }
+      }
+      return data;
+    },
+  },
 ];
 
 /**
- * CONTENIDOS DIDÁCTICOS PARA LA SECCIÓN "APUNTES DE LA CÁTEDRA"
+ * CONTENIDOS DIDÁCTICOS PARA "APUNTES DE LA CÁTEDRA"
  */
 export const THEMATIC_UNITS: ThematicUnit[] = [
   {
     id: 'unidad-1',
     number: 1,
     title: 'Estadística Descriptiva Aplicada a la Seguridad e Higiene',
-    subtitle: 'Variables, Organización de Datos, Tablas de Frecuencias y Representaciones Gráficas',
+    subtitle: 'Variables, Tablas de Frecuencias y Representaciones Gráficas',
     badge: 'Unidad 1',
     description: 'Fundamentos de recolección y sistematización de datos de siniestralidad, mediciones higiénicas (ruido, iluminación, contaminantes) y ergonomía.',
     topics: [
       {
         title: '1.1 Clasificación de Variables en SySO',
-        summary: 'Variables Cualitativas (Nominales y Ordinales: uso de EPP, sector) y Cuantitativas (Discretas: cantidad de accidentes, y Continuas: decibeles, ppm de gases, temperatura).',
+        summary: 'Variables Cualitativas (Nominales y Ordinales) y Cuantitativas (Discretas y Continuas).',
       },
       {
         title: '1.2 Construcción Didáctica de Intervalos',
-        summary: 'Determinación del Rango R = Xmax - Xmin, selección de la cantidad de clases k mediante la Regla de la Raíz Cuadrada k = √n, y cálculo de la Amplitud A = R / k.',
+        summary: 'Determinación del Rango R = Xmax - Xmin, selección de clases k mediante la Regla de la Raíz Cuadrada k = √n, y cálculo de la Amplitud A = R / k.',
         keyFormulas: [
-          { name: 'Rango muestral', formula: 'R = X_{max} - X_{min}', note: 'Diferencia entre el valor máximo y mínimo observado.' },
-          { name: 'Regla de la Raíz Cuadrada', formula: 'k = \\sqrt{n}', note: 'Redondeado al entero más cercano para evitar sesgo.' },
-          { name: 'Amplitud de intervalo', formula: 'A = \\frac{R}{k}', note: 'Ancho uniforme de cada intervalo de clase.' },
+          { name: 'Rango muestral', formula: 'R = X_{max} - X_{min}', note: 'Diferencia entre el valor máximo y mínimo.' },
+          { name: 'Regla de la Raíz Cuadrada', formula: 'k = \\sqrt{n}', note: 'Redondeado al entero más cercano o superior.' },
+          { name: 'Amplitud de intervalo', formula: 'A = \\frac{R}{k}', note: 'Ancho uniforme de cada intervalo.' },
         ]
       },
       {
         title: '1.3 Tablas de Frecuencias y Marcas de Clase',
         summary: 'Cálculo de Frecuencia Absoluta (fa), Relativa (fr = fa / n), Porcentaje (p = fr · 100), y frecuencias acumuladas (Fa, Fr, P).',
         keyFormulas: [
-          { name: 'Marca de Clase', formula: 'Mc = \\frac{L_i + L_s}{2}', note: 'Punto medio representativo del intervalo.' },
-          { name: 'Frecuencia Relativa', formula: 'fr = \\frac{fa}{n}', note: 'Proporción respecto al total de la muestra.' },
+          { name: 'Marca de Clase', formula: 'Mc = \\frac{L_i + L_s}{2}', note: 'Punto medio del intervalo.' },
+          { name: 'Frecuencia Relativa', formula: 'fr = \\frac{fa}{n}', note: 'Proporción de observaciones.' },
+          { name: 'Porcentaje', formula: 'p = fr \\cdot 100', note: 'Expresión porcentual.' },
         ]
-      },
-      {
-        title: '1.4 Tablas de Contingencia Bivariadas',
-        summary: 'Análisis conjunto de dos factores de riesgo, determinación de frecuencias conjuntas fa_ij y cálculo de totales marginales por fila, columna y gran total.',
       }
     ],
     theoreticalNote: {
-      title: 'Apunte Teórico N° 1: Estadística Descriptiva en Higiene y Seguridad',
-      fileName: 'Apunte_Teorico_U1_Estadistica_IES_Belen.pdf',
-      fileSize: '2.4 MB',
-      pages: 18,
-      summary: 'Desarrollo conceptual completo con ejemplos reales de mediciones de contaminantes físicos y químicos en puestos de trabajo industriales.',
+      title: 'Apunte Teórico Oficial - Unidad 1: Estadística Descriptiva',
+      fileName: 'Apunte_Unidad_1_Estadistica_Descriptiva_IES_Belen.pdf',
+      fileSize: '1.8 MB',
+      pages: 14,
+      summary: 'Desarrollo conceptual completo de variables, población, muestra, reglas de partición de intervalos (Regla de la Raíz Cuadrada k=√n) y gráficos didácticos de distribución de frecuencias.',
       contentOutline: [
-        'Introducción al método estadístico en prevención de riesgos.',
-        'Población, muestra y muestreo de agentes de riesgo.',
-        'Construcción de tablas simples y con intervalos (Regla k = √n).',
-        'Histogramas, polígonos de frecuencias y diagramas de Pareto en seguridad.',
-        'Tablas de contingencia y análisis bivariado de causas de accidentes.'
+        '1. Introducción a la Estadística en Higiene y Seguridad Laboral',
+        '2. Tipos de Variables: Cualitativas y Cuantitativas',
+        '3. Tablas de Frecuencias para Datos No Agrupados y Agrupados en Intervalos',
+        '4. Marcas de Clase y Frecuencias Acumuladas',
+        '5. Histogramas, Polígonos de Frecuencias, Diagramas Circulares y Ojivas',
       ]
     },
     practicalGuide: {
-      title: 'Guía de Trabajos Prácticos N° 1',
-      tpNumber: 'TP N° 1',
-      fileName: 'Guia_TP1_Estadistica_Descriptiva.pdf',
-      fileSize: '1.1 MB',
-      exercisesCount: 8,
-      summary: 'Ejercicios de aplicación profesional: análisis de niveles de ruido en decibeles, distribución de edades y tablas bivariadas de incidentes.',
+      title: 'Guía de Trabajos Prácticos N° 1: Organización y Tabulación de Datos',
+      tpNumber: 'T.P. N° 1',
+      fileName: 'TP1_Estadistica_Descriptiva_Guia_Alumnos.pdf',
+      fileSize: '950 KB',
+      exercisesCount: 6,
+      summary: 'Guía obligatoria de resolución de problemas con casos reales de mediciones sonométricas en talleres, registros de iluminación en oficinas y accidentología laboral.',
       sampleExercises: [
         {
           number: 1,
-          statement: 'En una fábrica textil se midieron los niveles sonoros continuos equivalentes (dBA) en 25 puestos de costura. Construya la tabla de frecuencias agrupadas aplicando k = √n y grafique el histograma correspondiente.',
+          statement: 'En un taller metalmecánico se registraron los niveles sonoros continuos equivalentes (en dBA) durante una jornada de 8 horas. Construya la tabla de distribución de frecuencias agrupadas aplicando la regla de la raíz cuadrada y trace el histograma correspondiente.',
           dataSample: '78.4; 82.1; 85.6; 88.0; 91.2; 84.3; 79.8; 87.5; 92.4; 86.1; 83.7; 89.9; 94.2; 81.0; 88.6; 90.5; 85.0; 77.9; 83.2; 87.1; 93.5; 86.8; 80.5; 89.1; 95.0'
         },
         {
           number: 2,
-          statement: 'Se auditó el uso de protección auditiva en 40 operarios según el turno de trabajo. Elabore la tabla de contingencia, determine los totales marginales y concluya.',
-          dataSample: 'Cruce bivariado Turno (Mañana, Tarde, Noche) vs. Uso de EPP (Adecuado, Deficiente).'
+          statement: 'Se auditó el personal de logística para relevar la edad de los trabajadores expuestos a tareas de estiba manual. Elabore la tabla de frecuencias simples y el polígono de frecuencias.',
+          dataSample: '21; 24; 28; 35; 42; 47; 53; 22; 31; 38; 45; 50; 58; 26; 34; 41; 49; 23; 29; 36; 44; 52; 25; 33; 40; 48; 55; 27; 37; 46'
         }
       ]
     }
@@ -645,56 +778,45 @@ export const THEMATIC_UNITS: ThematicUnit[] = [
   {
     id: 'unidad-2',
     number: 2,
-    title: 'Cálculo de la Probabilidad y Modelos Estocásticos',
-    subtitle: 'Conceptos de Probabilidad, Eventos en Seguridad y Distribuciones de Frecuencia',
+    title: 'Cálculo de la Probabilidad y Distribuciones de Riesgo',
+    subtitle: 'Espacios Muestrales, Eventos de Siniestralidad y Probabilidad Condicional',
     badge: 'Unidad 2',
-    description: 'Modelado cuantitativo de la incertidumbre en la ocurrencia de accidentes de trabajo y fallas en sistemas de protección.',
+    description: 'Teoría de probabilidades orientada a la estimación matemática de fallas de equipos, ocurrencia de accidentes y confiabilidad de sistemas de protección.',
     topics: [
       {
-        title: '2.1 Enfoques de Probabilidad en Seguridad',
-        summary: 'Enfoque clásico (Laplace), frecuencial (historial de siniestralidad de planta) y subjetivo (evaluación de expertos). Espacio muestral de incidentes.',
-        keyFormulas: [
-          { name: 'Probabilidad Frecuencial', formula: 'P(A) = \\frac{\\text{Casos favorables}}{\\text{Total de casos observados}}', note: 'Estimación basada en registros históricos.' }
-        ]
+        title: '2.1 Conceptos Fundamentales de Probabilidad',
+        summary: 'Espacio muestral, sucesos compatibles, incompatibles e independientes aplicados a la seguridad.',
       },
       {
-        title: '2.2 Reglas de Probabilidad Condicionada',
-        summary: 'Probabilidad de sufrir un accidente dado que no se utilizó el EPP adecuado. Independencia de eventos en líneas de producción.',
-        keyFormulas: [
-          { name: 'Probabilidad Condicionada', formula: 'P(A \\mid B) = \\frac{P(A \\cap B)}{P(B)}', note: 'Probabilidad del evento A habiendo ocurrido B.' }
-        ]
-      },
-      {
-        title: '2.3 Distribuciones Discretas: Binomial y Poisson',
-        summary: 'Modelo Binomial para muestreo de piezas defectuosas o no conformidades. Modelo de Poisson para ocurrencia de accidentes por unidad de tiempo u horas-hombre trabajadas.',
+        title: '2.2 Probabilidad Condicional y Teorema de Bayes',
+        summary: 'Evaluación de probabilidades condicionales P(A|B) en inspecciones de seguridad y detección de fallas.',
       }
     ],
     theoreticalNote: {
-      title: 'Apunte Teórico N° 2: Probabilidad Aplicada a la Gestión del Riesgo',
-      fileName: 'Apunte_Teorico_U2_Probabilidad_IES_Belen.pdf',
-      fileSize: '3.1 MB',
-      pages: 22,
-      summary: 'Tratamiento riguroso de árboles de decisión de fallas, confiabilidad de componentes de seguridad y distribuciones de Poisson en plantas continuas.',
+      title: 'Apunte Teórico Oficial - Unidad 2: Cálculo de Probabilidades',
+      fileName: 'Apunte_Unidad_2_Probabilidades_IES_Belen.pdf',
+      fileSize: '2.1 MB',
+      pages: 18,
+      summary: 'Fundamentos axiomáticos de la probabilidad, probabilidad condicional, tablas de contingencia bivariadas e independencia estadística en siniestralidad.',
       contentOutline: [
-        'Teoría de conjuntos y eventos en seguridad industrial.',
-        'Axiomas de probabilidad y reglas aditivas/multiplicativas.',
-        'Teorema de Bayes aplicado a diagnósticos de condiciones inseguras.',
-        'Variables aleatorias discretas: Binomial y Poisson en siniestralidad.',
-        'Confiabilidad y tasa de falla de dispositivos de seguridad.'
+        '1. Experimentos Aleatorios en Ambientes Industriales',
+        '2. Axiomas de Probabilidad y Reglas de Adición / Multiplicación',
+        '3. Probabilidad Condicional y Tablas de Contingencia',
+        '4. Distribuciones Discretas (Binomial y Poisson) en Conteo de Accidentes',
       ]
     },
     practicalGuide: {
-      title: 'Guía de Trabajos Prácticos N° 2',
-      tpNumber: 'TP N° 2',
-      fileName: 'Guia_TP2_Probabilidad_y_Modelos.pdf',
-      fileSize: '1.3 MB',
-      exercisesCount: 10,
-      summary: 'Problemas de cálculo de probabilidad condicionada en plantas industriales y estimación de fallas mediante distribución de Poisson.',
+      title: 'Guía de Trabajos Prácticos N° 2: Modelado Probabilístico',
+      tpNumber: 'T.P. N° 2',
+      fileName: 'TP2_Probabilidades_y_Riesgo.pdf',
+      fileSize: '1.1 MB',
+      exercisesCount: 5,
+      summary: 'Problemas de aplicación sobre probabilidad de falla en calderas, probabilidad de accidente en trabajo en altura y tablas de contingencia de turnos de trabajo.',
       sampleExercises: [
         {
           number: 1,
-          statement: 'En una planta química la tasa promedio de microfugas de gas es de λ = 2.4 eventos por mes. Calcule la probabilidad de que en el próximo mes no se registre ninguna fuga y la probabilidad de que ocurran al menos 3 fugas.',
-          dataSample: 'Distribución de Poisson: λ = 2.4 fugas/mes.'
+          statement: 'En una planta química se analiza la probabilidad de fuga en tres reactores independientes. Calcule la probabilidad de que al menos uno falle durante una jornada crítica.',
+          dataSample: 'P(R1) = 0.02, P(R2) = 0.015, P(R3) = 0.01'
         }
       ]
     }
@@ -702,55 +824,45 @@ export const THEMATIC_UNITS: ThematicUnit[] = [
   {
     id: 'unidad-3',
     number: 3,
-    title: 'Costos de la Seguridad, Índices de Siniestralidad y Evaluación Económica',
-    subtitle: 'Indicadores IRAM 3800 / OIT, Costos Directos e Indirectos (Teoría de Heinrich y Simonds)',
+    title: 'Costos de la Seguridad, Índices de Siniestralidad y Confiabilidad',
+    subtitle: 'Costos Directos e Indirectos (Teoría del Iceberg de Heinrich) e Indicadores de Siniestralidad',
     badge: 'Unidad 3',
-    description: 'Cuantificación estadística del impacto económico de los accidentes de trabajo e indicadores normativos de desempeño en seguridad.',
+    description: 'Cuantificación económica de la no-seguridad, estimación de costos asegurados y no asegurados, e indicadores legales (Índice de Frecuencia IF, Índice de Gravedad IG e Índice de Incidencia II).',
     topics: [
       {
-        title: '3.1 Índices Estadísticos de Siniestralidad (Norma IRAM / OIT)',
-        summary: 'Índice de Frecuencia (IF), Índice de Gravedad (IG) e Índice de Incidencia (II). Factor base 1.000.000 y 1.000 Horas-Hombre trabajadas.',
+        title: '3.1 Índices Legales de Siniestralidad (Norma IRAM 3800)',
+        summary: 'Cálculo y seguimiento del Índice de Frecuencia (IF), Índice de Gravedad (IG) e Índice de Incidencia (II).',
         keyFormulas: [
-          { name: 'Índice de Frecuencia (IF)', formula: 'IF = \\frac{\\text{N° de Accidentes con Baja} \\cdot 1.000.000}{\\text{Total de Horas-Hombre Trabajadas}}', note: 'Accidentes ocurridos por cada millón de horas de exposición.' },
-          { name: 'Índice de Gravedad (IG)', formula: 'IG = \\frac{\\text{Jornadas de Trabajo Perdidas} \\cdot 1.000}{\\text{Total de Horas-Hombre Trabajadas}}', note: 'Días perdidos por cada mil horas de exposición.' },
-          { name: 'Índice de Incidencia (II)', formula: 'II = \\frac{\\text{N° de Accidentes con Baja} \\cdot 1.000}{\\text{Número Medio de Trabajadores Expuestos}}', note: 'Frecuencia de accidentes por cada 1.000 trabajadores.' },
+          { name: 'Índice de Frecuencia (IF)', formula: 'IF = \\frac{\\text{N° Accidentes con Baja} \\cdot 10^6}{\\text{Horas Hombre Trabajadas (HHT)}}', note: 'Accidentes por cada millón de horas hombre.' },
+          { name: 'Índice de Gravedad (IG)', formula: 'IG = \\frac{\\text{Jornadas Perdidas} \\cdot 10^3}{\\text{Horas Hombre Trabajadas (HHT)}}', note: 'Días perdidos por cada mil horas hombre.' },
         ]
-      },
-      {
-        title: '3.2 Estructura de Costos de Accidentes: Directos vs. Indirectos',
-        summary: 'Costos asegurados (médicos, indemnizaciones de ART) vs. Costos no asegurados u ocultos (pérdida de tiempo de compañeros, daño a maquinaria, reprogramación, costos legales). Razón 1:4 de Heinrich y método de Simonds.',
-      },
-      {
-        title: '3.3 Justificación Económica de Inversiones en Prevención',
-        summary: 'Análisis Costo-Beneficio (ACB) para adquisición de sistemas de extracción localizada, guardas de seguridad y capacitaciones.',
       }
     ],
     theoreticalNote: {
-      title: 'Apunte Teórico N° 3: Costos y Métricas de Siniestralidad',
-      fileName: 'Apunte_Teorico_U3_Costos_Seguridad_IES_Belen.pdf',
-      fileSize: '2.8 MB',
-      pages: 20,
-      summary: 'Fórmulas oficiales, tablas de baremos para incapacidades permanentes y metodología de cálculo del costo real de accidentes según la SRT.',
+      title: 'Apunte Teórico Oficial - Unidad 3: Costos de la Seguridad y Siniestralidad',
+      fileName: 'Apunte_Unidad_3_Costos_Siniestralidad_IES_Belen.pdf',
+      fileSize: '2.4 MB',
+      pages: 16,
+      summary: 'Estructura de costos de la seguridad, teoría de Heinrich / Bird de costos ocultos e indicadores estandarizados de siniestralidad laboral.',
       contentOutline: [
-        'Marco normativo de registro de accidentes y enfermedades profesionales.',
-        'Cálculo riguroso de Horas-Hombre trabajadas (HHT) reales vs. teóricas.',
-        'Determinación de IF, IG, II y tasa de riesgo según Res. SRT.',
-        'El iceberg de costos de Heinrich y el modelo de costos de Simonds.',
-        'Elaboración de informes estadísticos para gerencia y comités mixtos.'
+        '1. Análisis Económico de los Accidentes de Trabajo',
+        '2. Costos Directos vs. Costos Indirectos (El Iceberg de Costos)',
+        '3. Metodología de Cálculo de Índices de Siniestralidad (IF, IG, II)',
+        '4. Plan de Inversión y Rentabilidad de las Mejoras Preventivas',
       ]
     },
     practicalGuide: {
-      title: 'Guía de Trabajos Prácticos N° 3',
-      tpNumber: 'TP N° 3',
-      fileName: 'Guia_TP3_Costos_y_Siniestralidad.pdf',
-      fileSize: '1.5 MB',
-      exercisesCount: 6,
-      summary: 'Casos reales de cálculo de IF, IG, pérdidas por jornadas no trabajadas y estimación de costos indirectos para empresas metalmecánicas y mineras.',
+      title: 'Guía de Trabajos Prácticos N° 3: Auditoría Económica de Siniestros',
+      tpNumber: 'T.P. N° 3',
+      fileName: 'TP3_Costos_y_Siniestralidad_Guia.pdf',
+      fileSize: '1.3 MB',
+      exercisesCount: 4,
+      summary: 'Ejercicios de cálculo de índices IF, IG, costos no asegurados y justificación de presupuesto de prevención.',
       sampleExercises: [
         {
           number: 1,
-          statement: 'Una empresa con 180 operarios registró en el año 6 accidentes con baja médica, totalizando 84 jornadas perdidas. Si cada operario trabajó en promedio 1.920 horas anuales, determine el Índice de Frecuencia (IF) y el Índice de Gravedad (IG).',
-          dataSample: 'Operarios: 180 | Accidentes: 6 | Días perdidos: 84 | HHT: 345.600 horas.'
+          statement: 'Una empresa constructora con 150 operarios registró 8 accidentes con baja laboral y 120 jornadas perdidas en 300.000 HHT. Calcule el Índice de Frecuencia (IF) y el Índice de Gravedad (IG).',
+          dataSample: 'N° Accidentes = 8, Días Perdidos = 120, HHT = 300.000'
         }
       ]
     }

@@ -6,13 +6,15 @@ import dynamic from 'next/dynamic';
 import { ContingencyTableResult } from '@/types/statistics';
 import { generateContingencyTable, SAFETY_PRESETS } from '@/lib/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
+import { exportContingencyTableToExcel } from '@/lib/excelExport';
 import { 
   Table, 
   Dices, 
   Info,
   Split,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  FileSpreadsheet
 } from 'lucide-react';
 
 const ContingencyBarVisualizer = dynamic(
@@ -53,7 +55,10 @@ export const ContingencyTableModule: React.FC = () => {
 
     if (preset.id === 'contingencia-turnos') {
       catsX = ['Turno Mañana', 'Turno Tarde', 'Turno Noche'];
-      catsY = ['Leve', 'Moderado', 'Grave'];
+      catsY = ['Leve (Sin Baja)', 'Moderado (1 a 10 días)', 'Grave (>10 días)'];
+    } else if (preset.id === 'contingencia-permisos') {
+      catsX = ['Trabajo en Altura', 'Espacios Confinados', 'Corte y Soldadura', 'Alta Tensión'];
+      catsY = ['ATS Aprobado y Firmado', 'ATS En Revisión', 'Sin ATS (No Conforme)'];
     }
 
     const pairs: { x: string; y: string }[] = [];
@@ -132,15 +137,15 @@ export const ContingencyTableModule: React.FC = () => {
               className="flex items-center gap-1 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
             >
               <Dices className="w-3.5 h-3.5" />
-              <span>Generar Simulación</span>
+              <span>Simulación</span>
             </button>
           </div>
         </div>
 
-        {/* Casos Rápidos y Chips de Tamaño Muestral */}
+        {/* Casos Rápidos de SySO & Chips de Tamaño Muestral */}
         <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos:</span>
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos Bivariados:</span>
             {SAFETY_PRESETS.filter(p => p.recommendedType === 'contingency').map((preset) => (
               <button
                 key={preset.id}
@@ -159,7 +164,7 @@ export const ContingencyTableModule: React.FC = () => {
 
           <div className="flex items-center gap-1 text-xs">
             <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Fijar n:</span>
-            {[20, 45, 80, 150].map((size) => (
+            {[20, 35, 50, 80, 150].map((size) => (
               <button
                 key={size}
                 type="button"
@@ -266,9 +271,22 @@ export const ContingencyTableModule: React.FC = () => {
             </h3>
           </div>
 
-          <span className="text-xs font-mono bg-[#15385B] px-2.5 py-0.5 rounded text-white border border-[#1C4874]">
-            Gran Total: {result.grandTotal}
-          </span>
+          <div className="flex items-center gap-2">
+            {/* BOTÓN EXPORTAR A EXCEL */}
+            <button
+              type="button"
+              onClick={() => exportContingencyTableToExcel(result)}
+              className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              title="Descargar tabla en formato Excel (.xlsx)"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>Exportar a Excel</span>
+            </button>
+
+            <span className="text-xs font-mono bg-[#15385B] px-2.5 py-1 rounded text-white border border-[#1C4874] hidden sm:inline">
+              Gran Total: {result.grandTotal}
+            </span>
+          </div>
         </div>
 
         <div className="overflow-x-auto p-4">

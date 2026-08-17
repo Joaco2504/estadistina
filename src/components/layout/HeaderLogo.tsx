@@ -50,7 +50,7 @@ export const HeaderLogo: React.FC<HeaderLogoProps> = ({
       >
         {!imgError ? (
           <img
-            src="/logo-catedra.svg"
+            src="/logo-catedra.png"
             alt="Logo Cátedra IES Belén"
             width={config.px}
             height={config.px}
