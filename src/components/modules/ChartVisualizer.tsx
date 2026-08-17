@@ -96,11 +96,11 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartType('histogram')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'histogram'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -114,7 +114,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
           <button
             type="button"
             onClick={() => setChartType('polygon')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'polygon'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -128,7 +128,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
           <button
             type="button"
             onClick={() => setChartType('pie')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'pie'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -142,7 +142,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
           <button
             type="button"
             onClick={() => setChartType('ogive')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'ogive'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -399,11 +399,11 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartType('bar')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'bar'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -416,7 +416,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
           <button
             type="button"
             onClick={() => setChartType('pie')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'pie'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -429,7 +429,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
           <button
             type="button"
             onClick={() => setChartType('line')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'line'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -628,11 +628,11 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartMode('grouped')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartMode === 'grouped'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
@@ -645,7 +645,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
           <button
             type="button"
             onClick={() => setChartMode('stacked')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartMode === 'stacked'
                 ? 'bg-[#0F2942] text-white shadow-xs'
                 : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'

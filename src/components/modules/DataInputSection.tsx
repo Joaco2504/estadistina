@@ -93,14 +93,34 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       min = 20;
       max = 60;
       decimals = 0;
-    } else if (lower.includes('días') || lower.includes('licencia') || lower.includes('jornada') || lower.includes('accidente')) {
+    } else if (lower.includes('días') || lower.includes('licencia') || lower.includes('jornada') || lower.includes('accidente') || lower.includes('incidente') || lower.includes('simulacro')) {
       min = 0;
       max = 25;
+      decimals = 0;
+    } else if (lower.includes('auditor') || lower.includes('5s') || lower.includes('calificac')) {
+      min = 4;
+      max = 10;
       decimals = 0;
     } else if (lower.includes('lux') || lower.includes('iluminac')) {
       min = 180;
       max = 600;
       decimals = 0;
+    } else if (lower.includes('co') || lower.includes('monóxido')) {
+      min = 8;
+      max = 35;
+      decimals = 1;
+    } else if (lower.includes('tgbh') || lower.includes('térmic') || lower.includes('calor')) {
+      min = 26;
+      max = 36;
+      decimals = 1;
+    } else if (lower.includes('polvo') || lower.includes('respirab')) {
+      min = 0.5;
+      max = 5.2;
+      decimals = 1;
+    } else if (lower.includes('carga') || lower.includes('peso') || lower.includes('levantam')) {
+      min = 10;
+      max = 26;
+      decimals = 1;
     } else {
       // Default: Niveles de Ruido en dBA
       min = 75;
@@ -123,41 +143,48 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     if (overrideN !== undefined) {
       setCustomSampleSize(overrideN);
     }
-    const newNumbers = generateRandomValuesForContext(variableName, targetN);
-    const newRawString = newNumbers.join('; ');
-    setRawInput(newRawString);
-    onCalculateWithValues(newRawString, variableName, unit);
+
+    const generated = generateRandomValuesForContext(variableName, targetN);
+    const dataStr = generated.join('; ');
+    setRawInput(dataStr);
+    
+    // Limpiar parámetros manuales
+    setRango('');
+    setKValue('');
+    setAmplitud('');
+
+    onCalculateWithValues(dataStr, variableName, unit);
   };
 
   return (
     <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden mb-6 transition-all">
       {/* Encabezado Minimalista y Compacto */}
-      <div className="bg-[#0F2942] px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-[#0F2942] px-4 sm:px-5 py-3 text-white flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[#1B8A5A] text-white">
+          <div className="p-1.5 rounded-lg bg-[#1B8A5A] text-white flex-shrink-0">
             <Sliders className="w-4 h-4" />
           </div>
           <div>
             <h2 className="text-sm sm:text-base font-bold tracking-wide">
               {mode === 'grouped' ? 'Frecuencias Agrupadas (k = √n)' : 'Frecuencias Simples'}
             </h2>
-            <span className="text-[11px] text-slate-300">
+            <span className="text-[11px] text-slate-300 hidden sm:inline">
               Personaliza el tamaño de la muestra o ingresa tus propios datos
             </span>
           </div>
         </div>
 
         {/* Acciones de Muestra Rápida */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex items-center gap-1.5 bg-[#15385B] px-2.5 py-1 rounded-lg border border-[#1C4874]">
             <label className="text-xs text-slate-300 font-medium">Muestra (n):</label>
             <input
               type="number"
               min={3}
-              max={300}
+              max={500}
               value={customSampleSize}
               onChange={(e) => setCustomSampleSize(Number(e.target.value))}
-              className="w-14 bg-[#0A1D30] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
+              className="w-12 sm:w-14 bg-[#0A1D30] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
             />
           </div>
 
@@ -173,20 +200,20 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
         </div>
       </div>
 
-      <div className="p-5 space-y-4">
+      <div className="p-4 sm:p-5 space-y-4">
         {/* Casos Prácticos Rápidos de SySO & Chips de Tamaño Muestral */}
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           {/* Casos Prácticos */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos:</span>
-            {SAFETY_PRESETS.filter(p => mode === 'grouped' ? p.recommendedType === 'grouped' : true).map((preset) => (
+            {SAFETY_PRESETS.filter(p => mode === 'grouped' ? p.recommendedType === 'grouped' : p.recommendedType === 'simple' || p.recommendedType === 'grouped').map((preset) => (
               <button
                 key={preset.id}
                 type="button"
                 onClick={() => handleLoadPreset(preset.id)}
                 className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] text-white'
+                    ? 'bg-[#0F2942] text-white shadow-2xs'
                     : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
@@ -200,7 +227,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           </div>
 
           {/* Chips de Tamaño Rápido de Muestra */}
-          <div className="flex items-center gap-1 text-xs">
+          <div className="flex items-center gap-1 text-xs self-start sm:self-auto">
             <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Fijar n:</span>
             {[10, 20, 30, 50, 100].map((size) => (
               <button
@@ -228,12 +255,9 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
             <input
               type="text"
               value={variableName}
-              onChange={(e) => {
-                setVariableName(e.target.value);
-                onCalculateWithValues(rawInput, e.target.value, unit);
-              }}
-              placeholder="Ej: Nivel de Ruido en dBA"
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg border border-slate-200 focus:border-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
+              onChange={(e) => setVariableName(e.target.value)}
+              placeholder="Ej: Nivel Sonoro Continuo Equivalente"
+              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
 
@@ -244,102 +268,100 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
             <input
               type="text"
               value={unit}
-              onChange={(e) => {
-                setUnit(e.target.value);
-                onCalculateWithValues(rawInput, variableName, e.target.value);
-              }}
-              placeholder="Ej: dBA, Años, Lux"
-              className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg border border-slate-200 focus:border-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
+              onChange={(e) => setUnit(e.target.value)}
+              placeholder="Ej: dBA, Lux, Años, Días"
+              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
         </div>
 
-        {/* Textarea de Datos en Bruto */}
+        {/* Datos en Bruto */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase">
               Datos en Bruto (separados por ;)
             </label>
-            <span className="text-xs font-mono font-bold text-[#1B8A5A] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+            <span className="text-[11px] font-mono text-[#1B8A5A] font-semibold bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">
               n actual = {n} datos
             </span>
           </div>
-
           <textarea
             rows={2}
             value={rawInput}
-            onChange={(e) => {
-              setRawInput(e.target.value);
-              onCalculateWithValues(e.target.value, variableName, unit);
-            }}
-            placeholder="Valores separados por punto y coma (ej: 82; 85; 90; 94)"
-            className="w-full font-mono text-xs px-3 py-2 rounded-lg border border-slate-200 focus:border-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none resize-y"
+            onChange={(e) => setRawInput(e.target.value)}
+            placeholder="Ingrese números separados por punto y coma (ej: 82.5; 85.0; 79.2; ...)"
+            className="w-full text-xs font-mono p-3 rounded-lg border border-slate-200 bg-white text-slate-800 focus:ring-1 focus:ring-[#0F2942] outline-none leading-relaxed resize-y"
           />
         </div>
 
-        {/* Configuración Avanzada Plegable (R, k, A) solo para Agrupadas */}
+        {/* Parámetros Manuales Plegables (Solo en agrupadas) */}
         {mode === 'grouped' && (
           <div className="pt-1">
             <button
               type="button"
               onClick={() => setShowManualParams(!showManualParams)}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#0F2942] font-semibold cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors cursor-pointer"
             >
               {showManualParams ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-              <span>{showManualParams ? 'Ocultar Parámetros Manuales (R, k, A)' : 'Personalizar Parámetros Manuales (R, k, A) - Opcional'}</span>
+              <span>Personalizar Parámetros Manuales (R, k, A) - Opcional</span>
             </button>
 
             {showManualParams && (
-              <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
-                <p className="text-slate-500 text-[11px]">
-                  Si dejas estos campos vacíos, el sistema calculará automáticamente <span className="font-mono font-bold">R = Max - Min</span>, <span className="font-mono font-bold">k = √n</span> y <span className="font-mono font-bold">A = R / k</span>.
-                </p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Rango (R)</label>
-                    <input
-                      type="number"
-                      value={rango}
-                      onChange={(e) => setRango(e.target.value)}
-                      placeholder="Auto"
-                      className="w-full text-xs px-2 py-1 rounded border border-slate-300 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Clases (k)</label>
-                    <input
-                      type="number"
-                      value={kValue}
-                      onChange={(e) => setKValue(e.target.value)}
-                      placeholder="√n"
-                      className="w-full text-xs px-2 py-1 rounded border border-slate-300 bg-white"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Amplitud (A)</label>
-                    <input
-                      type="number"
-                      value={amplitud}
-                      onChange={(e) => setAmplitud(e.target.value)}
-                      placeholder="R/k"
-                      className="w-full text-xs px-2 py-1 rounded border border-slate-300 bg-white"
-                    />
-                  </div>
+              <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    Rango Manual (R)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={rango}
+                    onChange={(e) => setRango(e.target.value)}
+                    placeholder="Automático (Xmax - Xmin)"
+                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 bg-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    Intervalos (k)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    value={kValue}
+                    onChange={(e) => setKValue(e.target.value)}
+                    placeholder="Automático (k = √n)"
+                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 bg-white font-mono"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                    Amplitud (A)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    value={amplitud}
+                    onChange={(e) => setAmplitud(e.target.value)}
+                    placeholder="Automático (A = R / k)"
+                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 bg-white font-mono"
+                  />
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Botón de Acción Principal */}
-        <div className="flex items-center justify-end pt-1">
+        {/* Botón Principal de Actualización */}
+        <div className="flex justify-end pt-1">
           <button
             type="button"
             onClick={() => onCalculateWithValues()}
-            disabled={n === 0}
-            className="flex items-center gap-1.5 bg-[#0F2942] hover:bg-[#15385B] active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0F2942] hover:bg-[#15385B] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer active:scale-98"
           >
-            <Sparkles className="w-3.5 h-3.5 text-[#E67E22]" />
+            <Sparkles className="w-4 h-4 text-[#E67E22]" />
             <span>Actualizar Tabla y Gráfico</span>
           </button>
         </div>
