@@ -10,14 +10,13 @@ import {
   Info
 } from 'lucide-react';
 
-// Carga dinámica exclusiva para cliente de Recharts
 const SimpleBarVisualizer = dynamic(
   () => import('./ChartVisualizer').then((mod) => mod.SimpleBarVisualizer),
   {
     ssr: false,
     loading: () => (
-      <div className="h-72 sm:h-96 w-full flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 mt-8">
-        <span className="text-xs text-slate-400 font-medium">Cargando gráfico de barras simples...</span>
+      <div className="h-72 w-full flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 mt-6">
+        <span className="text-xs text-slate-400 font-medium">Cargando gráfico estadístico...</span>
       </div>
     ),
   }
@@ -32,7 +31,6 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 }) => {
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(1);
 
-  // Transformar datos para el gráfico
   const chartData = data.rows.map((row) => ({
     variableValue: row.variableValue,
     fa: row.frecuenciaAbsoluta,
@@ -42,43 +40,39 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
   const selectedRow = data.rows.find((r) => r.index === selectedRowIndex) || data.rows[0];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Encabezado y Tabla */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
-        <div className="bg-[#0F2942] p-4 sm:p-5 text-white flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <BarChart2 className="w-5 h-5 text-[#1B8A5A]" />
-              <h3 className="text-base sm:text-lg font-bold tracking-wide">
-                Tabla de Distribución de Frecuencias Simples (Datos No Agrupados)
-              </h3>
-            </div>
-            <p className="text-xs text-slate-300 mt-0.5">
-              Variable: <strong className="text-white">{data.variableName}</strong> ({data.unit}) • Tamaño Muestral: <span className="font-mono text-[#E67E22]">n = {data.sampleSize}</span>
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs">
-            <span className="bg-[#15385B] text-slate-200 px-2.5 py-1 rounded-lg border border-[#1C4874] font-mono">
-              Valores distintos: {data.rows.length}
+      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
+        <div className="bg-[#0F2942] px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <BarChart2 className="w-4 h-4 text-[#1B8A5A]" />
+            <h3 className="text-sm sm:text-base font-bold tracking-wide">
+              Distribución de Frecuencias Simples
+            </h3>
+            <span className="text-xs font-mono text-slate-300">
+              ({data.variableName} • n = {data.sampleSize})
             </span>
           </div>
+
+          <span className="text-xs font-mono bg-[#15385B] px-2.5 py-0.5 rounded text-slate-200 border border-[#1C4874]">
+            {data.rows.length} valores distintos
+          </span>
         </div>
 
         {/* Tabla Didáctica */}
-        <div className="overflow-x-auto p-4 sm:p-6">
+        <div className="overflow-x-auto p-4">
           <table className="stat-table">
             <thead>
               <tr>
-                <th title="Número de orden">N°</th>
-                <th title="Valor individual de la variable">Variable (xi)</th>
-                <th title="Frecuencia Absoluta: cantidad de repeticiones">Frec. Absoluta (fa)</th>
-                <th title="Frecuencia Relativa: fa / n">Frec. Relativa (fr)</th>
-                <th title="Porcentaje: fr * 100">Porcentaje (p %)</th>
-                <th title="Frecuencia Absoluta Acumulada">Frec. Abs. Acum. (Fa)</th>
-                <th title="Frecuencia Relativa Acumulada">Frec. Rel. Acum. (Fr)</th>
-                <th title="Porcentaje Acumulado">Porc. Acum. (P %)</th>
-                <th title="Desglose paso a paso">Detalle</th>
+                <th>N°</th>
+                <th>Variable (xi)</th>
+                <th>Frec. Absoluta (fa)</th>
+                <th>Frec. Relativa (fr)</th>
+                <th>Porcentaje (p %)</th>
+                <th>Frec. Abs. Acum. (Fa)</th>
+                <th>Frec. Rel. Acum. (Fr)</th>
+                <th>Porc. Acum. (P %)</th>
+                <th>Detalle</th>
               </tr>
             </thead>
             <tbody>
@@ -89,11 +83,11 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                     key={row.index}
                     onClick={() => setSelectedRowIndex(row.index)}
                     className={`cursor-pointer transition-colors ${
-                      isSelected ? 'bg-emerald-50/80 font-medium' : ''
+                      isSelected ? 'bg-emerald-50/90 font-medium' : ''
                     }`}
                   >
                     <td className="font-bold text-[#0F2942]">{row.index}</td>
-                    <td className="font-mono font-bold text-slate-800 text-base">{row.variableValue}</td>
+                    <td className="font-mono font-bold text-slate-800 text-sm">{row.variableValue}</td>
                     <td className="font-mono font-bold text-[#1B8A5A]">{row.frecuenciaAbsoluta}</td>
                     <td className="font-mono text-slate-700">{row.frecuenciaRelativa.toFixed(4)}</td>
                     <td className="font-mono text-slate-700">{row.porcentaje.toFixed(2)}%</td>
@@ -107,9 +101,9 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                           e.stopPropagation();
                           setSelectedRowIndex(row.index);
                         }}
-                        className={`text-xs px-2 py-1 rounded font-semibold transition-all cursor-pointer ${
+                        className={`text-[11px] px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#1B8A5A] text-white shadow-sm'
+                            ? 'bg-[#1B8A5A] text-white'
                             : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                         }`}
                       >
@@ -122,10 +116,10 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
               {/* Fila de Totales Estricta (sin símbolo sigma) */}
               <tr className="total-row">
-                <td colSpan={2} className="text-right uppercase tracking-wider font-extrabold pr-4 text-[#0F2942]">
+                <td colSpan={2} className="text-right uppercase font-extrabold pr-4 text-[#0F2942]">
                   {data.totals.label}
                 </td>
-                <td className="font-mono font-black text-[#1B8A5A] text-base">
+                <td className="font-mono font-black text-[#1B8A5A]">
                   {data.totals.totalFa}
                 </td>
                 <td className="font-mono font-bold text-slate-800">
@@ -134,8 +128,8 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                 <td className="font-mono font-bold text-slate-800">
                   {data.totals.totalP.toFixed(2)}%
                 </td>
-                <td colSpan={4} className="text-xs text-slate-400 italic text-center font-normal">
-                  — Las frecuencias acumuladas no se totalizan —
+                <td colSpan={4} className="text-[11px] text-slate-400 italic text-center font-normal">
+                  — No se totaliza —
                 </td>
               </tr>
             </tbody>
@@ -144,76 +138,34 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
         {/* Desglose Pedagógico Paso a Paso */}
         {selectedRow && (
-          <div className="border-t border-slate-200 bg-slate-50/70 p-5 sm:p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2">
-                <Info className="w-5 h-5 text-[#E67E22]" />
-                <h4 className="text-sm sm:text-base font-bold text-[#0F2942]">
-                  Desglose Pedagógico de Cálculos para el Valor <span className="font-mono text-[#1B8A5A]">x_{selectedRow.index} = {selectedRow.variableValue}</span>
-                </h4>
-              </div>
-              <span className="text-xs text-slate-500 hidden sm:inline">
-                Haga clic en cualquier fila para visualizar su fórmula
-              </span>
+          <div className="border-t border-slate-200 bg-slate-50/80 p-4">
+            <div className="flex items-center gap-1.5 mb-2.5 text-xs text-[#0F2942] font-bold">
+              <Info className="w-4 h-4 text-[#E67E22]" />
+              <span>Cálculo del Valor: <span className="font-mono text-[#1B8A5A]">x_{selectedRow.index} = {selectedRow.variableValue}</span></span>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Frecuencia Absoluta y Relativa */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-                <div className="text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>1. Frecuencia Relativa (fr)</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
-                    fr = fa / n
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-2.5 rounded text-center text-xs mb-2">
-                  <MathFormula formula={selectedRow.stepExplanations.fr} />
-                </div>
-                <p className="text-xs text-slate-600">
-                  Indica la proporción del valor {selectedRow.variableValue} respecto al total de la muestra (n = {data.sampleSize}).
-                </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs">
+                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">1. Frec. Relativa (fr = fa / n)</span>
+                <MathFormula formula={selectedRow.stepExplanations.fr} />
               </div>
-
-              {/* Porcentaje */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-                <div className="text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>2. Porcentaje (p %)</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
-                    p = fr · 100
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-2.5 rounded text-center text-xs mb-2">
-                  <MathFormula formula={selectedRow.stepExplanations.p} />
-                </div>
-                <p className="text-xs text-slate-600">
-                  Representa el {selectedRow.porcentaje.toFixed(2)}% del total de las observaciones analizadas.
-                </p>
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs">
+                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">2. Porcentaje (p = fr · 100)</span>
+                <MathFormula formula={selectedRow.stepExplanations.p} />
               </div>
-
-              {/* Frecuencias Acumuladas */}
-              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-2xs">
-                <div className="text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center justify-between">
-                  <span>3. Frecuencias Acumuladas</span>
-                  <span className="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">
-                    Fa, Fr, P
-                  </span>
-                </div>
-                <div className="bg-slate-50 p-2.5 rounded text-center text-xs mb-2 space-y-1">
-                  <MathFormula formula={selectedRow.stepExplanations.faAcum} />
-                </div>
-                <p className="text-xs text-slate-600">
-                  Total de casos observados menores o iguales a {selectedRow.variableValue}.
-                </p>
+              <div className="bg-white p-2.5 rounded-xl border border-slate-200 text-xs">
+                <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">3. Acumulados (Fa, Fr, P)</span>
+                <MathFormula formula={selectedRow.stepExplanations.faAcum} />
               </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Gráfico de Barras Automático */}
+      {/* Gráfico Estadístico Multi-Tipo */}
       <SimpleBarVisualizer
-        title={`Diagrama de Barras: ${data.variableName}`}
-        xLabel={`Valores de la Variable (${data.unit})`}
+        title={`Gráfico Estadístico: ${data.variableName}`}
+        xLabel={`Valores (${data.unit})`}
         yLabel="Frecuencia Absoluta (fa)"
         data={chartData}
       />

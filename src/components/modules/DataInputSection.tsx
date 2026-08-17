@@ -4,14 +4,16 @@
 import React, { useState } from 'react';
 import { 
   Dices, 
-  Settings2, 
   Sparkles,
   Sliders,
   AlertCircle,
   Activity,
   Calendar,
   Volume2,
-  Sun
+  Sun,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw
 } from 'lucide-react';
 import { SAFETY_PRESETS, parseRawDataString } from '@/lib/statistics';
 
@@ -50,11 +52,14 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
 }) => {
   const [showManualParams, setShowManualParams] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
-
+  
+  // Control interactivo del tamaño de la muestra deseado (n)
   const parsedValues = parseRawDataString(rawInput);
+  const [customSampleSize, setCustomSampleSize] = useState<number>(parsedValues.length > 0 ? parsedValues.length : 25);
+
   const n = parsedValues.length;
 
-  // Cargar preset predefinido de Higiene y Seguridad y recalcular al instante
+  // Cargar preset predefinido de Higiene y Seguridad respetando o seteando tamaño
   const handleLoadPreset = (presetId: string) => {
     const preset = SAFETY_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
@@ -62,45 +67,42 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     setSelectedPresetId(presetId);
     setVariableName(preset.variableName);
     setUnit(preset.unit);
-    const data = preset.dataGenerator();
-    const dataStr = data.join('; ');
+    
+    // Generar muestra según el tamaño configurado por el usuario
+    const generated = generateRandomValuesForContext(preset.variableName, customSampleSize);
+    const dataStr = generated.join('; ');
     setRawInput(dataStr);
 
-    // Limpiar parámetros manuales para permitir el paso a paso
+    // Limpiar parámetros manuales
     setRango('');
     setKValue('');
     setAmplitud('');
 
-    // Recalcular inmediatamente con los nuevos valores
     onCalculateWithValues(dataStr, preset.variableName, preset.unit);
   };
 
-  // Generador de datos aleatorios dinámicos según contexto y recálculo automático
-  const handleGenerateRandom = () => {
-    let count = 25;
+  // Generador contextual con tamaño exacto n ingresado por el usuario
+  const generateRandomValuesForContext = (varName: string, targetN: number): number[] => {
+    const count = Math.max(3, Math.min(500, targetN || 25));
     let min = 70;
     let max = 100;
     let decimals = 1;
 
-    const lower = variableName.toLowerCase();
+    const lower = varName.toLowerCase();
     if (lower.includes('edad')) {
-      count = 30;
       min = 20;
       max = 60;
       decimals = 0;
     } else if (lower.includes('días') || lower.includes('licencia') || lower.includes('jornada') || lower.includes('accidente')) {
-      count = 20;
       min = 0;
       max = 25;
       decimals = 0;
     } else if (lower.includes('lux') || lower.includes('iluminac')) {
-      count = 24;
       min = 180;
       max = 600;
       decimals = 0;
     } else {
       // Default: Niveles de Ruido en dBA
-      count = 25;
       min = 75;
       max = 96;
       decimals = 1;
@@ -112,77 +114,116 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const rounded = decimals === 0 ? Math.round(rand) : Number(rand.toFixed(decimals));
       randomNumbers.push(rounded);
     }
+    return randomNumbers;
+  };
 
-    const newRawString = randomNumbers.join('; ');
+  // Generar muestra aleatoria de tamaño exacto configurado por el alumno
+  const handleGenerateCustomN = (overrideN?: number) => {
+    const targetN = overrideN !== undefined ? overrideN : customSampleSize;
+    if (overrideN !== undefined) {
+      setCustomSampleSize(overrideN);
+    }
+    const newNumbers = generateRandomValuesForContext(variableName, targetN);
+    const newRawString = newNumbers.join('; ');
     setRawInput(newRawString);
     onCalculateWithValues(newRawString, variableName, unit);
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-8 transition-all">
-      {/* Encabezado de la Sección de Entrada con Identificador de Módulo */}
-      <div className="bg-gradient-to-r from-[#0F2942] to-[#15385B] p-5 text-white flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Sliders className="w-5 h-5 text-[#E67E22]" />
-            <h2 className="text-base sm:text-lg font-bold tracking-wide">
-              {mode === 'grouped'
-                ? 'Módulo 1: Tabla de Frecuencias Agrupadas (k = √n)'
-                : 'Módulo 2: Tabla de Frecuencias Simples (Datos Individuales)'}
-            </h2>
+    <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden mb-6 transition-all">
+      {/* Encabezado Minimalista y Compacto */}
+      <div className="bg-[#0F2942] px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="p-1.5 rounded-lg bg-[#1B8A5A] text-white">
+            <Sliders className="w-4 h-4" />
           </div>
-          <p className="text-xs text-slate-300 mt-1">
-            Ingrese los datos en bruto separados por punto y coma (;) o seleccione un caso práctico de Higiene y Seguridad.
-          </p>
+          <div>
+            <h2 className="text-sm sm:text-base font-bold tracking-wide">
+              {mode === 'grouped' ? 'Frecuencias Agrupadas (k = √n)' : 'Frecuencias Simples'}
+            </h2>
+            <span className="text-[11px] text-slate-300">
+              Personaliza el tamaño de la muestra o ingresa tus propios datos
+            </span>
+          </div>
         </div>
 
-        {/* Acciones Rápidas y Botón Generar Aleatorios */}
-        <div className="flex items-center gap-2.5 flex-wrap">
+        {/* Acciones de Muestra Rápida */}
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 bg-[#15385B] px-2.5 py-1 rounded-lg border border-[#1C4874]">
+            <label className="text-xs text-slate-300 font-medium">Muestra (n):</label>
+            <input
+              type="number"
+              min={3}
+              max={300}
+              value={customSampleSize}
+              onChange={(e) => setCustomSampleSize(Number(e.target.value))}
+              className="w-14 bg-[#0A1D30] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
+            />
+          </div>
+
           <button
             type="button"
-            onClick={handleGenerateRandom}
-            className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-lg transition-all shadow-sm cursor-pointer"
-            title="Generar nuevos valores aleatorios realistas"
+            onClick={() => handleGenerateCustomN()}
+            className="flex items-center gap-1 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-xs"
+            title="Generar nueva muestra aleatoria del tamaño seleccionado"
           >
-            <Dices className="w-4 h-4" />
-            <span>Generar Datos Aleatorios</span>
+            <Dices className="w-3.5 h-3.5" />
+            <span>Generar Muestra</span>
           </button>
         </div>
       </div>
 
-      <div className="p-6 space-y-6">
-        {/* Pastillas de Casos Rápidos de Higiene y Seguridad */}
-        <div>
-          <label className="block text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
-            Cargar Casos Prácticos de Higiene, Seguridad y Medio Ambiente:
-          </label>
-          <div className="flex flex-wrap gap-2">
+      <div className="p-5 space-y-4">
+        {/* Casos Prácticos Rápidos de SySO & Chips de Tamaño Muestral */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+          {/* Casos Prácticos */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos:</span>
             {SAFETY_PRESETS.filter(p => mode === 'grouped' ? p.recommendedType === 'grouped' : true).map((preset) => (
               <button
                 key={preset.id}
                 type="button"
                 onClick={() => handleLoadPreset(preset.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] text-white shadow-xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#0F2942] text-white'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                 }`}
               >
-                {preset.id.includes('ruido') && <Volume2 className="w-3.5 h-3.5 text-[#E67E22]" />}
-                {preset.id.includes('edad') && <Activity className="w-3.5 h-3.5 text-[#1B8A5A]" />}
-                {preset.id.includes('dias') && <Calendar className="w-3.5 h-3.5 text-blue-500" />}
-                {preset.id.includes('lux') && <Sun className="w-3.5 h-3.5 text-amber-500" />}
-                <span>{preset.title}</span>
+                {preset.id.includes('ruido') && <Volume2 className="w-3 h-3 text-[#E67E22]" />}
+                {preset.id.includes('edad') && <Activity className="w-3 h-3 text-[#1B8A5A]" />}
+                {preset.id.includes('dias') && <Calendar className="w-3 h-3 text-blue-500" />}
+                {preset.id.includes('lux') && <Sun className="w-3 h-3 text-amber-500" />}
+                <span>{preset.title.split(' ')[0]} {preset.title.split(' ')[1] || ''}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Chips de Tamaño Rápido de Muestra */}
+          <div className="flex items-center gap-1 text-xs">
+            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Fijar n:</span>
+            {[10, 20, 30, 50, 100].map((size) => (
+              <button
+                key={size}
+                type="button"
+                onClick={() => handleGenerateCustomN(size)}
+                className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer ${
+                  customSampleSize === size
+                    ? 'bg-[#1B8A5A] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                {size}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Formulario Principal: Nombre de Variable y Unidad */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="md:col-span-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Nombre de la Variable en Estudio
+        {/* Datos de la Variable y Medida */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="sm:col-span-2">
+            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+              Variable en Estudio
             </label>
             <input
               type="text"
@@ -191,14 +232,14 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 setVariableName(e.target.value);
                 onCalculateWithValues(rawInput, e.target.value, unit);
               }}
-              placeholder="Ej: Nivel de Ruido en dBA, Edades de Operarios, etc."
-              className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#0F2942] focus:ring-2 focus:ring-[#0F2942]/20 outline-none transition-all"
+              placeholder="Ej: Nivel de Ruido en dBA"
+              className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg border border-slate-200 focus:border-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
-              Unidad de Medida
+            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+              Unidad
             </label>
             <input
               type="text"
@@ -207,152 +248,99 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 setUnit(e.target.value);
                 onCalculateWithValues(rawInput, variableName, e.target.value);
               }}
-              placeholder="Ej: dBA, Años, Lux, ppm"
-              className="w-full text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#0F2942] focus:ring-2 focus:ring-[#0F2942]/20 outline-none transition-all"
+              placeholder="Ej: dBA, Años, Lux"
+              className="w-full text-xs sm:text-sm px-3 py-2 rounded-lg border border-slate-200 focus:border-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
         </div>
 
         {/* Textarea de Datos en Bruto */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-              <span>Datos en Bruto (Separados por punto y coma ;)</span>
-              <span className="text-slate-400 font-normal lowercase">(o comas/espacios)</span>
+          <div className="flex items-center justify-between mb-1">
+            <label className="text-[11px] font-bold text-slate-600 uppercase">
+              Datos en Bruto (separados por ;)
             </label>
-            
-            {/* Indicador de Tamaño Muestral */}
-            <div className="flex items-center gap-2">
-              <span className={`text-xs px-2.5 py-0.5 rounded-full font-mono font-bold ${
-                n > 0 
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                  : 'bg-amber-100 text-amber-800 border border-amber-300'
-              }`}>
-                Muestra (n): {n}
-              </span>
-              {n > 0 && (
-                <span className="text-xs font-mono text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
-                  Mín: {parsedValues[0]} | Máx: {parsedValues[parsedValues.length - 1]}
-                </span>
-              )}
-            </div>
+            <span className="text-xs font-mono font-bold text-[#1B8A5A] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              n actual = {n} datos
+            </span>
           </div>
 
           <textarea
-            rows={3}
+            rows={2}
             value={rawInput}
             onChange={(e) => {
               setRawInput(e.target.value);
               onCalculateWithValues(e.target.value, variableName, unit);
             }}
-            placeholder="Ejemplo: 78.4; 82.1; 85.6; 88.0; 91.2; 84.3; 79.8; 87.5; 92.4; 86.1; 83.7; 89.9"
-            className="w-full font-mono text-sm px-3.5 py-2.5 rounded-lg border border-slate-300 focus:border-[#0F2942] focus:ring-2 focus:ring-[#0F2942]/20 outline-none transition-all resize-y"
+            placeholder="Valores separados por punto y coma (ej: 82; 85; 90; 94)"
+            className="w-full font-mono text-xs px-3 py-2 rounded-lg border border-slate-200 focus:border-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none resize-y"
           />
         </div>
 
-        {/* Configuración Condicional de Parámetros R, k, A (Solo para Frecuencias Agrupadas) */}
+        {/* Configuración Avanzada Plegable (R, k, A) solo para Agrupadas */}
         {mode === 'grouped' && (
-          <div className="border border-slate-200 rounded-xl p-4 bg-slate-50">
-            <div className="flex items-center justify-between cursor-pointer" onClick={() => setShowManualParams(!showManualParams)}>
-              <div className="flex items-center gap-2">
-                <Settings2 className="w-4 h-4 text-[#0F2942]" />
-                <span className="text-xs font-bold text-slate-800 uppercase tracking-wide">
-                  Parámetros de Intervalo Manuales (R, k, A) - Opcional
-                </span>
-              </div>
-              <button
-                type="button"
-                className="text-xs text-[#0F2942] font-semibold underline hover:text-[#1B8A5A] cursor-pointer"
-              >
-                {showManualParams ? 'Ocultar campos manuales' : 'Mostrar campos manuales'}
-              </button>
-            </div>
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={() => setShowManualParams(!showManualParams)}
+              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-[#0F2942] font-semibold cursor-pointer"
+            >
+              {showManualParams ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              <span>{showManualParams ? 'Ocultar Parámetros Manuales (R, k, A)' : 'Personalizar Parámetros Manuales (R, k, A) - Opcional'}</span>
+            </button>
 
-            {showManualParams ? (
-              <div className="mt-4 pt-3 border-t border-slate-200">
-                <div className="p-3 bg-amber-50 rounded-lg border border-amber-200 text-xs text-amber-900 mb-3 flex items-start gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+            {showManualParams && (
+              <div className="mt-2 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+                <p className="text-slate-500 text-[11px]">
+                  Si dejas estos campos vacíos, el sistema calculará automáticamente <span className="font-mono font-bold">R = Max - Min</span>, <span className="font-mono font-bold">k = √n</span> y <span className="font-mono font-bold">A = R / k</span>.
+                </p>
+                <div className="grid grid-cols-3 gap-2">
                   <div>
-                    <strong>Lógica Didáctica de la Cátedra:</strong>
-                    <p className="mt-0.5">
-                      • Si <strong>ingresas</strong> R, k y A: el sistema construirá los intervalos con tus valores exactos sin paso a paso previo.
-                    </p>
-                    <p className="mt-0.5">
-                      • Si los <strong>dejas vacíos</strong>: el sistema calculará automáticamente <span className="font-mono">R = Xmax - Xmin</span>, la regla de la raíz <span className="font-mono">k = √n</span> y la amplitud <span className="font-mono">A = R / k</span> mostrando todo el desarrollo paso a paso.
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Rango (R)
-                    </label>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Rango (R)</label>
                     <input
                       type="number"
-                      step="any"
                       value={rango}
-                      onChange={(e) => {
-                        setRango(e.target.value);
-                      }}
-                      placeholder="Dejar vacío para auto"
-                      className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                      onChange={(e) => setRango(e.target.value)}
+                      placeholder="Auto"
+                      className="w-full text-xs px-2 py-1 rounded border border-slate-300 bg-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Cantidad de Intervalos (k)
-                    </label>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Clases (k)</label>
                     <input
                       type="number"
-                      step="1"
                       value={kValue}
-                      onChange={(e) => {
-                        setKValue(e.target.value);
-                      }}
-                      placeholder="Dejar vacío para √n"
-                      className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                      onChange={(e) => setKValue(e.target.value)}
+                      placeholder="√n"
+                      className="w-full text-xs px-2 py-1 rounded border border-slate-300 bg-white"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1">
-                      Amplitud (A)
-                    </label>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Amplitud (A)</label>
                     <input
                       type="number"
-                      step="any"
                       value={amplitud}
-                      onChange={(e) => {
-                        setAmplitud(e.target.value);
-                      }}
-                      placeholder="Dejar vacío para R/k"
-                      className="w-full text-xs px-3 py-2 rounded-lg border border-slate-300 bg-white"
+                      onChange={(e) => setAmplitud(e.target.value)}
+                      placeholder="R/k"
+                      className="w-full text-xs px-2 py-1 rounded border border-slate-300 bg-white"
                     />
                   </div>
                 </div>
               </div>
-            ) : (
-              <p className="text-xs text-slate-500 mt-1">
-                Por defecto, se aplicará automáticamente el cálculo explicativo de <span className="font-semibold text-slate-700">Rango (R)</span>, <span className="font-semibold text-slate-700">Regla de la Raíz Cuadrada (k = √n)</span> y <span className="font-semibold text-slate-700">Amplitud (A = R / k)</span>.
-              </p>
             )}
           </div>
         )}
 
-        {/* Botón de Procesamiento */}
-        <div className="flex items-center justify-end gap-3 pt-2">
+        {/* Botón de Acción Principal */}
+        <div className="flex items-center justify-end pt-1">
           <button
             type="button"
             onClick={() => onCalculateWithValues()}
             disabled={n === 0}
-            className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold text-sm text-white shadow-md transition-all ${
-              n > 0
-                ? 'bg-[#0F2942] hover:bg-[#15385B] active:scale-95 cursor-pointer'
-                : 'bg-slate-300 cursor-not-allowed opacity-70'
-            }`}
+            className="flex items-center gap-1.5 bg-[#0F2942] hover:bg-[#15385B] active:scale-95 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs cursor-pointer"
           >
-            <Sparkles className="w-4 h-4 text-[#E67E22]" />
-            <span>Generar Tabla y Gráfico Didáctico</span>
+            <Sparkles className="w-3.5 h-3.5 text-[#E67E22]" />
+            <span>Actualizar Tabla y Gráfico</span>
           </button>
         </div>
       </div>

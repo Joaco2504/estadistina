@@ -25,8 +25,7 @@ import {
   BarChart3, 
   Layers, 
   BookOpen, 
-  ShieldCheck, 
-  UserCheck
+  ShieldCheck
 } from 'lucide-react';
 
 export default function HomePage() {
@@ -111,7 +110,7 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
-      {/* Navbar Superior con Identidad Institucional */}
+      {/* Navbar Superior */}
       <Navbar
         activeTab={activeTab}
         onSelectTab={handleTabChange}
@@ -119,138 +118,94 @@ export default function HomePage() {
       />
 
       {/* Contenedor Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8">
-        {/* PORTADA / HERO INSTITUCIONAL */}
-        <section className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200 mb-8 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-emerald-100/40 via-blue-50/20 to-transparent rounded-full blur-3xl pointer-events-none -mr-20 -mt-20" />
-
-          <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 relative z-10">
-            <div className="space-y-3 max-w-3xl">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#0F2942] text-white text-xs font-bold font-mono uppercase tracking-wider">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#1B8A5A]" />
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-5">
+        {/* ENCABEZADO INSTITUCIONAL MINIMALISTA Y COMPACTO */}
+        <section className="bg-white rounded-2xl p-4 sm:p-5 shadow-xs border border-slate-200 mb-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#0F2942] text-white text-[11px] font-bold font-mono uppercase">
+                  <ShieldCheck className="w-3 h-3 text-[#1B8A5A]" />
                   I.E.S. de Belén
                 </span>
-                <span className="inline-flex items-center px-3 py-1 rounded-full bg-[#1B8A5A]/15 text-[#1B8A5A] text-xs font-bold">
-                  Higiene, Seguridad y Control Ambiental - Industrial
+                <span className="text-[11px] text-slate-500 font-medium">
+                  Higiene, Seguridad y Control Ambiental
                 </span>
-                <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200">
-                  2° año (Plan Nuevo) / 3° año (Plan Viejo)
+                <span className="text-[11px] font-mono text-slate-400">
+                  • Prof. Pacheco E. Joaquín
                 </span>
               </div>
-
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-[#0F2942] tracking-tight leading-tight">
-                Estadística, Cálculo de la Probabilidad y Costos de la Seguridad
+              <h1 className="text-lg sm:text-xl font-bold text-[#0F2942] tracking-tight">
+                Estadística, Probabilidad y Costos de la Seguridad
               </h1>
-
-              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                Plataforma didáctica para el análisis cuantitativo y la toma de decisiones en prevención de riesgos laborales. Desarrolle tablas de frecuencias con la regla <span className="font-mono font-bold text-[#1B8A5A]">k = √n</span>, cruces bivariados de contingencia y visualizaciones gráficas bajo el marco pedagógico oficial.
-              </p>
-
-              <div className="flex items-center gap-4 text-xs text-slate-700 pt-1">
-                <div className="flex items-center gap-1.5">
-                  <UserCheck className="w-4 h-4 text-[#E67E22]" />
-                  <span><strong>Docente Titular:</strong> Prof. Pacheco E. Joaquín</span>
-                </div>
-              </div>
             </div>
 
-            {/* Emblema Institucional de Portada */}
-            <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-br from-[#0F2942] to-[#15385B] border border-[#1C4874] shadow-md self-stretch lg:self-auto min-w-[240px]">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 min-w-[56px] min-h-[56px] flex items-center justify-center rounded-xl bg-white/10 p-1 border border-white/20">
-                  <img
-                    src="/logo-catedra.svg"
-                    alt="Logo Cátedra IES Belén"
-                    className="w-12 h-12 object-contain"
-                  />
-                </div>
-                <div className="text-left">
-                  <span className="text-base font-extrabold text-white block tracking-wide">
-                    I.E.S. de Belén
-                  </span>
-                  <span className="text-[10px] bg-[#1B8A5A] text-white px-2 py-0.5 rounded-full font-bold uppercase tracking-wider inline-block">
-                    Cátedra Oficial
-                  </span>
-                </div>
-              </div>
+            {/* Pestañas de Navegación Compactas */}
+            <div className="grid grid-cols-2 sm:flex items-center gap-1.5 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={() => handleTabChange('grouped')}
+                className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'grouped'
+                    ? 'bg-[#0F2942] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Table2 className="w-3.5 h-3.5 text-[#1B8A5A]" />
+                <span>Agrupadas</span>
+              </button>
 
-              <div className="text-center mt-3 pt-3 border-t border-white/10 w-full">
-                <span className="text-[11px] font-medium text-slate-300 block">
-                  Seguridad e Higiene Industrial
-                </span>
-                <span className="text-xs font-mono font-bold text-[#E67E22]">
-                  Prof. Pacheco E. Joaquín
-                </span>
-              </div>
+              <button
+                type="button"
+                onClick={() => handleTabChange('simple')}
+                className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'simple'
+                    ? 'bg-[#0F2942] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <BarChart3 className="w-3.5 h-3.5 text-[#E67E22]" />
+                <span>Simples</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTabChange('contingency')}
+                className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'contingency'
+                    ? 'bg-[#0F2942] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5 text-[#3B82F6]" />
+                <span>Contingencia</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleTabChange('notes')}
+                className={`flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  activeTab === 'notes'
+                    ? 'bg-[#0F2942] text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#10B981]" />
+                <span>Apuntes</span>
+              </button>
             </div>
-          </div>
-
-          {/* Selector de Pestañas Principales */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-8 pt-6 border-t border-slate-100">
-            <button
-              type="button"
-              onClick={() => handleTabChange('grouped')}
-              className={`flex items-center justify-center gap-2 p-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'grouped'
-                  ? 'bg-[#0F2942] text-white shadow-md ring-2 ring-[#1B8A5A]'
-                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              <Table2 className="w-4 h-4 text-[#1B8A5A]" />
-              <span>Frecuencias Agrupadas</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleTabChange('simple')}
-              className={`flex items-center justify-center gap-2 p-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'simple'
-                  ? 'bg-[#0F2942] text-white shadow-md ring-2 ring-[#E67E22]'
-                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              <BarChart3 className="w-4 h-4 text-[#E67E22]" />
-              <span>Frecuencias Simples</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleTabChange('contingency')}
-              className={`flex items-center justify-center gap-2 p-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'contingency'
-                  ? 'bg-[#0F2942] text-white shadow-md ring-2 ring-[#3B82F6]'
-                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              <Layers className="w-4 h-4 text-[#3B82F6]" />
-              <span>Tabla de Contingencia</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleTabChange('notes')}
-              className={`flex items-center justify-center gap-2 p-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                activeTab === 'notes'
-                  ? 'bg-[#0F2942] text-white shadow-md ring-2 ring-[#10B981]'
-                  : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border border-slate-200'
-              }`}
-            >
-              <BookOpen className="w-4 h-4 text-[#10B981]" />
-              <span>Apuntes de la Cátedra</span>
-            </button>
           </div>
         </section>
 
         {/* Mensaje de Error si aplica */}
         {errorMessage && (
-          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
             {errorMessage}
           </div>
         )}
 
         {/* CONTENEDOR ANCLADO DEL MÓDULO ACTIVO */}
-        <div id="active-module-container" className="scroll-mt-24 transition-all">
+        <div id="active-module-container" className="scroll-mt-16 transition-all">
           {activeTab === 'grouped' && (
             <div className="space-y-6">
               <DataInputSection
@@ -303,7 +258,7 @@ export default function HomePage() {
         </div>
       </main>
 
-      {/* Modal de Glosario de Fórmulas Oficial */}
+      {/* Modal de Glosario de Fórmulas */}
       <FormulaGlossaryModal
         isOpen={isGlossaryOpen}
         onClose={() => setIsGlossaryOpen(false)}
