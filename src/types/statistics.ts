@@ -1,0 +1,214 @@
+// src/types/statistics.ts
+
+/**
+ * Representa un conjunto de datos en bruto y metadatos asociados
+ */
+export interface RawDataSet {
+  id: string;
+  variableName: string;
+  unit?: string;
+  description?: string;
+  sampleSize: number; // n
+  rawDataString: string; // Datos separados por ";"
+  values: number[]; // Array numérico ordenado/procesado
+  category?: 'hygiene' | 'safety' | 'environment' | 'general';
+}
+
+/**
+ * Parámetros de configuración de intervalos ingresados o calculados
+ */
+export interface IntervalParameters {
+  userProvided: boolean; // true si el alumno ingresó R, k, A manualmente
+  xmin: number;
+  xmax: number;
+  rango: number; // R = xmax - xmin
+  k: number; // Cantidad de intervalos: k = round(sqrt(n))
+  amplitud: number; // A = R / k
+  precision: number; // Decimales a redondear
+}
+
+/**
+ * Fila individual de la Tabla de Frecuencias Agrupadas
+ * Columnas: I, Mc, fa, fr, p, Fa, Fr, P
+ */
+export interface GroupedFrequencyRow {
+  index: number; // Número de intervalo (1, 2, ..., k)
+  intervalLabel: string; // ej: "[65.0 - 71.0)"
+  lowerBound: number; // Límite inferior (Li)
+  upperBound: number; // Límite superior (Ls)
+  isLastInterval?: boolean; // Para cerrar con corchete [Li - Ls]
+  marcaDeClase: number; // Mc = (Li + Ls) / 2
+  frecuenciaAbsoluta: number; // fa
+  frecuenciaRelativa: number; // fr = fa / n
+  porcentaje: number; // p = fr * 100
+  frecuenciaAbsolutaAcumulada: number; // Fa
+  frecuenciaRelativaAcumulada: number; // Fr = Fa / n
+  porcentajeAcumulado: number; // P = Fr * 100
+  
+  // Detalle didáctico del paso a paso de cálculo
+  stepExplanations: {
+    mc: string;
+    fa: string;
+    fr: string;
+    p: string;
+    faAcum: string;
+    frAcum: string;
+    pAcum: string;
+  };
+}
+
+/**
+ * Fila individual de la Tabla de Frecuencias Simples
+ * Columnas: xi, fa, fr, p, Fa, Fr, P
+ */
+export interface SimpleFrequencyRow {
+  index: number;
+  variableValue: number | string; // xi
+  frecuenciaAbsoluta: number; // fa
+  frecuenciaRelativa: number; // fr = fa / n
+  porcentaje: number; // p = fr * 100
+  frecuenciaAbsolutaAcumulada: number; // Fa
+  frecuenciaRelativaAcumulada: number; // Fr
+  porcentajeAcumulado: number; // P = Fr * 100
+  
+  stepExplanations: {
+    fa: string;
+    fr: string;
+    p: string;
+    faAcum: string;
+    frAcum: string;
+    pAcum: string;
+  };
+}
+
+/**
+ * Resultado completo del análisis de Frecuencias Agrupadas
+ */
+export interface GroupedFrequencyTableResult {
+  variableName: string;
+  unit: string;
+  sampleSize: number; // n
+  sortedValues: number[];
+  parameters: IntervalParameters;
+  rows: GroupedFrequencyRow[];
+  totals: {
+    totalFa: number; // Total fa = n
+    totalFr: number; // Total fr = 1.000
+    totalP: number; // Total p = 100.0%
+    label: string; // "Suma total" o "Total" (NO usar símbolo sigma)
+  };
+  stepByStepDerivation?: {
+    rangoFormula: string;
+    rangoValue: string;
+    kFormula: string;
+    kValue: string;
+    amplitudFormula: string;
+    amplitudValue: string;
+  };
+}
+
+/**
+ * Resultado completo del análisis de Frecuencias Simples
+ */
+export interface SimpleFrequencyTableResult {
+  variableName: string;
+  unit: string;
+  sampleSize: number; // n
+  rows: SimpleFrequencyRow[];
+  totals: {
+    totalFa: number;
+    totalFr: number;
+    totalP: number;
+    label: string; // "Suma total" / "Total" (sin sigma)
+  };
+}
+
+/**
+ * Celda bivariada para Tabla de Contingencia
+ */
+export interface ContingencyCell {
+  rowCategory: string;
+  colCategory: string;
+  frecuenciaConjunta: number; // fa_ij
+  frecuenciaRelativaConjunta: number; // fr_ij = fa_ij / n
+  porcentajeConjunto: number; // p_ij = fr_ij * 100
+}
+
+/**
+ * Estructura completa de Tabla de Contingencia (Bivariada)
+ */
+export interface ContingencyTableResult {
+  variableX: string; // Variable de filas (ej: "Sector de Planta")
+  variableY: string; // Variable de columnas (ej: "Uso de EPP")
+  sampleSize: number; // Gran Total (n)
+  rowCategories: string[];
+  colCategories: string[];
+  matrix: number[][]; // [rowIndex][colIndex] = fa_ij
+  rowMarginalTotals: number[]; // "Total por fila"
+  colMarginalTotals: number[]; // "Total por columna"
+  grandTotal: number; // "Gran Total" = n
+  
+  // Desglose didáctico
+  didacticSteps: {
+    step1SimpleFrequencies: {
+      varXCounts: { category: string; count: number }[];
+      varYCounts: { category: string; count: number }[];
+    };
+    step2JointFrequencies: string;
+    step3RowMarginals: { category: string; calculation: string; total: number }[];
+    step4ColMarginals: { category: string; calculation: string; total: number }[];
+    step5GrandTotal: { calculation: string; total: number };
+  };
+}
+
+/**
+ * Preset temático de Higiene y Seguridad
+ */
+export interface SafetyDataPreset {
+  id: string;
+  title: string;
+  category: 'Higiene Industrial' | 'Seguridad Operativa' | 'Medio Ambiente' | 'Costos y Siniestralidad';
+  variableName: string;
+  unit: string;
+  description: string;
+  sampleSize: number;
+  recommendedType: 'grouped' | 'simple' | 'contingency';
+  dataGenerator: () => number[];
+  bivariateDataGenerator?: () => { x: string; y: string }[];
+  defaultXName?: string;
+  defaultYName?: string;
+}
+
+/**
+ * Unidad temática para la sección de "Apuntes de la Cátedra"
+ */
+export interface ThematicUnit {
+  id: string;
+  number: number;
+  title: string;
+  subtitle: string;
+  description: string;
+  badge: string;
+  topics: {
+    title: string;
+    summary: string;
+    keyFormulas?: { name: string; formula: string; note: string }[];
+  }[];
+  theoreticalNote: {
+    title: string;
+    fileName: string;
+    fileSize: string;
+    pages: number;
+    summary: string;
+    contentOutline: string[];
+  };
+  practicalGuide: {
+    title: string;
+    tpNumber: string;
+    fileName: string;
+    fileSize: string;
+    exercisesCount: number;
+    summary: string;
+    sampleExercises: { number: number; statement: string; dataSample: string }[];
+  };
+}

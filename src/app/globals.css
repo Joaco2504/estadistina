@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "katex/dist/katex.min.css";
+
+@layer base {
+  :root {
+    --primary: #0F2942; /* Azul Marino Institucional */
+    --primary-light: #183C5F;
+    --secondary: #1B8A5A; /* Verde Seguridad Industrial */
+    --secondary-light: #22A36B;
+    --accent: #E67E22; /* Acento Ámbar / Precaución */
+    --accent-light: #F39C12;
+    --bg-technical: #F8FAFC; /* Gris Técnico */
+    --card-bg: #FFFFFF;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --border-color: #E2E8F0;
+  }
+
+  body {
+    background-color: var(--bg-technical);
+    color: var(--text-main);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+/* Estilos de tablas didácticas universitarias */
+.stat-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid #CBD5E1;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  background: #FFFFFF;
+}
+
+.stat-table th {
+  background-color: #0F2942;
+  color: #FFFFFF;
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.75rem 1rem;
+  text-align: center;
+  border-right: 1px solid #1E3A5F;
+}
+
+.stat-table th:last-child {
+  border-right: none;
+}
+
+.stat-table td {
+  padding: 0.65rem 1rem;
+  font-size: 0.875rem;
+  border-bottom: 1px solid #E2E8F0;
+  border-right: 1px solid #F1F5F9;
+  text-align: center;
+  color: #334155;
+}
+
+.stat-table td:last-child {
+  border-right: none;
+}
+
+.stat-table tr:hover td {
+  background-color: #F1F5F9;
+}
+
+.stat-table tr.total-row td {
+  background-color: #F8FAFC;
+  font-weight: 700;
+  color: #0F2942;
+  border-top: 2px solid #0F2942;
+  border-bottom: none;
+}
+
+/* Custom Scrollbar for mathematical tables and formulas */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F1F5F9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #CBD5E1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94A3B8;
+}
