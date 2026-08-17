@@ -10,8 +10,9 @@ export interface RawDataSet {
   description?: string;
   sampleSize: number; // n
   rawDataString: string; // Datos separados por ";"
-  values: number[]; // Array numérico ordenado/procesado
+  values: (number | string)[]; // Array numérico o cualitativo
   category?: 'hygiene' | 'safety' | 'environment' | 'general';
+  variableType?: 'quantitative' | 'qualitative';
 }
 
 /**
@@ -32,22 +33,21 @@ export interface IntervalParameters {
  * Columnas: I, Mc, fa, fr, p, Fa, Fr, P
  */
 export interface GroupedFrequencyRow {
-  index: number; // Número de intervalo (1, 2, ..., k)
-  intervalLabel: string; // ej: "[65.0 - 71.0)"
+  index: number;
+  intervalLabel: string;
   limiteInferior?: number;
   limiteSuperior?: number;
-  lowerBound?: number; // Límite inferior (Li)
-  upperBound?: number; // Límite superior (Ls)
-  isLastInterval?: boolean; // Para cerrar con corchete [Li - Ls]
-  marcaDeClase: number; // Mc = (Li + Ls) / 2
-  frecuenciaAbsoluta: number; // fa
-  frecuenciaRelativa: number; // fr = fa / n
-  porcentaje: number; // p = fr * 100
-  frecuenciaAbsolutaAcumulada: number; // Fa
-  frecuenciaRelativaAcumulada: number; // Fr = Fa / n
-  porcentajeAcumulado: number; // P = Fr * 100
+  lowerBound?: number;
+  upperBound?: number;
+  isLastInterval?: boolean;
+  marcaDeClase: number;
+  frecuenciaAbsoluta: number;
+  frecuenciaRelativa: number;
+  porcentaje: number;
+  frecuenciaAbsolutaAcumulada: number;
+  frecuenciaRelativaAcumulada: number;
+  porcentajeAcumulado: number;
   
-  // Detalle didáctico del paso a paso de cálculo
   stepExplanations: {
     mc: string;
     fa?: string;
@@ -60,12 +60,11 @@ export interface GroupedFrequencyRow {
 }
 
 /**
- * Fila individual de la Tabla de Frecuencias Simples
- * Columnas: xi, fa, fr, p, Fa, Fr, P
+ * Fila individual de la Tabla de Frecuencias Simples (Cuantitativas o Cualitativas)
  */
 export interface SimpleFrequencyRow {
   index: number;
-  variableValue: number | string; // xi
+  variableValue: number | string; // xi o Categoría
   frecuenciaAbsoluta: number; // fa
   frecuenciaRelativa: number; // fr = fa / n
   porcentaje: number; // p = fr * 100
@@ -94,9 +93,9 @@ export interface GroupedFrequencyTableResult {
   parameters: IntervalParameters;
   rows: GroupedFrequencyRow[];
   totals: {
-    totalFa: number; // Total fa = n
-    totalFr: number; // Total fr = 1.000
-    totalP: number; // Total p = 100.0%
+    totalFa: number;
+    totalFr: number;
+    totalP: number;
     label: string; // "Suma total" o "Total" (NO usar símbolo sigma)
   };
   stepByStepDerivation?: {
@@ -116,6 +115,7 @@ export interface SimpleFrequencyTableResult {
   variableName: string;
   unit: string;
   sampleSize: number; // n
+  variableType: 'quantitative' | 'qualitative';
   rows: SimpleFrequencyRow[];
   totals: {
     totalFa: number;
@@ -140,8 +140,8 @@ export interface ContingencyCell {
  * Estructura completa de Tabla de Contingencia (Bivariada)
  */
 export interface ContingencyTableResult {
-  variableX: string; // Variable de filas (ej: "Sector de Planta")
-  variableY: string; // Variable de columnas (ej: "Uso de EPP")
+  variableX: string; // Variable de filas
+  variableY: string; // Variable de columnas
   sampleSize: number; // Gran Total (n)
   rowCategories: string[];
   colCategories: string[];
@@ -150,7 +150,6 @@ export interface ContingencyTableResult {
   colMarginalTotals: number[]; // "Total por columna"
   grandTotal: number; // "Gran Total" = n
   
-  // Desglose didáctico
   didacticSteps: {
     step1SimpleFrequencies: {
       varXCounts: { category: string; count: number }[];
@@ -175,7 +174,8 @@ export interface SafetyDataPreset {
   description: string;
   sampleSize: number;
   recommendedType: 'grouped' | 'simple' | 'contingency';
-  dataGenerator: () => number[];
+  variableType?: 'quantitative' | 'qualitative';
+  dataGenerator: () => (number | string)[];
   bivariateDataGenerator?: () => { x: string; y: string }[];
   defaultXName?: string;
   defaultYName?: string;

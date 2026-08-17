@@ -12,6 +12,7 @@ import { CourseNotesModule } from '@/components/modules/CourseNotesModule';
 import { FormulaGlossaryModal } from '@/components/modules/FormulaGlossaryModal';
 import { 
   parseRawDataString, 
+  parseAnyDataString,
   generateGroupedFrequencyTable, 
   generateSimpleFrequencyTable, 
   SAFETY_PRESETS 
@@ -26,7 +27,10 @@ export default function HomePage() {
   const [activeTab, setActiveTab] = useState<string>('simple');
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
 
-  // Preset inicial para Frecuencias Simples
+  // Tipo de variable en estudio para frecuencias simples
+  const [variableType, setVariableType] = useState<'quantitative' | 'qualitative'>('quantitative');
+
+  // Preset inicial
   const defaultSimplePreset = SAFETY_PRESETS.find(p => p.id === 'dias-baja') || SAFETY_PRESETS[0];
   const [variableName, setVariableName] = useState<string>(defaultSimplePreset.variableName);
   const [unit, setUnit] = useState<string>(defaultSimplePreset.unit);
@@ -49,47 +53,56 @@ export default function HomePage() {
   };
 
   // Función principal de cálculo
-  const handleCalculate = useCallback((customRaw?: string, customVar?: string, customUnit?: string) => {
+  const handleCalculate = useCallback((
+    customRaw?: string, 
+    customVar?: string, 
+    customUnit?: string, 
+    customType?: 'quantitative' | 'qualitative'
+  ) => {
     try {
       setErrorMessage(null);
       const inputStringToParse = customRaw !== undefined ? customRaw : rawInput;
-      const parsedValues = parseRawDataString(inputStringToParse);
-
-      if (parsedValues.length === 0) {
-        setErrorMessage('Por favor ingrese al menos un número válido en los datos en bruto.');
-        return;
-      }
-
+      const activeType = customType !== undefined ? customType : variableType;
       const activeVarName = customVar !== undefined ? customVar : variableName;
       const activeUnit = customUnit !== undefined ? customUnit : unit;
 
-      // Calcular Frecuencias Simples
+      // Calcular Frecuencias Simples (Soporta Cuantitativo y Cualitativo)
+      const parsedAny = parseAnyDataString(inputStringToParse);
+      if (parsedAny.length === 0) {
+        setErrorMessage('Por favor ingrese al menos un dato o categoría válida.');
+        return;
+      }
+
       const simple = generateSimpleFrequencyTable(
         activeVarName || 'Variable Muestral',
         activeUnit || 'u',
-        parsedValues
+        parsedAny,
+        activeType
       );
       setSimpleResult(simple);
 
-      // Calcular Frecuencias Agrupadas
-      const customParams = (rango && kValue && amplitud) ? {
-        rango: Number(rango),
-        k: Number(kValue),
-        amplitud: Number(amplitud),
-      } : undefined;
+      // Calcular Frecuencias Agrupadas (Requiere datos numéricos)
+      const parsedNumeric = parseRawDataString(inputStringToParse);
+      if (parsedNumeric.length > 0) {
+        const customParams = (rango && kValue && amplitud) ? {
+          rango: Number(rango),
+          k: Number(kValue),
+          amplitud: Number(amplitud),
+        } : undefined;
 
-      const grouped = generateGroupedFrequencyTable(
-        activeVarName || 'Variable Muestral',
-        activeUnit || 'u',
-        parsedValues,
-        customParams
-      );
-      setGroupedResult(grouped);
+        const grouped = generateGroupedFrequencyTable(
+          activeVarName || 'Variable Muestral',
+          activeUnit || 'u',
+          parsedNumeric,
+          customParams
+        );
+        setGroupedResult(grouped);
+      }
     } catch (err: any) {
       console.error('Calculation error:', err);
       setErrorMessage(err.message || 'Ocurrió un error al procesar los datos estadísticos.');
     }
-  }, [rawInput, variableName, unit, rango, kValue, amplitud]);
+  }, [rawInput, variableName, unit, variableType, rango, kValue, amplitud]);
 
   // Ejecutar cálculo inicial
   useEffect(() => {
@@ -133,6 +146,8 @@ export default function HomePage() {
                 amplitud={amplitud}
                 setAmplitud={setAmplitud}
                 mode="simple"
+                variableType={variableType}
+                setVariableType={setVariableType}
                 onCalculateWithValues={handleCalculate}
               />
 

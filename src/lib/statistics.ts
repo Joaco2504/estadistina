@@ -18,15 +18,14 @@ export function roundTo(val: number, decimals: number = 2): number {
 }
 
 /**
- * Parsea un string de datos en bruto separados por punto y coma (;), comas o espacios.
+ * Parsea un string de datos numéricos en bruto
  */
 export function parseRawDataString(input: string): number[] {
   if (!input || !input.trim()) return [];
 
-  // Soporta separadores: punto y coma, comas seguidas de espacios, saltos de línea o tabulaciones
   const tokens = input
     .replace(/;/g, ' ')
-    .replace(/,/g, '.') // Convertir coma decimal a punto
+    .replace(/,/g, '.')
     .split(/[\s\n\t]+/)
     .map((t) => t.trim())
     .filter((t) => t.length > 0);
@@ -40,6 +39,34 @@ export function parseRawDataString(input: string): number[] {
   }
 
   return numbers;
+}
+
+/**
+ * Parsea un string de datos tanto cualitativos (texto) como cuantitativos
+ */
+export function parseAnyDataString(input: string): (number | string)[] {
+  if (!input || !input.trim()) return [];
+
+  // Dividir principalmente por punto y coma, salto de línea o coma (si no es decimal)
+  const rawTokens = input
+    .split(/;|\n/)
+    .map((t) => t.trim())
+    .filter((t) => t.length > 0);
+
+  // Si solo hay un bloque sin punto y coma, intentar separar por comas
+  const tokens = rawTokens.length === 1 && rawTokens[0].includes(',')
+    ? rawTokens[0].split(',').map((t) => t.trim()).filter((t) => t.length > 0)
+    : rawTokens;
+
+  return tokens.map((token) => {
+    // Verificar si es puramente numérico
+    const normalizedNumStr = token.replace(/,/g, '.');
+    const num = parseFloat(normalizedNumStr);
+    if (!isNaN(num) && isFinite(num) && /^-?\d+(\.\d+)?$/.test(normalizedNumStr)) {
+      return num;
+    }
+    return token;
+  });
 }
 
 /**
@@ -101,12 +128,10 @@ export function calculateIntervalParameters(
     };
   }
 
-  // REGLA DE LA RAÍZ CUADRADA: k = round(sqrt(n)) o ceil(sqrt(n))
   const kCalculado = kRoundingMode === 'ceil' 
     ? Math.max(1, Math.ceil(sqrtN))
     : Math.max(1, Math.round(sqrtN));
   
-  // Amplitud: A = R / k
   let rawAmplitud = naturalRango / kCalculado;
   if (rawAmplitud === 0) rawAmplitud = 1;
   
@@ -126,7 +151,6 @@ export function calculateIntervalParameters(
 
 /**
  * MÓDULO 1: Generación de Tabla de Frecuencias Agrupadas
- * Columnas: I, Mc, fa, fr, p, Fa, Fr, P
  */
 export function generateGroupedFrequencyTable(
   variableName: string,
@@ -156,10 +180,8 @@ export function generateGroupedFrequencyTable(
     const lower = roundTo(currentLower, params.precision);
     const upper = roundTo(lower + params.amplitud, params.precision);
 
-    // Marca de clase: Mc = (Li + Ls) / 2
     const mc = roundTo((lower + upper) / 2, params.precision + 1);
 
-    // Conteo de frecuencia absoluta
     let fa = 0;
     for (const val of sortedValues) {
       if (isLast) {
@@ -169,12 +191,9 @@ export function generateGroupedFrequencyTable(
       }
     }
 
-    // Frecuencia relativa: fr = fa / n
     const fr = roundTo(fa / n, 4);
-    // Porcentaje: p = fr * 100
     const p = roundTo(fr * 100, 2);
 
-    // Acumulados
     accumulatedFa += fa;
     accumulatedFr = roundTo(accumulatedFa / n, 4);
     accumulatedP = roundTo(accumulatedFr * 100, 2);
@@ -183,9 +202,9 @@ export function generateGroupedFrequencyTable(
       ? `[${lower} - ${upper}]`
       : `[${lower} - ${upper})`;
 
-    // Fórmulas pedagógicas individuales para el paso a paso
     const stepExplanations = {
       mc: `Mc_${i} = \\frac{${lower} + ${upper}}{2} = ${mc}`,
+      fa: `fa_${i} = ${fa}`,
       fr: `fr_${i} = \\frac{fa_${i}}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
       p: `p_${i} = fr_${i} \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
       faAcum: i === 1 
@@ -218,7 +237,6 @@ export function generateGroupedFrequencyTable(
     currentLower = upper;
   }
 
-  // Suma total sin usar el símbolo sigma
   let totalFa = 0;
   let totalFr = 0;
   let totalP = 0;
@@ -255,33 +273,46 @@ export function generateGroupedFrequencyTable(
       totalFa: totalFa,
       totalFr: roundTo(totalFr, 4),
       totalP: roundTo(totalP, 2),
-      label: 'Suma total', // Estricto: sin símbolo sigma
+      label: 'Suma total',
     },
     stepByStepDerivation,
   };
 }
 
 /**
- * MÓDULO 2: Generación de Tabla de Frecuencias Simples
+ * MÓDULO 2: Generación de Tabla de Frecuencias Simples (Cuantitativas y Cualitativas)
  */
 export function generateSimpleFrequencyTable(
   variableName: string,
   unit: string,
-  rawValues: number[]
+  rawValues: (number | string)[],
+  variableType: 'quantitative' | 'qualitative' = 'quantitative'
 ): SimpleFrequencyTableResult {
-  const sortedValues = [...rawValues].sort((a, b) => a - b);
-  const n = sortedValues.length;
+  const n = rawValues.length;
 
   if (n === 0) {
     throw new Error('El conjunto de datos no puede estar vacío.');
   }
 
-  const frequencyMap = new Map<number, number>();
-  for (const val of sortedValues) {
-    frequencyMap.set(val, (frequencyMap.get(val) || 0) + 1);
+  // Conteo de frecuencias
+  const frequencyMap = new Map<string | number, number>();
+  const orderArray: (string | number)[] = [];
+
+  for (const val of rawValues) {
+    const key = typeof val === 'number' ? val : String(val).trim();
+    if (!frequencyMap.has(key)) {
+      frequencyMap.set(key, 0);
+      orderArray.push(key);
+    }
+    frequencyMap.set(key, (frequencyMap.get(key) || 0) + 1);
   }
 
-  const uniqueValues = Array.from(frequencyMap.keys()).sort((a, b) => a - b);
+  // Ordenar: si es cuantitativo, numéricamente. Si es cualitativo, preservar orden de aparición o alfabético.
+  let sortedKeys = [...orderArray];
+  if (variableType === 'quantitative' && sortedKeys.every(k => typeof k === 'number')) {
+    sortedKeys = (sortedKeys as number[]).sort((a, b) => a - b);
+  }
+
   const rows: SimpleFrequencyRow[] = [];
 
   let accumulatedFa = 0;
@@ -289,7 +320,7 @@ export function generateSimpleFrequencyTable(
   let accumulatedP = 0;
   let index = 1;
 
-  for (const val of uniqueValues) {
+  for (const val of sortedKeys) {
     const fa = frequencyMap.get(val) || 0;
     const fr = roundTo(fa / n, 4);
     const p = roundTo(fr * 100, 2);
@@ -298,7 +329,10 @@ export function generateSimpleFrequencyTable(
     accumulatedFr = roundTo(accumulatedFa / n, 4);
     accumulatedP = roundTo(accumulatedFr * 100, 2);
 
+    const valLabel = String(val);
+
     const stepExplanations = {
+      fa: `fa_${index} = ${fa}`,
       fr: `fr_${index} = \\frac{fa_${index}}{n} = \\frac{${fa}}{${n}} = ${fr.toFixed(4)}`,
       p: `p_${index} = fr_${index} \\cdot 100 = ${fr.toFixed(4)} \\cdot 100 = ${p.toFixed(2)}\\%`,
       faAcum: index === 1
@@ -339,14 +373,15 @@ export function generateSimpleFrequencyTable(
 
   return {
     variableName,
-    unit,
+    unit: unit || (variableType === 'qualitative' ? 'Casos' : 'u'),
     sampleSize: n,
+    variableType,
     rows,
     totals: {
       totalFa: totalFa,
       totalFr: roundTo(totalFr, 4),
       totalP: roundTo(totalP, 2),
-      label: 'Suma total', // Estricto: sin símbolo sigma
+      label: 'Suma total',
     },
   };
 }
@@ -442,17 +477,121 @@ export function generateContingencyTable(
 }
 
 /**
- * 16 CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE
+ * CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE (CUANTITATIVOS Y CUALITATIVOS)
  */
 export const SAFETY_PRESETS: SafetyPreset[] = [
-  // --- FRECUENCIAS AGRUPADAS ---
+  // --- FRECUENCIAS SIMPLES: CUALITATIVAS (NUEVAS) ---
+  {
+    id: 'cualitativa-lesiones',
+    title: 'Tipo de Lesión más Frecuente en Planta',
+    category: 'Siniestralidad y Medicina',
+    variableName: 'Naturaleza de la Lesión',
+    unit: 'Casos registrados',
+    variableType: 'qualitative',
+    description: 'Distribución de frecuencias cualitativas nominales de traumatismos y lesiones en operarios metalúrgicos.',
+    sampleSize: 24,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      'Corte en manos', 'Contusión', 'Quemadura térmica', 'Corte en manos', 'Esguince', 
+      'Corte en manos', 'Contusión', 'Fractura', 'Quemadura térmica', 'Corte en manos',
+      'Esguince', 'Contusión', 'Corte en manos', 'Quemadura térmica', 'Contusión',
+      'Corte en manos', 'Esguince', 'Corte en manos', 'Contusión', 'Corte en manos',
+      'Quemadura térmica', 'Esguince', 'Contusión', 'Corte en manos'
+    ],
+  },
+  {
+    id: 'cualitativa-epp-estado',
+    title: 'Estado del Equipo de Protección (EPP)',
+    category: 'Seguridad Operativa',
+    variableName: 'Condición Operativa del EPP',
+    unit: 'Elementos inspeccionados',
+    variableType: 'qualitative',
+    description: 'Auditoría cualitativa ordinal de elementos de protección personal (cascos, guantes, calzado).',
+    sampleSize: 20,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      'Excelente', 'Bueno', 'Bueno', 'Regular', 'Excelente',
+      'Bueno', 'Deteriorado', 'Bueno', 'Regular', 'Excelente',
+      'Bueno', 'Bueno', 'Deteriorado', 'Regular', 'Excelente',
+      'Bueno', 'Bueno', 'Regular', 'Excelente', 'Bueno'
+    ],
+  },
+  {
+    id: 'cualitativa-riesgo-ergo',
+    title: 'Nivel de Riesgo Ergonómico en Puestos',
+    category: 'Ergonomía Laboral',
+    variableName: 'Nivel de Riesgo (Método RULA)',
+    unit: 'Puestos evaluados',
+    variableType: 'qualitative',
+    description: 'Clasificación cualitativa ordinal de posturas forzadas en líneas de producción.',
+    sampleSize: 22,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      'Riesgo Bajo', 'Riesgo Moderado', 'Riesgo Alto', 'Riesgo Moderado', 'Riesgo Bajo',
+      'Riesgo Crítico', 'Riesgo Alto', 'Riesgo Moderado', 'Riesgo Bajo', 'Riesgo Alto',
+      'Riesgo Moderado', 'Riesgo Crítico', 'Riesgo Moderado', 'Riesgo Alto', 'Riesgo Bajo',
+      'Riesgo Moderado', 'Riesgo Alto', 'Riesgo Bajo', 'Riesgo Moderado', 'Riesgo Alto',
+      'Riesgo Moderado', 'Riesgo Bajo'
+    ],
+  },
+
+  // --- FRECUENCIAS SIMPLES: CUANTITATIVAS ---
+  {
+    id: 'dias-baja',
+    title: 'Días de Licencia por Accidente',
+    category: 'Costos y Siniestralidad',
+    variableName: 'Jornadas de Trabajo Perdidas',
+    unit: 'Días corridos',
+    variableType: 'quantitative',
+    description: 'Días de inactividad laboral ocasionados por accidentes para el cálculo de Índice de Gravedad.',
+    sampleSize: 20,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      0, 2, 5, 0, 14, 3, 0, 21, 7, 0, 
+      1, 4, 10, 0, 8, 15, 2, 0, 6, 12
+    ],
+  },
+  {
+    id: 'incidentes-mes',
+    title: 'Incidentes Mensuales por Sector',
+    category: 'Siniestralidad',
+    variableName: 'Conteo de Cuasi-Accidentes Mensuales',
+    unit: 'Incidentes',
+    variableType: 'quantitative',
+    description: 'Registro de desvíos y eventos sin lesión reportados en planta.',
+    sampleSize: 25,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      1, 0, 3, 2, 0, 4, 1, 2, 0, 1, 
+      3, 5, 2, 1, 0, 2, 4, 1, 3, 0, 
+      2, 1, 0, 3, 2
+    ],
+  },
+  {
+    id: 'auditorias-5s',
+    title: 'Puntaje de Auditoría 5S',
+    category: 'Prevención Operativa',
+    variableName: 'Calificación de Orden y Limpieza',
+    unit: 'Puntos (1-10)',
+    variableType: 'quantitative',
+    description: 'Calificaciones mensuales de orden y limpieza en células de trabajo.',
+    sampleSize: 24,
+    recommendedType: 'simple',
+    dataGenerator: () => [
+      7, 8, 6, 9, 8, 7, 10, 6, 8, 9, 
+      7, 8, 5, 9, 8, 10, 7, 6, 8, 9, 
+      8, 7, 9, 10
+    ],
+  },
+
+  // --- FRECUENCIAS AGRUPADAS: CUANTITATIVAS ---
   {
     id: 'ruido-db',
     title: 'Niveles de Ruido en Taller Metalúrgico',
     category: 'Higiene Industrial',
     variableName: 'Nivel Sonoro Continuo Equivalente',
     unit: 'dBA',
-    description: 'Mediciones de exposición sonora ocupacional con sonómetro integrador para contrastar con el límite legal de 85 dBA (Res. 295/03 Anexo V).',
+    description: 'Mediciones de exposición sonora ocupacional con sonómetro integrador (Límite legal: 85 dBA).',
     sampleSize: 25,
     recommendedType: 'grouped',
     dataGenerator: () => [
@@ -532,81 +671,6 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     dataGenerator: () => [
       0.8, 1.4, 2.1, 3.5, 4.2, 1.8, 2.9, 3.1, 5.0, 2.4,
       1.1, 2.7, 3.8, 4.6, 1.9, 3.0, 2.2, 4.0, 1.5, 3.3, 4.8, 2.6
-    ],
-  },
-  {
-    id: 'carga-manual',
-    title: 'Peso en Levantamiento Manual',
-    category: 'Ergonomía Laboral',
-    variableName: 'Masa de Bultos Manipulados',
-    unit: 'kg',
-    description: 'Pesaje de cargas manipuladas manualmente por estibadores (Ecuación NIOSH / Res. 295/03).',
-    sampleSize: 26,
-    recommendedType: 'grouped',
-    dataGenerator: () => [
-      12.5, 15.0, 18.2, 22.0, 24.5, 14.0, 16.8, 19.5, 23.1, 25.0,
-      13.2, 17.4, 20.0, 21.5, 24.8, 15.5, 18.0, 22.4, 25.0, 14.8,
-      16.2, 19.1, 23.8, 13.9, 17.0, 20.5
-    ],
-  },
-
-  // --- FRECUENCIAS SIMPLES ---
-  {
-    id: 'dias-baja',
-    title: 'Días de Licencia por Accidente',
-    category: 'Costos y Siniestralidad',
-    variableName: 'Jornadas de Trabajo Perdidas',
-    unit: 'Días corridos',
-    description: 'Días de inactividad laboral ocasionados por accidentes para el cálculo de Índice de Gravedad.',
-    sampleSize: 20,
-    recommendedType: 'simple',
-    dataGenerator: () => [
-      0, 2, 5, 0, 14, 3, 0, 21, 7, 0, 
-      1, 4, 10, 0, 8, 15, 2, 0, 6, 12
-    ],
-  },
-  {
-    id: 'incidentes-mes',
-    title: 'Incidentes Mensuales por Sector',
-    category: 'Siniestralidad',
-    variableName: 'Conteo de Cuasi-Accidentes Mensuales',
-    unit: 'Incidentes',
-    description: 'Registro de desvíos y eventos sin lesión reportados por los delegados de seguridad.',
-    sampleSize: 25,
-    recommendedType: 'simple',
-    dataGenerator: () => [
-      1, 0, 3, 2, 0, 4, 1, 2, 0, 1, 
-      3, 5, 2, 1, 0, 2, 4, 1, 3, 0, 
-      2, 1, 0, 3, 2
-    ],
-  },
-  {
-    id: 'auditorias-5s',
-    title: 'Puntaje de Auditoría 5S',
-    category: 'Prevención Operativa',
-    variableName: 'Calificación de Orden y Limpieza',
-    unit: 'Puntos (1-10)',
-    description: 'Calificaciones mensuales de orden y limpieza en células de trabajo.',
-    sampleSize: 24,
-    recommendedType: 'simple',
-    dataGenerator: () => [
-      7, 8, 6, 9, 8, 7, 10, 6, 8, 9, 
-      7, 8, 5, 9, 8, 10, 7, 6, 8, 9, 
-      8, 7, 9, 10
-    ],
-  },
-  {
-    id: 'simulacros-anuales',
-    title: 'Simulacros de Evacuación Realizados',
-    category: 'Planes de Emergencia',
-    variableName: 'Ejercicios de Evacuación por Planta',
-    unit: 'Simulacros/Año',
-    description: 'Conteo anual de ejercicios prácticos de rol de emergencias y evacuación.',
-    sampleSize: 20,
-    recommendedType: 'simple',
-    dataGenerator: () => [
-      1, 2, 2, 3, 1, 4, 2, 3, 1, 2, 
-      3, 2, 1, 4, 2, 3, 2, 1, 3, 2
     ],
   },
 
@@ -698,6 +762,98 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
         for (const e of estados) {
           const count = counts[t][e];
           for (let i = 0; i < count; i++) data.push({ x: t, y: e });
+        }
+      }
+      return data;
+    },
+  },
+  // --- 3 NUEVOS EJEMPLOS BIVARIADOS SOLICITADOS ---
+  {
+    id: 'contingencia-lesion-cuerpo',
+    title: 'Naturaleza de Lesión vs. Zona Corporal Afectada',
+    category: 'Medicina Laboral y Traumatología',
+    variableName: 'Tipo de Lesión vs. Zona del Cuerpo',
+    unit: 'Casos clínicos',
+    description: 'Registro de accidentes cruzando el tipo de lesión con la parte anatómica afectada.',
+    sampleSize: 48,
+    recommendedType: 'contingency',
+    defaultXName: 'Tipo de Lesión Ocurrida',
+    defaultYName: 'Zona Corporal Afectada',
+    dataGenerator: () => [],
+    bivariateDataGenerator: () => {
+      const data: { x: string; y: string }[] = [];
+      const lesiones = ['Corte / Laceración', 'Contusión / Golpe', 'Quemadura', 'Esguince'];
+      const zonas = ['Manos y Dedos', 'Ojos y Rostro', 'Espalda / Columna', 'Miembros Inferiores'];
+      const counts: Record<string, Record<string, number>> = {
+        'Corte / Laceración': { 'Manos y Dedos': 14, 'Ojos y Rostro': 2, 'Espalda / Columna': 0, 'Miembros Inferiores': 3 },
+        'Contusión / Golpe': { 'Manos y Dedos': 6, 'Ojos y Rostro': 1, 'Espalda / Columna': 4, 'Miembros Inferiores': 5 },
+        'Quemadura': { 'Manos y Dedos': 4, 'Ojos y Rostro': 3, 'Espalda / Columna': 0, 'Miembros Inferiores': 1 },
+        'Esguince': { 'Manos y Dedos': 1, 'Ojos y Rostro': 0, 'Espalda / Columna': 3, 'Miembros Inferiores': 1 },
+      };
+      for (const l of lesiones) {
+        for (const z of zonas) {
+          const count = counts[l][z];
+          for (let i = 0; i < count; i++) data.push({ x: l, y: z });
+        }
+      }
+      return data;
+    },
+  },
+  {
+    id: 'contingencia-antiguedad-desvios',
+    title: 'Antigüedad Laboral vs. Tipo de Acto Inseguro',
+    category: 'Psicología y Comportamiento Seguro',
+    variableName: 'Experiencia vs. Acto Inseguro',
+    unit: 'Observaciones preventivas',
+    description: 'Estudio de conducta laboral contrastando la experiencia del operario con el desvío cometido.',
+    sampleSize: 42,
+    recommendedType: 'contingency',
+    defaultXName: 'Antigüedad del Trabajador',
+    defaultYName: 'Tipo de Acto Inseguro Detectado',
+    dataGenerator: () => [],
+    bivariateDataGenerator: () => {
+      const data: { x: string; y: string }[] = [];
+      const antiguedades = ['< 1 Año (Ingresante)', '1 a 5 Años (Intermedio)', '> 5 Años (Experimentado)'];
+      const actos = ['Omisión de EPP', 'Uso Indebido de Herramienta', 'Exceso de Confianza', 'Operación a Velocidad Insegura'];
+      const counts: Record<string, Record<string, number>> = {
+        '< 1 Año (Ingresante)': { 'Omisión de EPP': 8, 'Uso Indebido de Herramienta': 6, 'Exceso de Confianza': 1, 'Operación a Velocidad Insegura': 2 },
+        '1 a 5 Años (Intermedio)': { 'Omisión de EPP': 4, 'Uso Indebido de Herramienta': 3, 'Exceso de Confianza': 4, 'Operación a Velocidad Insegura': 3 },
+        '> 5 Años (Experimentado)': { 'Omisión de EPP': 2, 'Uso Indebido de Herramienta': 1, 'Exceso de Confianza': 6, 'Operación a Velocidad Insegura': 2 },
+      };
+      for (const a of antiguedades) {
+        for (const act of actos) {
+          const count = counts[a][act];
+          for (let i = 0; i < count; i++) data.push({ x: a, y: act });
+        }
+      }
+      return data;
+    },
+  },
+  {
+    id: 'contingencia-ruido-proteccion',
+    title: 'Nivel Sonoro del Área vs. Uso de Protección Auditiva',
+    category: 'Higiene y Salud Auditiva',
+    variableName: 'Nivel Sonoro vs. Adhesión a Protector',
+    unit: 'Operarios auditados',
+    description: 'Evaluación higiénica del cumplimiento de uso de protectores auditivos según el nivel de decibeles del área.',
+    sampleSize: 40,
+    recommendedType: 'contingency',
+    defaultXName: 'Nivel de Ruido en el Sector',
+    defaultYName: 'Uso de Protección Auditiva',
+    dataGenerator: () => [],
+    bivariateDataGenerator: () => {
+      const data: { x: string; y: string }[] = [];
+      const niveles = ['Alto Riesgo (>85 dBA)', 'Riesgo Moderado (80-85 dBA)', 'Área Confort (<80 dBA)'];
+      const usos = ['Uso Continuo y Correcto', 'Uso Intermitente', 'No Utiliza'];
+      const counts: Record<string, Record<string, number>> = {
+        'Alto Riesgo (>85 dBA)': { 'Uso Continuo y Correcto': 12, 'Uso Intermitente': 3, 'No Utiliza': 1 },
+        'Riesgo Moderado (80-85 dBA)': { 'Uso Continuo y Correcto': 6, 'Uso Intermitente': 7, 'No Utiliza': 2 },
+        'Área Confort (<80 dBA)': { 'Uso Continuo y Correcto': 1, 'Uso Intermitente': 2, 'No Utiliza': 6 },
+      };
+      for (const n of niveles) {
+        for (const u of usos) {
+          const count = counts[n][u];
+          for (let i = 0; i < count; i++) data.push({ x: n, y: u });
         }
       }
       return data;

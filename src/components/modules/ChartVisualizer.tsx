@@ -27,21 +27,25 @@ import {
   Activity
 } from 'lucide-react';
 
-const CHART_COLORS = [
-  '#1B8A5A', // Verde Seguridad
-  '#0F2942', // Azul Marino
-  '#E67E22', // Ámbar
+// Paleta de colores vibrante, moderna y accesible para Higiene y Seguridad
+const DYNAMIC_CHART_COLORS = [
+  '#1B8A5A', // Verde Seguridad Primario
+  '#0F2942', // Azul Marino Técnico
+  '#E67E22', // Ámbar Alerta
   '#3B82F6', // Azul Eléctrico
-  '#8B5CF6', // Púrpura
+  '#8B5CF6', // Púrpura Radiación
   '#EC4899', // Rosa
   '#14B8A6', // Turquesa
-  '#F59E0B', // Amarillo
+  '#F59E0B', // Amarillo Precaución
   '#6366F1', // Índigo
+  '#10B981', // Verde Esmeralda
+  '#06B6D4', // Cian
+  '#F97316', // Naranja Industrial
 ];
 
 /* -------------------------------------------------------------------------- */
-/* 1. VISUALIZADOR DE FRECUENCIAS AGRUPADAS MULTI-TIPO                        */
-/* (Histograma, Polígono de Frecuencias, Circular/Torta, Ojiva Acumulada)    */
+/* 1. VISUALIZADOR DE DATOS AGRUPADOS MULTI-TIPO                              */
+/* (Histograma, Polígono, Circular/Torta, Ojiva)                              */
 /* -------------------------------------------------------------------------- */
 interface GroupedChartProps {
   title: string;
@@ -52,7 +56,7 @@ interface GroupedChartProps {
     marcaDeClase: number;
     fa: number;
     p: number;
-    Fa?: number;
+    Fa: number;
   }[];
 }
 
@@ -69,33 +73,29 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
     setIsMounted(true);
   }, []);
 
-  // Preparar datos para Ojiva (calculando acumulado si no viene)
-  let runningFa = 0;
-  const enrichedData = data.map((d) => {
-    runningFa += d.fa;
-    return {
-      ...d,
-      Fa: d.Fa !== undefined ? d.Fa : runningFa,
-    };
-  });
+  const dynamicYLabel = yLabel && yLabel !== 'Frecuencia Absoluta (fa)'
+    ? yLabel
+    : chartType === 'ogive'
+    ? 'Total Acumulado de Casos (Fa)'
+    : 'Cantidad de Observaciones Registradas';
 
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 mt-6">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
       {/* Barra de Control de Tipo de Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-[#0F2942] uppercase tracking-wide">
             {title}
           </h3>
           <p className="text-xs text-slate-500">
             {chartType === 'histogram' && 'Histograma de Frecuencias por Intervalo de Clase'}
-            {chartType === 'polygon' && 'Polígono de Frecuencias (Marcas de Clase)'}
+            {chartType === 'polygon' && 'Polígono de Frecuencias (Marcas de Clase Mc)'}
             {chartType === 'pie' && 'Distribución Porcentual Relativa (Torta %)'}
-            {chartType === 'ogive' && 'Ojiva de Frecuencias Absolutas Acumuladas (Fa)'}
+            {chartType === 'ogive' && 'Ojiva de Frecuencias Acumuladas (Fa)'}
           </p>
         </div>
 
-        {/* Selector de Pestañas de Gráficos */}
+        {/* Selector de Pestañas de Gráficos con Scroll Horizontal */}
         <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
@@ -163,7 +163,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {chartType === 'histogram' && (
               <BarChart
                 data={data}
-                margin={{ top: 15, right: 25, left: 15, bottom: 20 }}
+                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
                 barCategoryGap={0}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -173,33 +173,36 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   label={{
                     value: xLabel,
                     position: 'insideBottom',
-                    offset: -12,
+                    offset: -15,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: yLabel,
+                    value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 0,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                   allowDecimals={false}
                 />
                 <Tooltip
-                  formatter={(val: any) => [`${val} observaciones`, 'Frecuencia Absoluta (fa)']}
+                  formatter={(val: any) => [`${val} observaciones`, 'Conteo Registrado (fa)']}
                   labelFormatter={(lbl: any) => `Intervalo: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                 />
-                <Bar dataKey="fa" name="Frecuencia (fa)" fill="#1B8A5A" stroke="#0F2942" strokeWidth={1}>
+                <Bar dataKey="fa" name="Observaciones Registradas" stroke="#0F2942" strokeWidth={1}>
                   {data.map((_, idx) => (
-                    <Cell key={`hist-cell-${idx}`} fill={idx % 2 === 0 ? '#1B8A5A' : '#22A36B'} />
+                    <Cell 
+                      key={`hist-cell-${idx}`} 
+                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                    />
                   ))}
                 </Bar>
               </BarChart>
@@ -209,8 +212,14 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {chartType === 'polygon' && (
               <AreaChart
                 data={data}
-                margin={{ top: 15, right: 25, left: 15, bottom: 20 }}
+                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
               >
+                <defs>
+                  <linearGradient id="polyGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#1B8A5A" stopOpacity={0.7}/>
+                    <stop offset="95%" stopColor="#1B8A5A" stopOpacity={0.05}/>
+                  </linearGradient>
+                </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
                   dataKey="marcaDeClase"
@@ -218,60 +227,56 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   label={{
                     value: `Marca de Clase (Mc) [${xLabel}]`,
                     position: 'insideBottom',
-                    offset: -12,
+                    offset: -15,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: yLabel,
+                    value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 0,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                   allowDecimals={false}
                 />
                 <Tooltip
-                  formatter={(val: any) => [`${val} casos`, 'Frecuencia (fa)']}
+                  formatter={(val: any) => [`${val} observaciones`, 'Conteo Registrado (fa)']}
                   labelFormatter={(lbl: any) => `Marca de Clase (Mc): ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
                 />
                 <Area
                   type="monotone"
                   dataKey="fa"
-                  name="Frecuencia Absoluta (fa)"
+                  name="Conteo de Casos"
                   stroke="#1B8A5A"
-                  fill="#1B8A5A"
-                  fillOpacity={0.25}
-                  strokeWidth={2.5}
-                  dot={{ r: 4, fill: '#1B8A5A', stroke: '#FFF', strokeWidth: 2 }}
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#polyGradient)"
                 />
               </AreaChart>
             )}
 
-            {/* 3. GRÁFICO CIRCULAR (TORTA) */}
+            {/* 3. GRÁFICO CIRCULAR (TORTA %) */}
             {chartType === 'pie' && (
-              <PieChart margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+              <PieChart>
                 <Tooltip
                   formatter={(val: any, name: any, item: any) => [
-                    `${Number(val).toFixed(2)}% (${item.payload.fa} casos)`,
-                    item.payload.intervalLabel,
+                    `${val}% (${item.payload.fa} observaciones)`,
+                    'Porcentaje Relativo'
                   ]}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
                 />
-                <Legend
-                  formatter={(val: any, entry: any) => (
-                    <span className="text-xs text-slate-700 font-medium">
-                      {entry.payload.intervalLabel} ({Number(entry.payload.p).toFixed(1)}%)
-                    </span>
-                  )}
-                  wrapperStyle={{ fontSize: '12px' }}
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  formatter={(value: string) => <span className="text-xs font-medium text-slate-700">{value}</span>}
                 />
                 <Pie
                   data={data}
@@ -279,13 +284,17 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   nameKey="intervalLabel"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
+                  outerRadius={95}
                   innerRadius={35}
-                  paddingAngle={2}
-                  label={(props: any) => `${Number(props.percent !== undefined ? props.percent * 100 : props.value || 0).toFixed(1)}%`}
+                  paddingAngle={3}
+                  label={(props: any) => `${Number(props.percent ? props.percent * 100 : props.value || 0).toFixed(1)}%`}
+                  labelLine={false}
                 >
                   {data.map((_, idx) => (
-                    <Cell key={`pie-cell-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                    <Cell 
+                      key={`pie-cell-${idx}`} 
+                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                    />
                   ))}
                 </Pie>
               </PieChart>
@@ -294,8 +303,8 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             {/* 4. OJIVA (FRECUENCIAS ACUMULADAS) */}
             {chartType === 'ogive' && (
               <LineChart
-                data={enrichedData}
-                margin={{ top: 15, right: 25, left: 15, bottom: 20 }}
+                data={data}
+                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
@@ -304,21 +313,21 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   label={{
                     value: xLabel,
                     position: 'insideBottom',
-                    offset: -12,
+                    offset: -15,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: 'Frecuencia Acumulada (Fa)',
+                    value: 'Total Acumulado de Casos (Fa)',
                     angle: -90,
                     position: 'insideLeft',
                     offset: 0,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                   allowDecimals={false}
@@ -326,37 +335,37 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 <Tooltip
                   formatter={(val: any) => [`${val} casos acumulados`, 'Frec. Acumulada (Fa)']}
                   labelFormatter={(lbl: any) => `Intervalo: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
                 />
                 <Line
                   type="monotone"
                   dataKey="Fa"
                   name="Frecuencia Acumulada (Fa)"
                   stroke="#E67E22"
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: '#E67E22', stroke: '#FFF', strokeWidth: 2 }}
+                  strokeWidth={3.5}
+                  dot={{ r: 6, fill: '#E67E22', stroke: '#FFF', strokeWidth: 2 }}
                 />
               </LineChart>
             )}
           </ResponsiveContainer>
         ) : (
           <div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-xl">
-            <span className="text-xs text-slate-400">Cargando gráfico...</span>
+            <span className="text-xs text-slate-400">Cargando gráfico estadístico...</span>
           </div>
         )}
       </div>
 
-      {/* Pie Institucional Estricto */}
+      {/* Pie Institucional */}
       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
-        <span className="font-mono text-[11px] text-slate-400">Gráfico Interactivo</span>
+        <span className="font-mono text-[11px] text-slate-400">Visualización Dinámica</span>
       </div>
     </div>
   );
 };
 
 /* -------------------------------------------------------------------------- */
-/* 2. VISUALIZADOR DE FRECUENCIAS SIMPLES MULTI-TIPO                          */
+/* 2. VISUALIZADOR DE FRECUENCIAS SIMPLES (Cuantitativas y Cualitativas)      */
 /* (Barras, Circular/Torta, Líneas)                                          */
 /* -------------------------------------------------------------------------- */
 interface SimpleChartProps {
@@ -383,18 +392,22 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
     setIsMounted(true);
   }, []);
 
+  const dynamicYLabel = yLabel && yLabel !== 'Frecuencia Absoluta (fa)'
+    ? yLabel
+    : 'Cantidad de Casos Registrados';
+
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 mt-6">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
       {/* Barra de Control de Tipo de Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-[#0F2942] uppercase tracking-wide">
             {title}
           </h3>
           <p className="text-xs text-slate-500">
-            {chartType === 'bar' && 'Diagrama de Barras por Valor Individual'}
+            {chartType === 'bar' && 'Diagrama de Barras por Categoría / Valor'}
             {chartType === 'pie' && 'Distribución Porcentual (Torta %)'}
-            {chartType === 'line' && 'Gráfico de Líneas de Frecuencias'}
+            {chartType === 'line' && 'Gráfico de Tendencia de Frecuencias'}
           </p>
         </div>
 
@@ -445,9 +458,12 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
       <div className="h-72 sm:h-88 w-full min-h-[260px]">
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
-            {/* 1. BARRAS */}
+            {/* 1. BARRAS MULTICOLOR */}
             {chartType === 'bar' && (
-              <BarChart data={data} margin={{ top: 15, right: 25, left: 15, bottom: 20 }}>
+              <BarChart 
+                data={data} 
+                margin={{ top: 15, right: 25, left: 15, bottom: 25 }}
+              >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
                   dataKey="variableValue"
@@ -455,55 +471,59 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   label={{
                     value: xLabel,
                     position: 'insideBottom',
-                    offset: -12,
+                    offset: -15,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: yLabel,
+                    value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 0,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                   allowDecimals={false}
                 />
                 <Tooltip
-                  formatter={(val: any) => [`${val} observaciones`, 'Frecuencia (fa)']}
-                  labelFormatter={(lbl: any) => `Valor: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(val: any) => [`${val} casos`, 'Frecuencia Observada']}
+                  labelFormatter={(lbl: any) => `Categoría: ${lbl}`}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
                 />
-                <Bar dataKey="fa" name="Frecuencia (fa)" fill="#0F2942" radius={[4, 4, 0, 0]}>
+                <Bar 
+                  dataKey="fa" 
+                  name="Cantidad de Casos" 
+                  radius={[6, 6, 0, 0]}
+                >
                   {data.map((_, idx) => (
-                    <Cell key={`bar-cell-${idx}`} fill={idx % 2 === 0 ? '#0F2942' : '#1C4874'} />
+                    <Cell 
+                      key={`bar-cell-${idx}`} 
+                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                    />
                   ))}
                 </Bar>
               </BarChart>
             )}
 
-            {/* 2. CIRCULAR */}
+            {/* 2. CIRCULAR (TORTA %) */}
             {chartType === 'pie' && (
-              <PieChart margin={{ top: 10, right: 20, left: 20, bottom: 10 }}>
+              <PieChart>
                 <Tooltip
                   formatter={(val: any, name: any, item: any) => [
-                    `${Number(val).toFixed(2)}% (${item.payload.fa} casos)`,
-                    `Valor ${item.payload.variableValue}`,
+                    `${val}% (${item.payload.fa} casos)`,
+                    'Porcentaje Relativo'
                   ]}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
                 />
-                <Legend
-                  formatter={(val: any, entry: any) => (
-                    <span className="text-xs text-slate-700 font-medium">
-                      {entry.payload.variableValue} ({Number(entry.payload.p).toFixed(1)}%)
-                    </span>
-                  )}
-                  wrapperStyle={{ fontSize: '12px' }}
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  formatter={(value: string) => <span className="text-xs font-medium text-slate-700">{value}</span>}
                 />
                 <Pie
                   data={data}
@@ -511,13 +531,17 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   nameKey="variableValue"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
+                  outerRadius={95}
                   innerRadius={35}
-                  paddingAngle={2}
-                  label={(props: any) => `${Number(props.percent !== undefined ? props.percent * 100 : props.value || 0).toFixed(1)}%`}
+                  paddingAngle={3}
+                  label={(props: any) => `${Number(props.percent ? props.percent * 100 : props.value || 0).toFixed(1)}%`}
+                  labelLine={false}
                 >
                   {data.map((_, idx) => (
-                    <Cell key={`simple-pie-${idx}`} fill={CHART_COLORS[idx % CHART_COLORS.length]} />
+                    <Cell 
+                      key={`pie-simple-${idx}`} 
+                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                    />
                   ))}
                 </Pie>
               </PieChart>
@@ -525,7 +549,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 
             {/* 3. LÍNEAS */}
             {chartType === 'line' && (
-              <LineChart data={data} margin={{ top: 15, right: 25, left: 15, bottom: 20 }}>
+              <LineChart data={data} margin={{ top: 15, right: 25, left: 15, bottom: 25 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
                 <XAxis
                   dataKey="variableValue"
@@ -533,37 +557,37 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   label={{
                     value: xLabel,
                     position: 'insideBottom',
-                    offset: -12,
+                    offset: -15,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
                   tick={{ fontSize: 11, fill: '#475569' }}
                   label={{
-                    value: yLabel,
+                    value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 0,
                     fill: '#0F2942',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     fontSize: 11,
                   }}
                   allowDecimals={false}
                 />
                 <Tooltip
-                  formatter={(val: any) => [`${val} observaciones`, 'Frecuencia (fa)']}
-                  labelFormatter={(lbl: any) => `Valor: ${lbl}`}
-                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '8px', fontSize: '12px' }}
+                  formatter={(val: any) => [`${val} casos`, 'Frecuencia Observada']}
+                  labelFormatter={(lbl: any) => `Categoría: ${lbl}`}
+                  contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
                 />
                 <Line
                   type="monotone"
                   dataKey="fa"
-                  name="Frecuencia (fa)"
+                  name="Frecuencia Observada"
                   stroke="#1B8A5A"
-                  strokeWidth={3}
-                  dot={{ r: 5, fill: '#1B8A5A', stroke: '#FFF', strokeWidth: 2 }}
+                  strokeWidth={3.5}
+                  dot={{ r: 6, fill: '#1B8A5A', stroke: '#FFF', strokeWidth: 2 }}
                 />
               </LineChart>
             )}
@@ -575,7 +599,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
         )}
       </div>
 
-      {/* Pie Institucional Estricto */}
+      {/* Pie Institucional */}
       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
         <span className="font-mono text-[11px] text-slate-400">Diagrama Estadístico</span>
@@ -612,10 +636,14 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
     setIsMounted(true);
   }, []);
 
+  const dynamicYLabel = yLabel && yLabel !== 'Frecuencia Conjunta (fa)'
+    ? yLabel
+    : 'Cantidad de Casos Conjuntos';
+
   return (
-    <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm border border-slate-200 mt-6">
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
       {/* Barra de Control de Tipo de Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
         <div>
           <h3 className="text-sm sm:text-base font-bold text-[#0F2942] uppercase tracking-wide">
             {title}
@@ -661,7 +689,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
       <div className="h-72 sm:h-88 w-full min-h-[260px]">
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 15, right: 25, left: 15, bottom: 20 }}>
+            <BarChart data={chartData} margin={{ top: 15, right: 25, left: 15, bottom: 25 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
               <XAxis
                 dataKey="categoryX"
@@ -669,44 +697,43 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
                 label={{
                   value: xLabel,
                   position: 'insideBottom',
-                  offset: -12,
+                  offset: -15,
                   fill: '#0F2942',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: 11,
                 }}
               />
               <YAxis
                 tick={{ fontSize: 11, fill: '#475569' }}
                 label={{
-                  value: yLabel,
+                  value: dynamicYLabel,
                   angle: -90,
                   position: 'insideLeft',
                   offset: 0,
                   fill: '#0F2942',
-                  fontWeight: 600,
+                  fontWeight: 700,
                   fontSize: 11,
                 }}
                 allowDecimals={false}
               />
               <Tooltip
-                contentStyle={{
-                  backgroundColor: '#0F2942',
-                  color: '#FFFFFF',
-                  borderRadius: '8px',
-                  border: 'none',
-                  fontSize: '12px',
-                }}
-                itemStyle={{ color: '#FFFFFF' }}
+                formatter={(val: any, name: any) => [`${val} casos`, name]}
+                contentStyle={{ backgroundColor: '#0F2942', color: '#FFF', borderRadius: '10px', fontSize: '12px' }}
               />
-              <Legend verticalAlign="top" align="right" wrapperStyle={{ paddingBottom: '10px', fontSize: '12px' }} />
+              <Legend 
+                verticalAlign="top" 
+                height={36} 
+                formatter={(value: string) => <span className="text-xs font-bold text-slate-700">{value}</span>}
+              />
+
               {categoriesY.map((catY, idx) => (
                 <Bar
                   key={catY}
-                  dataKey={(row: any) => Number(row[catY] ?? row[`col_${idx}`] ?? 0)}
+                  dataKey={(row: any) => Number(row[catY] ?? row['col_' + idx] ?? 0)}
                   name={catY}
-                  stackId={chartMode === 'stacked' ? 'a' : undefined}
-                  fill={CHART_COLORS[idx % CHART_COLORS.length]}
-                  radius={chartMode === 'stacked' ? [0, 0, 0, 0] : [4, 4, 0, 0]}
+                  fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]}
+                  stackId={chartMode === 'stacked' ? 'stack-a' : undefined}
+                  radius={chartMode === 'stacked' ? [0, 0, 0, 0] : [6, 6, 0, 0]}
                 />
               ))}
             </BarChart>
@@ -718,10 +745,10 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
         )}
       </div>
 
-      {/* Pie Institucional Estricto */}
+      {/* Pie Institucional */}
       <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
-        <span className="font-mono text-[11px] text-slate-400">Distribución de Frecuencias Bivariadas</span>
+        <span className="font-mono text-[11px] text-slate-400">Gráfico Bivariado</span>
       </div>
     </div>
   );

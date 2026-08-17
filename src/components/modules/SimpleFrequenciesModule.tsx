@@ -10,7 +10,9 @@ import {
   BarChart2, 
   Info,
   FileSpreadsheet,
-  Sparkles
+  Sparkles,
+  Tag,
+  Hash
 } from 'lucide-react';
 
 const SimpleBarVisualizer = dynamic(
@@ -33,7 +35,9 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
   data,
 }) => {
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(1);
-  const [hoveredStep, setHoveredStep] = useState<'fr' | 'p' | 'acum' | null>(null);
+  const [hoveredStep, setHoveredStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
+
+  const isQualitative = data.variableType === 'qualitative';
 
   const chartData = data.rows.map((row) => ({
     variableValue: row.variableValue,
@@ -47,7 +51,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
     <div className="space-y-6">
       {/* Encabezado y Tabla */}
       <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-        <div className="bg-[#0F2942] px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+        <div className="bg-[#0F2942] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             <BarChart2 className="w-4 h-4 text-[#1B8A5A]" />
             <h3 className="text-sm sm:text-base font-bold tracking-wide">
@@ -59,6 +63,15 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
           </div>
 
           <div className="flex items-center gap-2">
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
+              isQualitative 
+                ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' 
+                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
+            }`}>
+              {isQualitative ? <Tag className="w-3 h-3" /> : <Hash className="w-3 h-3" />}
+              <span>{isQualitative ? 'Variable Cualitativa' : 'Variable Cuantitativa'}</span>
+            </span>
+
             {/* BOTÓN EXPORTAR A EXCEL */}
             <button
               type="button"
@@ -69,10 +82,6 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               <FileSpreadsheet className="w-3.5 h-3.5" />
               <span>Exportar a Excel</span>
             </button>
-
-            <span className="text-xs font-mono bg-[#15385B] px-2.5 py-1 rounded text-slate-200 border border-[#1C4874] hidden sm:inline">
-              {data.rows.length} valores distintos
-            </span>
           </div>
         </div>
 
@@ -82,22 +91,22 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#E67E22]" />
               <span>
-                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow.frecuenciaRelativa.toFixed(4)}`}
-                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow.frecuenciaRelativa.toFixed(4)}) × 100 = ${selectedRow.porcentaje.toFixed(2)}%`}
-                {hoveredStep === 'acum' && `💡 Iluminando: Frecuencia Acumulada Fa = Suma de frecuencias anteriores (fa) hasta x_${selectedRow.index} = ${selectedRow.frecuenciaAbsolutaAcumulada}`}
+                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow?.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow?.frecuenciaRelativa.toFixed(4)}`}
+                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(4)}) × 100 = ${selectedRow?.porcentaje.toFixed(2)}%`}
+                {hoveredStep === 'acum' && `💡 Iluminando: Frecuencia Acumulada Fa = Suma de frecuencias anteriores (fa) hasta la fila ${selectedRow?.index} = ${selectedRow?.frecuenciaAbsolutaAcumulada}`}
               </span>
             </div>
             <span className="text-[11px] font-bold text-slate-500">Paso activo</span>
           </div>
         )}
 
-        {/* Tabla Didáctica con Iluminación en Tiempo Real */}
+        {/* Tabla Didáctica */}
         <div className="overflow-x-auto p-4">
           <table className="stat-table">
             <thead>
               <tr>
                 <th>N°</th>
-                <th>Variable (xi)</th>
+                <th>{isQualitative ? 'Categoría / Modalidad (xi)' : 'Valor de Variable (xi)'}</th>
                 <th className={hoveredStep === 'fr' || hoveredStep === 'acum' ? 'bg-emerald-100 text-emerald-950 font-bold' : ''}>
                   Frec. Absoluta (fa)
                 </th>
@@ -133,7 +142,9 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                     }`}
                   >
                     <td className="font-bold text-[#0F2942]">{row.index}</td>
-                    <td className="font-mono font-bold text-slate-800 text-sm">{row.variableValue}</td>
+                    <td className="font-bold text-slate-800 text-xs sm:text-sm">
+                      {row.variableValue}
+                    </td>
                     
                     {/* fa */}
                     <td className={`font-mono font-bold transition-colors ${
@@ -233,13 +244,16 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
           </table>
         </div>
 
-        {/* Desglose Pedagógico Paso a Paso con Iluminación Interactiva */}
+        {/* Desglose Pedagógico Paso a Paso */}
         {selectedRow && (
           <div className="border-t border-slate-200 bg-slate-50/80 p-4">
             <div className="flex items-center justify-between gap-2 mb-2.5">
               <div className="flex items-center gap-1.5 text-xs text-[#0F2942] font-bold">
                 <Info className="w-4 h-4 text-[#E67E22]" />
-                <span>Cálculo del Valor: <span className="font-mono text-[#1B8A5A]">x_{selectedRow.index} = {selectedRow.variableValue}</span></span>
+                <span>
+                  {isQualitative ? 'Cálculo de la Categoría' : 'Cálculo del Valor'}:{' '}
+                  <span className="font-bold text-[#1B8A5A]">{selectedRow.variableValue}</span>
+                </span>
               </div>
               <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
                 ✨ Pasa el mouse por cada tarjeta para iluminar sus celdas:
@@ -296,8 +310,8 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
       {/* Gráfico Estadístico Multi-Tipo */}
       <SimpleBarVisualizer
         title={`Gráfico Estadístico: ${data.variableName}`}
-        xLabel={`Valores de la Variable (${data.unit})`}
-        yLabel="Frecuencia Absoluta (fa)"
+        xLabel={isQualitative ? 'Categorías Observadas' : `Valores de la Variable (${data.unit})`}
+        yLabel="Cantidad de Casos Registrados"
         data={chartData}
       />
     </div>
