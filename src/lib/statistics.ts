@@ -18,48 +18,89 @@ export function roundTo(val: number, decimals: number = 2): number {
 }
 
 /**
- * Parsea un string de datos numéricos en bruto
+ * Parsea un string de datos numéricos para datos agrupados según su tipo (continua o discreta)
+ * - Continua: solo acepta ';' y saltos de línea como separadores de datos. La coma ',' es separador decimal (ej: 78,4; 82,1).
+ * - Discreta: acepta tanto comas ',' como punto y coma ';' y espacios como separadores (ej: 21, 24, 28 o 21; 24; 28).
  */
-export function parseRawDataString(input: string): number[] {
+export function parseGroupedDataString(input: string, isContinuous: boolean = true): number[] {
   if (!input || !input.trim()) return [];
 
-  const tokens = input
-    .replace(/;/g, ' ')
-    .replace(/,/g, '.')
-    .split(/[\s\n\t]+/)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0);
+  if (isContinuous) {
+    // Continua: solo punto y coma o saltos de línea son delimitadores
+    const rawTokens = input
+      .split(/;|\n/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
 
-  const numbers: number[] = [];
-  for (const token of tokens) {
-    const num = parseFloat(token);
-    if (!isNaN(num) && isFinite(num)) {
-      numbers.push(num);
+    const numbers: number[] = [];
+    for (const token of rawTokens) {
+      const normalized = token.replace(/,/g, '.');
+      const num = parseFloat(normalized);
+      if (!isNaN(num) && isFinite(num)) {
+        numbers.push(num);
+      }
     }
-  }
+    return numbers;
+  } else {
+    // Discreta: comas, punto y coma, espacios o saltos de línea
+    const tokens = input
+      .replace(/;/g, ' ')
+      .replace(/,/g, ' ')
+      .split(/[\s\n\t]+/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
 
-  return numbers;
+    const numbers: number[] = [];
+    for (const token of tokens) {
+      const num = parseFloat(token);
+      if (!isNaN(num) && isFinite(num)) {
+        numbers.push(num);
+      }
+    }
+    return numbers;
+  }
+}
+
+/**
+ * Parsea un string de datos numéricos en bruto (legacy / fallback compatible)
+ */
+export function parseRawDataString(input: string): number[] {
+  return parseGroupedDataString(input, false);
 }
 
 /**
  * Parsea un string de datos tanto cualitativos (texto) como cuantitativos
+ * Acepta números con coma decimal y delimitación por ';' o ','
  */
 export function parseAnyDataString(input: string): (number | string)[] {
   if (!input || !input.trim()) return [];
 
-  // Dividir principalmente por punto y coma, salto de línea o coma (si no es decimal)
-  const rawTokens = input
-    .split(/;|\n/)
-    .map((t) => t.trim())
-    .filter((t) => t.length > 0);
+  const hasSemicolon = input.includes(';');
 
-  // Si solo hay un bloque sin punto y coma, intentar separar por comas
-  const tokens = rawTokens.length === 1 && rawTokens[0].includes(',')
-    ? rawTokens[0].split(',').map((t) => t.trim()).filter((t) => t.length > 0)
-    : rawTokens;
+  let rawTokens: string[] = [];
+  if (hasSemicolon) {
+    rawTokens = input
+      .split(/;|\n/)
+      .map((t) => t.trim())
+      .filter((t) => t.length > 0);
+  } else {
+    if (input.includes('\n')) {
+      rawTokens = input
+        .split('\n')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+    } else if (input.includes(',')) {
+      rawTokens = input
+        .split(',')
+        .map((t) => t.trim())
+        .filter((t) => t.length > 0);
+    } else {
+      rawTokens = [input.trim()];
+    }
+  }
 
-  return tokens.map((token) => {
-    // Verificar si es puramente numérico
+  return rawTokens.map((token) => {
+    // Normalizar coma decimal a punto para comprobar si es un número válido
     const normalizedNumStr = token.replace(/,/g, '.');
     const num = parseFloat(normalizedNumStr);
     if (!isNaN(num) && isFinite(num) && /^-?\d+(\.\d+)?$/.test(normalizedNumStr)) {
@@ -72,13 +113,12 @@ export function parseAnyDataString(input: string): (number | string)[] {
 /**
  * Calcula los parámetros didácticos previos para datos agrupados:
  * - R = Xmax - Xmin
- * - k = round(sqrt(n)) o ceil(sqrt(n))
+ * - k = Si sqrt(n) es entero exacto -> k = sqrt(n). Si no es exacto -> k = ceil(sqrt(n)) (redondeo a uno más).
  * - A = R / k
  */
 export function calculateIntervalParameters(
   sortedValues: number[],
-  customParams?: { rango?: number; k?: number; amplitud?: number },
-  kRoundingMode: 'nearest' | 'ceil' = 'nearest'
+  customParams?: { rango?: number; k?: number; amplitud?: number }
 ): {
   userProvided: boolean;
   xmin: number;
@@ -88,6 +128,7 @@ export function calculateIntervalParameters(
   amplitud: number;
   precision: number;
   kCalculatedRaw: number;
+  isExactRoot: boolean;
 } {
   const n = sortedValues.length;
   if (n === 0) {
@@ -100,6 +141,7 @@ export function calculateIntervalParameters(
       amplitud: 1,
       precision: 2,
       kCalculatedRaw: 1,
+      isExactRoot: true,
     };
   }
 
@@ -107,6 +149,7 @@ export function calculateIntervalParameters(
   const xmax = sortedValues[sortedValues.length - 1];
   const naturalRango = roundTo(xmax - xmin, 2);
   const sqrtN = Math.sqrt(n);
+  const isExactRoot = Number.isInteger(sqrtN);
 
   if (
     customParams &&
@@ -125,12 +168,15 @@ export function calculateIntervalParameters(
       amplitud: customParams.amplitud,
       precision: 2,
       kCalculatedRaw: sqrtN,
+      isExactRoot,
     };
   }
 
-  const kCalculado = kRoundingMode === 'ceil' 
-    ? Math.max(1, Math.ceil(sqrtN))
-    : Math.max(1, Math.round(sqrtN));
+  // Regla pedagógica: Si la raíz cuadrada es exacta, k = sqrt(n).
+  // Si no es exacta, redondear siempre al entero superior (ceil), aumentando a uno más.
+  const kCalculado = isExactRoot
+    ? Math.max(1, Math.round(sqrtN))
+    : Math.max(1, Math.ceil(sqrtN));
   
   let rawAmplitud = naturalRango / kCalculado;
   if (rawAmplitud === 0) rawAmplitud = 1;
@@ -146,19 +192,23 @@ export function calculateIntervalParameters(
     amplitud: amplitudCalculada,
     precision: 2,
     kCalculatedRaw: sqrtN,
+    isExactRoot,
   };
 }
 
 /**
  * MÓDULO 1: Generación de Tabla de Frecuencias Agrupadas
- * Las frecuencias relativas (fr) y acumuladas (Fr) se redondean a 2 decimales.
+ * Frecuencia relativa fr = fa / n (redondeada a 2 decimales).
+ * Porcentaje p = fr * 100 (estrictamente obtenido de fr).
+ * Frecuencia relativa acumulada Fr = Fa / n (2 decimales).
+ * Porcentaje acumulado P = Fr * 100.
  */
 export function generateGroupedFrequencyTable(
   variableName: string,
   unit: string,
   rawValues: number[],
   customParams?: { rango?: number; k?: number; amplitud?: number },
-  kRoundingMode: 'nearest' | 'ceil' = 'nearest'
+  groupedVariableType: 'continuous' | 'discrete' = 'continuous'
 ): GroupedFrequencyTableResult {
   const sortedValues = [...rawValues].sort((a, b) => a - b);
   const n = sortedValues.length;
@@ -167,7 +217,7 @@ export function generateGroupedFrequencyTable(
     throw new Error('El conjunto de datos no puede estar vacío.');
   }
 
-  const params = calculateIntervalParameters(sortedValues, customParams, kRoundingMode);
+  const params = calculateIntervalParameters(sortedValues, customParams);
   const rows: GroupedFrequencyRow[] = [];
 
   let accumulatedFa = 0;
@@ -192,13 +242,13 @@ export function generateGroupedFrequencyTable(
       }
     }
 
-    // Redondeo exacto a 2 decimales para fr y Fr
+    // fr redondeada a 2 decimales y p calculada directamente como fr * 100
     const fr = roundTo(fa / n, 2);
-    const p = roundTo((fa / n) * 100, 2);
+    const p = roundTo(fr * 100, 2);
 
     accumulatedFa += fa;
     accumulatedFr = roundTo(accumulatedFa / n, 2);
-    accumulatedP = roundTo((accumulatedFa / n) * 100, 2);
+    accumulatedP = roundTo(accumulatedFr * 100, 2);
 
     const intervalLabel = isLast
       ? `[${lower} - ${upper}]`
@@ -217,7 +267,7 @@ export function generateGroupedFrequencyTable(
         : `Fr_${i} = Fr_${i-1} + fr_${i} = ${(accumulatedFr - fr).toFixed(2)} + ${fr.toFixed(2)} = ${accumulatedFr.toFixed(2)}`,
       pAcum: i === 1
         ? `P_1 = p_1 = ${p.toFixed(2)}\\%`
-        : `P_${i} = P_${i-1} + p_${i} = ${(accumulatedP - p).toFixed(2)}\\% + ${p.toFixed(2)}\\% = ${accumulatedP.toFixed(2)}\\%`,
+        : `P_${i} = Fr_${i} \\cdot 100 = ${accumulatedFr.toFixed(2)} \\cdot 100 = ${accumulatedP.toFixed(2)}\\%`,
     };
 
     rows.push({
@@ -250,15 +300,15 @@ export function generateGroupedFrequencyTable(
   }
 
   const sqrtVal = Math.sqrt(n);
-  const kNearest = Math.round(sqrtVal);
-  const kCeil = Math.ceil(sqrtVal);
 
   const stepByStepDerivation = !params.userProvided
     ? {
         rangoFormula: `R = X_{max} - X_{min}`,
         rangoValue: `R = ${params.xmax} - ${params.xmin} = ${params.rango}`,
         kFormula: `k = \\sqrt{n}`,
-        kValue: `k = \\sqrt{${n}} \\approx ${sqrtVal.toFixed(2)} \\rightarrow k = ${params.k} (Redondeo: ${kNearest === kCeil ? `${params.k}` : `más próximo = ${kNearest}, superior = ${kCeil}`})`,
+        kValue: params.isExactRoot
+          ? `k = \\sqrt{${n}} = ${params.k} (Raíz exacta)`
+          : `k = \\sqrt{${n}} \\approx ${sqrtVal.toFixed(2)} \\rightarrow k = ${params.k} (Redondeo superior a uno más)`,
         amplitudFormula: `A = \\frac{R}{k}`,
         amplitudValue: `A = \\frac{${params.rango}}{${params.k}} = ${(params.rango / params.k).toFixed(2)} \\approx ${params.amplitud}`,
       }
@@ -269,6 +319,7 @@ export function generateGroupedFrequencyTable(
     unit,
     sampleSize: n,
     sortedValues,
+    groupedVariableType,
     parameters: params,
     rows,
     totals: {
@@ -325,13 +376,13 @@ export function generateSimpleFrequencyTable(
 
   for (const val of sortedKeys) {
     const fa = frequencyMap.get(val) || 0;
-    // Redondeo exacto a 2 decimales
+    // Redondeo exacto a 2 decimales para fr y p obtenido de fr * 100
     const fr = roundTo(fa / n, 2);
-    const p = roundTo((fa / n) * 100, 2);
+    const p = roundTo(fr * 100, 2);
 
     accumulatedFa += fa;
     accumulatedFr = roundTo(accumulatedFa / n, 2);
-    accumulatedP = roundTo((accumulatedFa / n) * 100, 2);
+    accumulatedP = roundTo(accumulatedFr * 100, 2);
 
     const stepExplanations = {
       fa: `fa_${index} = ${fa}`,
@@ -345,7 +396,7 @@ export function generateSimpleFrequencyTable(
         : `Fr_${index} = Fr_${index-1} + fr_${index} = ${(accumulatedFr - fr).toFixed(2)} + ${fr.toFixed(2)} = ${accumulatedFr.toFixed(2)}`,
       pAcum: index === 1
         ? `P_1 = p_1 = ${p.toFixed(2)}\\%`
-        : `P_${index} = P_${index-1} + p_${index} = ${(accumulatedP - p).toFixed(2)}\\% + ${p.toFixed(2)}\\% = ${accumulatedP.toFixed(2)}\\%`,
+        : `P_${index} = Fr_${index} \\cdot 100 = ${accumulatedFr.toFixed(2)} \\cdot 100 = ${accumulatedP.toFixed(2)}\\%`,
     };
 
     rows.push({
@@ -614,6 +665,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     description: 'Mediciones de exposición sonora ocupacional con sonómetro integrador (Límite legal: 85 dBA).',
     sampleSize: 25,
     recommendedType: 'grouped',
+    groupedVariableType: 'continuous',
     dataGenerator: () => [
       78.4, 82.1, 85.6, 88.0, 91.2, 84.3, 79.8, 87.5, 92.4, 86.1,
       83.7, 89.9, 94.2, 81.0, 88.6, 90.5, 85.0, 77.9, 83.2, 87.1,
@@ -629,6 +681,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     description: 'Registro etario de operarios de estiba y montaje para evaluación ergonómica (Criterio ISO 11228).',
     sampleSize: 30,
     recommendedType: 'grouped',
+    groupedVariableType: 'discrete',
     dataGenerator: () => [
       21, 24, 28, 35, 42, 47, 53, 22, 31, 38, 
       45, 50, 58, 26, 34, 41, 49, 23, 29, 36, 
@@ -644,6 +697,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     description: 'Mediciones de iluminancia con luxómetro calibrado en puestos de control de calidad.',
     sampleSize: 24,
     recommendedType: 'grouped',
+    groupedVariableType: 'discrete',
     dataGenerator: () => [
       240, 310, 450, 180, 520, 490, 380, 600, 
       290, 340, 410, 480, 530, 220, 360, 420, 
@@ -659,6 +713,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     description: 'Monitoreo ambiental de gas tóxico en interior de mina (Límite CMP: 25 ppm).',
     sampleSize: 28,
     recommendedType: 'grouped',
+    groupedVariableType: 'continuous',
     dataGenerator: () => [
       8.5, 12.0, 15.4, 22.1, 27.5, 18.3, 14.2, 9.8, 24.0, 31.2,
       19.5, 16.8, 11.2, 25.4, 28.9, 13.6, 17.1, 21.8, 10.4, 15.9,
@@ -674,6 +729,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     description: 'Evaluación de carga térmica por calor radiante y metabólico en fundición metalúrgica.',
     sampleSize: 20,
     recommendedType: 'grouped',
+    groupedVariableType: 'continuous',
     dataGenerator: () => [
       26.5, 28.2, 30.1, 31.8, 33.5, 29.4, 27.8, 32.0, 34.2, 30.8,
       28.9, 31.1, 32.6, 29.8, 33.9, 35.0, 27.2, 30.4, 32.1, 34.6
@@ -688,6 +744,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     description: 'Muestreo gravimétrico con ciclón para determinar exposición a sílice libre cristalina.',
     sampleSize: 22,
     recommendedType: 'grouped',
+    groupedVariableType: 'continuous',
     dataGenerator: () => [
       0.8, 1.4, 2.1, 3.5, 4.2, 1.8, 2.9, 3.1, 5.0, 2.4,
       1.1, 2.7, 3.8, 4.6, 1.9, 3.0, 2.2, 4.0, 1.5, 3.3, 4.8, 2.6

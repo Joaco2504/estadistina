@@ -11,7 +11,7 @@ import { ContingencyTableModule } from '@/components/modules/ContingencyTableMod
 import { CourseNotesModule } from '@/components/modules/CourseNotesModule';
 import { FormulaGlossaryModal } from '@/components/modules/FormulaGlossaryModal';
 import { 
-  parseRawDataString, 
+  parseGroupedDataString, 
   parseAnyDataString,
   generateGroupedFrequencyTable, 
   generateSimpleFrequencyTable, 
@@ -29,6 +29,9 @@ export default function HomePage() {
 
   // Tipo de variable en estudio para frecuencias simples
   const [variableType, setVariableType] = useState<'quantitative' | 'qualitative'>('quantitative');
+
+  // Tipo de variable en estudio para frecuencias agrupadas (continua o discreta)
+  const [groupedVariableType, setGroupedVariableType] = useState<'continuous' | 'discrete'>('continuous');
 
   // Preset inicial
   const defaultSimplePreset = SAFETY_PRESETS.find(p => p.id === 'dias-baja') || SAFETY_PRESETS[0];
@@ -57,12 +60,14 @@ export default function HomePage() {
     customRaw?: string, 
     customVar?: string, 
     customUnit?: string, 
-    customType?: 'quantitative' | 'qualitative'
+    customType?: 'quantitative' | 'qualitative',
+    customGroupedType?: 'continuous' | 'discrete'
   ) => {
     try {
       setErrorMessage(null);
       const inputStringToParse = customRaw !== undefined ? customRaw : rawInput;
       const activeType = customType !== undefined ? customType : variableType;
+      const activeGroupedType = customGroupedType !== undefined ? customGroupedType : groupedVariableType;
       const activeVarName = customVar !== undefined ? customVar : variableName;
       const activeUnit = customUnit !== undefined ? customUnit : unit;
 
@@ -81,8 +86,9 @@ export default function HomePage() {
       );
       setSimpleResult(simple);
 
-      // Calcular Frecuencias Agrupadas (Requiere datos numéricos)
-      const parsedNumeric = parseRawDataString(inputStringToParse);
+      // Calcular Frecuencias Agrupadas (Requiere datos numéricos según tipo continuo o discreto)
+      const isContinuous = activeGroupedType === 'continuous';
+      const parsedNumeric = parseGroupedDataString(inputStringToParse, isContinuous);
       if (parsedNumeric.length > 0) {
         const customParams = (rango && kValue && amplitud) ? {
           rango: Number(rango),
@@ -94,7 +100,8 @@ export default function HomePage() {
           activeVarName || 'Variable Muestral',
           activeUnit || 'u',
           parsedNumeric,
-          customParams
+          customParams,
+          activeGroupedType
         );
         setGroupedResult(grouped);
       }
@@ -102,7 +109,7 @@ export default function HomePage() {
       console.error('Calculation error:', err);
       setErrorMessage(err.message || 'Ocurrió un error al procesar los datos estadísticos.');
     }
-  }, [rawInput, variableName, unit, variableType, rango, kValue, amplitud]);
+  }, [rawInput, variableName, unit, variableType, groupedVariableType, rango, kValue, amplitud]);
 
   // Ejecutar cálculo inicial
   useEffect(() => {
@@ -148,6 +155,8 @@ export default function HomePage() {
                 mode="simple"
                 variableType={variableType}
                 setVariableType={setVariableType}
+                groupedVariableType={groupedVariableType}
+                setGroupedVariableType={setGroupedVariableType}
                 onCalculateWithValues={handleCalculate}
               />
 
@@ -172,6 +181,8 @@ export default function HomePage() {
                 amplitud={amplitud}
                 setAmplitud={setAmplitud}
                 mode="grouped"
+                groupedVariableType={groupedVariableType}
+                setGroupedVariableType={setGroupedVariableType}
                 onCalculateWithValues={handleCalculate}
               />
 

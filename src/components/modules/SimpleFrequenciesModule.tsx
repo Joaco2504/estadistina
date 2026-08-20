@@ -36,6 +36,13 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 }) => {
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(1);
   const [hoveredStep, setHoveredStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
+  const [pinnedStep, setPinnedStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
+
+  const activeStep = hoveredStep || pinnedStep;
+
+  const handleStepClick = (step: 'fa' | 'fr' | 'p' | 'acum') => {
+    setPinnedStep((prev) => (prev === step ? null : step));
+  };
 
   const isQualitative = data.variableType === 'qualitative';
 
@@ -69,7 +76,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                 : 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/40'
             }`}>
               {isQualitative ? <Tag className="w-3 h-3" /> : <Hash className="w-3 h-3" />}
-              <span>{isQualitative ? 'Variable Cualitativa' : 'Variable Cuantitativa'}</span>
+              <span>{isQualitative ? 'Variable Cualitativa' : 'Variable Cuantitativa Discreta'}</span>
             </span>
 
             {/* BOTÓN EXPORTAR A EXCEL */}
@@ -85,18 +92,35 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
           </div>
         </div>
 
-        {/* Indicador de Iluminación en Tiempo Real */}
-        {hoveredStep && (
-          <div className="bg-gradient-to-r from-emerald-500/10 via-blue-500/10 to-purple-500/10 px-4 py-2 border-b border-slate-200 flex items-center justify-between text-xs font-medium text-slate-700 animate-pulse">
+        {/* Indicador de Iluminación en Tiempo Real (Sin titileo) */}
+        {activeStep && (
+          <div className="bg-slate-900 text-white px-4 py-2.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#E67E22]" />
+              <Sparkles className="w-4 h-4 text-[#E67E22] flex-shrink-0" />
               <span>
-                {hoveredStep === 'fr' && `💡 Iluminando: Frecuencia Relativa fr = fa (${selectedRow?.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow?.frecuenciaRelativa.toFixed(2)}`}
-                {hoveredStep === 'p' && `💡 Iluminando: Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(2)}) × 100 = ${selectedRow?.porcentaje.toFixed(2)}%`}
-                {hoveredStep === 'acum' && `💡 Iluminando: Frecuencia Acumulada Fa = Suma de frecuencias anteriores (fa) hasta la fila ${selectedRow?.index} = ${selectedRow?.frecuenciaAbsolutaAcumulada}`}
+                {activeStep === 'fr' && `Frecuencia Relativa fr = fa (${selectedRow?.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow?.frecuenciaRelativa.toFixed(2)}`}
+                {activeStep === 'p' && `Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(2)}) × 100 = ${selectedRow?.porcentaje.toFixed(2)}%`}
+                {activeStep === 'acum' && `Frecuencia Acumulada Fa = Suma de frecuencias fa hasta fila ${selectedRow?.index} = ${selectedRow?.frecuenciaAbsolutaAcumulada}`}
               </span>
             </div>
-            <span className="text-[11px] font-bold text-slate-500">Paso activo</span>
+            <div className="flex items-center gap-2">
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                pinnedStep 
+                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' 
+                  : 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+              }`}>
+                {pinnedStep ? '📌 Fijado en tabla' : '💡 Vista previa (Clic para fijar)'}
+              </span>
+              {pinnedStep && (
+                <button
+                  type="button"
+                  onClick={() => setPinnedStep(null)}
+                  className="text-[10px] text-slate-300 hover:text-white underline cursor-pointer"
+                >
+                  Soltar
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -107,22 +131,22 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               <tr>
                 <th>N°</th>
                 <th>{isQualitative ? 'Categoría / Modalidad (xi)' : 'Valor de Variable (xi)'}</th>
-                <th className={hoveredStep === 'fr' || hoveredStep === 'acum' ? 'bg-emerald-100 text-emerald-950 font-bold' : ''}>
+                <th className={activeStep === 'fr' || activeStep === 'acum' ? 'bg-emerald-100 text-emerald-950 font-bold' : ''}>
                   Frec. Absoluta (fa)
                 </th>
-                <th className={hoveredStep === 'fr' || hoveredStep === 'p' ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-400' : ''}>
+                <th className={activeStep === 'fr' || activeStep === 'p' ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-400' : ''}>
                   Frec. Relativa (fr)
                 </th>
-                <th className={hoveredStep === 'p' ? 'bg-blue-200 text-blue-950 font-black ring-2 ring-blue-400' : ''}>
+                <th className={activeStep === 'p' ? 'bg-blue-200 text-blue-950 font-black ring-2 ring-blue-400' : ''}>
                   Porcentaje (p %)
                 </th>
-                <th className={hoveredStep === 'acum' ? 'bg-purple-200 text-purple-950 font-black ring-2 ring-purple-400' : ''}>
+                <th className={activeStep === 'acum' ? 'bg-purple-200 text-purple-950 font-black ring-2 ring-purple-400' : ''}>
                   Frec. Abs. Acum. (Fa)
                 </th>
-                <th className={hoveredStep === 'acum' ? 'bg-purple-100 text-purple-950 font-bold' : ''}>
+                <th className={activeStep === 'acum' ? 'bg-purple-100 text-purple-950 font-bold' : ''}>
                   Frec. Rel. Acum. (Fr)
                 </th>
-                <th className={hoveredStep === 'acum' ? 'bg-purple-100 text-purple-950 font-bold' : ''}>
+                <th className={activeStep === 'acum' ? 'bg-purple-100 text-purple-950 font-bold' : ''}>
                   Porc. Acum. (P %)
                 </th>
                 <th>Detalle</th>
@@ -131,7 +155,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
             <tbody>
               {data.rows.map((row) => {
                 const isSelected = selectedRowIndex === row.index;
-                const isPriorForCumulative = hoveredStep === 'acum' && row.index <= (selectedRowIndex || 1);
+                const isPriorForCumulative = activeStep === 'acum' && row.index <= (selectedRowIndex || 1);
 
                 return (
                   <tr
@@ -148,7 +172,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                     
                     {/* fa */}
                     <td className={`font-mono font-bold transition-colors ${
-                      isSelected && hoveredStep === 'fr' 
+                      isSelected && activeStep === 'fr' 
                         ? 'bg-emerald-200 text-emerald-950 ring-2 ring-emerald-500' 
                         : isPriorForCumulative 
                         ? 'bg-purple-100 text-purple-950 ring-1 ring-purple-300 font-black' 
@@ -159,7 +183,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
                     {/* fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
-                      isSelected && (hoveredStep === 'fr' || hoveredStep === 'p') 
+                      isSelected && (activeStep === 'fr' || activeStep === 'p') 
                         ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-500' 
                         : 'text-slate-700'
                     }`}>
@@ -168,7 +192,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
                     {/* p */}
                     <td className={`font-mono transition-colors ${
-                      isSelected && hoveredStep === 'p' 
+                      isSelected && activeStep === 'p' 
                         ? 'bg-blue-200 text-blue-950 font-black ring-2 ring-blue-500' 
                         : 'text-slate-700'
                     }`}>
@@ -177,7 +201,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
                     {/* Fa */}
                     <td className={`font-mono transition-colors ${
-                      isSelected && hoveredStep === 'acum' 
+                      isSelected && activeStep === 'acum' 
                         ? 'bg-purple-200 text-purple-950 font-black ring-2 ring-purple-500' 
                         : 'text-slate-700'
                     }`}>
@@ -186,7 +210,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
                     {/* Fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
-                      isSelected && hoveredStep === 'acum' 
+                      isSelected && activeStep === 'acum' 
                         ? 'bg-purple-100 text-purple-950 font-bold ring-1 ring-purple-400' 
                         : 'text-slate-700'
                     }`}>
@@ -195,7 +219,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
                     {/* P */}
                     <td className={`font-mono transition-colors ${
-                      isSelected && hoveredStep === 'acum' 
+                      isSelected && activeStep === 'acum' 
                         ? 'bg-purple-100 text-purple-950 font-bold ring-1 ring-purple-400' 
                         : 'text-slate-700'
                     }`}>
@@ -244,63 +268,129 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
           </table>
         </div>
 
-        {/* Desglose Pedagógico Paso a Paso */}
+        {/* Desglose Pedagógico Paso a Paso con Tarjetas Ampliadas */}
         {selectedRow && (
-          <div className="border-t border-slate-200 bg-slate-50/80 p-4">
-            <div className="flex items-center justify-between gap-2 mb-2.5">
-              <div className="flex items-center gap-1.5 text-xs text-[#0F2942] font-bold">
+          <div className="border-t border-slate-200 bg-slate-50/90 p-5 sm:p-6">
+            <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-[#0F2942] font-bold">
                 <Info className="w-4 h-4 text-[#E67E22]" />
                 <span>
                   {isQualitative ? 'Cálculo de la Categoría' : 'Cálculo del Valor'}:{' '}
-                  <span className="font-bold text-[#1B8A5A]">{selectedRow.variableValue}</span>
+                  <span className="font-extrabold text-[#1B8A5A]">{selectedRow.variableValue}</span>
                 </span>
               </div>
-              <span className="text-[11px] text-slate-500 font-medium hidden sm:inline">
-                ✨ Pasa el mouse por cada tarjeta para iluminar sus celdas:
+              <span className="text-xs text-slate-500 font-medium">
+                ✨ Pasa el mouse para previsualizar o <strong className="text-slate-700">haz clic para fijar la iluminación</strong>:
               </span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+              {/* Tarjeta 1: Frecuencia Relativa */}
               <div 
                 onMouseEnter={() => setHoveredStep('fr')}
                 onMouseLeave={() => setHoveredStep(null)}
-                onClick={() => setHoveredStep(hoveredStep === 'fr' ? null : 'fr')}
-                className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
-                  hoveredStep === 'fr' 
-                    ? 'bg-emerald-50 border-emerald-400 shadow-md ring-2 ring-emerald-300' 
-                    : 'bg-white border-slate-200 hover:border-emerald-300'
+                onClick={() => handleStepClick('fr')}
+                className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
+                  pinnedStep === 'fr'
+                    ? 'bg-emerald-50/90 border-emerald-500 shadow-md ring-2 ring-emerald-400'
+                    : hoveredStep === 'fr'
+                    ? 'bg-emerald-50/50 border-emerald-300 shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-emerald-300 shadow-2xs'
                 }`}
               >
-                <span className="text-[10px] font-bold uppercase text-emerald-800 block mb-1">1. Frec. Relativa (fr = fa / n)</span>
-                <MathFormula formula={selectedRow.stepExplanations.fr} />
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-emerald-800 mb-2">
+                    <span>1. Frec. Relativa (fr = fa / n)</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                      pinnedStep === 'fr' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-900'
+                    }`}>
+                      {pinnedStep === 'fr' ? '📌 Fijado' : 'Paso 1'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                    <MathFormula formula={selectedRow.stepExplanations.fr} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-500 block text-center">
+                    Proporción de observaciones sobre el total n
+                  </span>
+                  <span className="text-[10px] text-emerald-700/80 font-medium block text-center mt-1">
+                    {pinnedStep === 'fr' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
+                  </span>
+                </div>
               </div>
 
+              {/* Tarjeta 2: Porcentaje */}
               <div 
                 onMouseEnter={() => setHoveredStep('p')}
                 onMouseLeave={() => setHoveredStep(null)}
-                onClick={() => setHoveredStep(hoveredStep === 'p' ? null : 'p')}
-                className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
-                  hoveredStep === 'p' 
-                    ? 'bg-blue-50 border-blue-400 shadow-md ring-2 ring-blue-300' 
-                    : 'bg-white border-slate-200 hover:border-blue-300'
+                onClick={() => handleStepClick('p')}
+                className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
+                  pinnedStep === 'p'
+                    ? 'bg-blue-50/90 border-blue-500 shadow-md ring-2 ring-blue-400'
+                    : hoveredStep === 'p'
+                    ? 'bg-blue-50/50 border-blue-300 shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-blue-300 shadow-2xs'
                 }`}
               >
-                <span className="text-[10px] font-bold uppercase text-blue-800 block mb-1">2. Porcentaje (p = fr · 100)</span>
-                <MathFormula formula={selectedRow.stepExplanations.p} />
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-blue-800 mb-2">
+                    <span>2. Porcentaje (p = fr · 100)</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                      pinnedStep === 'p' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-900'
+                    }`}>
+                      {pinnedStep === 'p' ? '📌 Fijado' : 'Paso 2'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                    <MathFormula formula={selectedRow.stepExplanations.p} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-500 block text-center">
+                    Expresión porcentual derivada de fr
+                  </span>
+                  <span className="text-[10px] text-blue-700/80 font-medium block text-center mt-1">
+                    {pinnedStep === 'p' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
+                  </span>
+                </div>
               </div>
 
+              {/* Tarjeta 3: Acumulados */}
               <div 
                 onMouseEnter={() => setHoveredStep('acum')}
                 onMouseLeave={() => setHoveredStep(null)}
-                onClick={() => setHoveredStep(hoveredStep === 'acum' ? null : 'acum')}
-                className={`p-3 rounded-xl border transition-all cursor-pointer select-none ${
-                  hoveredStep === 'acum' 
-                    ? 'bg-purple-50 border-purple-400 shadow-md ring-2 ring-purple-300' 
-                    : 'bg-white border-slate-200 hover:border-purple-300'
+                onClick={() => handleStepClick('acum')}
+                className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
+                  pinnedStep === 'acum'
+                    ? 'bg-purple-50/90 border-purple-500 shadow-md ring-2 ring-purple-400'
+                    : hoveredStep === 'acum'
+                    ? 'bg-purple-50/50 border-purple-300 shadow-xs'
+                    : 'bg-white border-slate-200 hover:border-purple-300 shadow-2xs'
                 }`}
               >
-                <span className="text-[10px] font-bold uppercase text-purple-800 block mb-1">3. Acumulados (Fa, Fr, P)</span>
-                <MathFormula formula={selectedRow.stepExplanations.faAcum} />
+                <div>
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-purple-800 mb-2">
+                    <span>3. Acumulados (Fa, Fr, P)</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
+                      pinnedStep === 'acum' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-900'
+                    }`}>
+                      {pinnedStep === 'acum' ? '📌 Fijado' : 'Paso 3'}
+                    </span>
+                  </div>
+                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                    <MathFormula formula={selectedRow.stepExplanations.faAcum} />
+                  </div>
+                </div>
+                <div>
+                  <span className="text-[11px] text-slate-500 block text-center">
+                    Suma progresiva de frecuencias absolutas fa
+                  </span>
+                  <span className="text-[10px] text-purple-700/80 font-medium block text-center mt-1">
+                    {pinnedStep === 'acum' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
+                  </span>
+                </div>
               </div>
             </div>
           </div>

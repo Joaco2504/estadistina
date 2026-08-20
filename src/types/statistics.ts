@@ -90,6 +90,7 @@ export interface GroupedFrequencyTableResult {
   unit: string;
   sampleSize: number; // n
   sortedValues: number[];
+  groupedVariableType?: 'continuous' | 'discrete';
   parameters: IntervalParameters;
   rows: GroupedFrequencyRow[];
   totals: {
@@ -175,6 +176,7 @@ export interface SafetyDataPreset {
   sampleSize: number;
   recommendedType: 'grouped' | 'simple' | 'contingency';
   variableType?: 'quantitative' | 'qualitative';
+  groupedVariableType?: 'continuous' | 'discrete';
   dataGenerator: () => (number | string)[];
   bivariateDataGenerator?: () => { x: string; y: string }[];
   defaultXName?: string;

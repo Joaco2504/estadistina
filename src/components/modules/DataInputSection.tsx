@@ -4,17 +4,18 @@
 import React, { useState } from 'react';
 import { 
   Dices, 
-  Sparkles,
-  Sliders,
-  Activity,
-  Calendar,
-  Volume2,
-  Sun,
-  ShieldCheck,
-  Tag,
-  Hash
+  Sparkles, 
+  Sliders, 
+  Activity, 
+  Calendar, 
+  Volume2, 
+  Sun, 
+  ShieldCheck, 
+  Tag, 
+  Hash,
+  Binary
 } from 'lucide-react';
-import { SAFETY_PRESETS, parseAnyDataString } from '@/lib/statistics';
+import { SAFETY_PRESETS, parseAnyDataString, parseGroupedDataString } from '@/lib/statistics';
 
 interface DataInputSectionProps {
   variableName: string;
@@ -32,7 +33,15 @@ interface DataInputSectionProps {
   mode: 'grouped' | 'simple';
   variableType?: 'quantitative' | 'qualitative';
   setVariableType?: (type: 'quantitative' | 'qualitative') => void;
-  onCalculateWithValues: (customRaw?: string, customVar?: string, customUnit?: string, customType?: 'quantitative' | 'qualitative') => void;
+  groupedVariableType?: 'continuous' | 'discrete';
+  setGroupedVariableType?: (type: 'continuous' | 'discrete') => void;
+  onCalculateWithValues: (
+    customRaw?: string, 
+    customVar?: string, 
+    customUnit?: string, 
+    customType?: 'quantitative' | 'qualitative',
+    customGroupedType?: 'continuous' | 'discrete'
+  ) => void;
 }
 
 export const DataInputSection: React.FC<DataInputSectionProps> = ({
@@ -51,16 +60,20 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
   mode,
   variableType = 'quantitative',
   setVariableType,
+  groupedVariableType = 'continuous',
+  setGroupedVariableType,
   onCalculateWithValues,
 }) => {
   const [showManualParams, setShowManualParams] = useState(false);
   const [selectedPresetId, setSelectedPresetId] = useState<string>('');
   
-  // Control interactivo del tamaño de la muestra deseado (n)
-  const parsedTokens = parseAnyDataString(rawInput);
-  const [customSampleSize, setCustomSampleSize] = useState<number>(parsedTokens.length > 0 ? parsedTokens.length : 25);
+  // Conteo de elementos según el modo
+  const countParsed = mode === 'grouped'
+    ? parseGroupedDataString(rawInput, groupedVariableType === 'continuous').length
+    : parseAnyDataString(rawInput).length;
 
-  const n = parsedTokens.length;
+  const [customSampleSize, setCustomSampleSize] = useState<number>(countParsed > 0 ? countParsed : 25);
+  const n = countParsed;
 
   // Cargar preset predefinido de Higiene y Seguridad respetando o seteando tamaño
   const handleLoadPreset = (presetId: string) => {
@@ -68,15 +81,26 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     if (!preset) return;
 
     const presetType = preset.variableType || 'quantitative';
+    const presetGroupedType = preset.groupedVariableType || 'continuous';
+
     setSelectedPresetId(presetId);
     setVariableName(preset.variableName);
     setUnit(preset.unit);
-    if (setVariableType) {
+
+    if (mode === 'simple' && setVariableType) {
       setVariableType(presetType);
+    }
+    if (mode === 'grouped' && setGroupedVariableType) {
+      setGroupedVariableType(presetGroupedType);
     }
     
     // Generar muestra según el tamaño configurado por el usuario
-    const generated = generateValuesForContext(preset.variableName, customSampleSize, presetType);
+    const generated = generateValuesForContext(
+      preset.variableName, 
+      customSampleSize, 
+      presetType, 
+      presetGroupedType
+    );
     const dataStr = generated.join('; ');
     setRawInput(dataStr);
 
@@ -85,11 +109,16 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     setKValue('');
     setAmplitud('');
 
-    onCalculateWithValues(dataStr, preset.variableName, preset.unit, presetType);
+    onCalculateWithValues(dataStr, preset.variableName, preset.unit, presetType, presetGroupedType);
   };
 
-  // Generador contextual con tamaño exacto n ingresado por el usuario (numérico o cualitativo)
-  const generateValuesForContext = (varName: string, targetN: number, type: 'quantitative' | 'qualitative'): (number | string)[] => {
+  // Generador contextual con tamaño exacto n ingresado por el usuario
+  const generateValuesForContext = (
+    varName: string, 
+    targetN: number, 
+    type: 'quantitative' | 'qualitative',
+    gType: 'continuous' | 'discrete' = 'continuous'
+  ): (number | string)[] => {
     const count = Math.max(3, Math.min(500, targetN || 25));
 
     if (type === 'qualitative') {
@@ -114,10 +143,11 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       return qualitativeItems;
     }
 
-    // Cuantitativo
+    // Cuantitativo: evaluar si es discreto o continuo
+    const isDiscrete = mode === 'simple' || gType === 'discrete';
     let min = 70;
     let max = 100;
-    let decimals = 1;
+    let decimals = isDiscrete ? 0 : 1;
 
     const lower = varName.toLowerCase();
     if (lower.includes('edad')) {
@@ -153,9 +183,9 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       max = 26;
       decimals = 1;
     } else {
-      min = 75;
-      max = 96;
-      decimals = 1;
+      min = isDiscrete ? 1 : 75;
+      max = isDiscrete ? 50 : 96;
+      decimals = isDiscrete ? 0 : 1;
     }
 
     const randomNumbers: number[] = [];
@@ -174,7 +204,12 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       setCustomSampleSize(overrideN);
     }
 
-    const generated = generateValuesForContext(variableName, targetN, variableType);
+    const generated = generateValuesForContext(
+      variableName, 
+      targetN, 
+      variableType, 
+      groupedVariableType
+    );
     const dataStr = generated.join('; ');
     setRawInput(dataStr);
     
@@ -183,11 +218,11 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     setKValue('');
     setAmplitud('');
 
-    onCalculateWithValues(dataStr, variableName, unit, variableType);
+    onCalculateWithValues(dataStr, variableName, unit, variableType, groupedVariableType);
   };
 
-  // Cambiar tipo de variable (cuantitativa / cualitativa)
-  const handleTypeChange = (newType: 'quantitative' | 'qualitative') => {
+  // Cambiar tipo de variable en Simples (cuantitativa / cualitativa)
+  const handleSimpleTypeChange = (newType: 'quantitative' | 'qualitative') => {
     if (setVariableType) {
       setVariableType(newType);
     }
@@ -199,7 +234,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const generated = generateValuesForContext(newVar, customSampleSize, 'qualitative');
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
-      onCalculateWithValues(dataStr, newVar, newUnit, 'qualitative');
+      onCalculateWithValues(dataStr, newVar, newUnit, 'qualitative', groupedVariableType);
     } else {
       const newVar = 'Jornadas de Trabajo Perdidas';
       const newUnit = 'Días corridos';
@@ -208,26 +243,52 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative');
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
-      onCalculateWithValues(dataStr, newVar, newUnit, 'quantitative');
+      onCalculateWithValues(dataStr, newVar, newUnit, 'quantitative', groupedVariableType);
+    }
+  };
+
+  // Cambiar tipo de variable en Agrupadas (continua / discreta)
+  const handleGroupedTypeChange = (newGroupedType: 'continuous' | 'discrete') => {
+    if (setGroupedVariableType) {
+      setGroupedVariableType(newGroupedType);
+    }
+    if (newGroupedType === 'discrete') {
+      const newVar = 'Edades de Trabajadores en Obras';
+      const newUnit = 'Años';
+      setVariableName(newVar);
+      setUnit(newUnit);
+      const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative', 'discrete');
+      const dataStr = generated.join('; ');
+      setRawInput(dataStr);
+      onCalculateWithValues(dataStr, newVar, newUnit, variableType, 'discrete');
+    } else {
+      const newVar = 'Niveles de Ruido en Taller Metalúrgico';
+      const newUnit = 'dBA';
+      setVariableName(newVar);
+      setUnit(newUnit);
+      const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative', 'continuous');
+      const dataStr = generated.join('; ');
+      setRawInput(dataStr);
+      onCalculateWithValues(dataStr, newVar, newUnit, variableType, 'continuous');
     }
   };
 
   // Manejo de cambio reactivo del nombre de variable
   const handleVariableNameChange = (val: string) => {
     setVariableName(val);
-    onCalculateWithValues(undefined, val, unit, variableType);
+    onCalculateWithValues(undefined, val, unit, variableType, groupedVariableType);
   };
 
   // Manejo de cambio reactivo de la unidad/individuo
   const handleUnitChange = (val: string) => {
     setUnit(val);
-    onCalculateWithValues(undefined, variableName, val, variableType);
+    onCalculateWithValues(undefined, variableName, val, variableType, groupedVariableType);
   };
 
   // Manejo de cambio reactivo del input en bruto
   const handleRawInputChange = (val: string) => {
     setRawInput(val);
-    onCalculateWithValues(val, variableName, unit, variableType);
+    onCalculateWithValues(val, variableName, unit, variableType, groupedVariableType);
   };
 
   return (
@@ -241,10 +302,12 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           <div>
             <h2 className="text-sm sm:text-base font-bold tracking-wide">
               {mode === 'grouped' 
-                ? 'Frecuencias Agrupadas (k = √n)' 
-                : variableType === 'qualitative'
-                ? 'Frecuencias Simples: Variable Cualitativa'
-                : 'Frecuencias Simples: Variable Cuantitativa Discreta'}
+                ? (groupedVariableType === 'discrete'
+                    ? 'Frecuencias Agrupadas: Variable Cuantitativa Discreta'
+                    : 'Frecuencias Agrupadas: Variable Cuantitativa Continua')
+                : (variableType === 'qualitative'
+                    ? 'Frecuencias Simples: Variable Cualitativa'
+                    : 'Frecuencias Simples: Variable Cuantitativa Discreta')}
             </h2>
             <span className="text-[11px] text-slate-300 hidden sm:inline">
               Personaliza el tipo de variable, el individuo, la muestra o ingresa tus propios datos
@@ -288,7 +351,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
-                onClick={() => handleTypeChange('quantitative')}
+                onClick={() => handleSimpleTypeChange('quantitative')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   variableType === 'quantitative'
                     ? 'bg-[#0F2942] text-white shadow-xs'
@@ -301,7 +364,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
 
               <button
                 type="button"
-                onClick={() => handleTypeChange('qualitative')}
+                onClick={() => handleSimpleTypeChange('qualitative')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   variableType === 'qualitative'
                     ? 'bg-[#1B8A5A] text-white shadow-xs'
@@ -315,13 +378,51 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           </div>
         )}
 
+        {/* Selector de Tipo de Variable Cuantitativa en Frecuencias Agrupadas (Discreta o Continua) */}
+        {mode === 'grouped' && (
+          <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
+            <span className="text-xs font-bold text-[#0F2942] uppercase tracking-wide">
+              Tipo de Variable a Agrupar en Intervalos:
+            </span>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleGroupedTypeChange('continuous')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  groupedVariableType === 'continuous'
+                    ? 'bg-[#0F2942] text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <Activity className="w-3.5 h-3.5 text-[#1B8A5A]" />
+                <span>Cuantitativa Continua (Mediciones / Decimales)</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleGroupedTypeChange('discrete')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  groupedVariableType === 'discrete'
+                    ? 'bg-[#1B8A5A] text-white shadow-xs'
+                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                }`}
+              >
+                <Binary className="w-3.5 h-3.5 text-white" />
+                <span>Cuantitativa Discreta (Números Enteros)</span>
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Casos Prácticos Rápidos de SySO & Chips de Tamaño Muestral */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           {/* Casos Prácticos */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos:</span>
-            {SAFETY_PRESETS.filter(p => {
-              if (mode === 'grouped') return p.recommendedType === 'grouped';
+            {SAFETY_PRESETS.filter((p) => {
+              if (mode === 'grouped') {
+                return p.recommendedType === 'grouped' && (p.groupedVariableType === groupedVariableType || (!p.groupedVariableType && groupedVariableType === 'continuous'));
+              }
               if (variableType === 'qualitative') return p.variableType === 'qualitative';
               return p.recommendedType === 'simple' && p.variableType !== 'qualitative';
             }).map((preset) => (
@@ -348,7 +449,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           {/* Chips de Tamaño Rápido de Muestra */}
           <div className="flex items-center gap-1 text-xs self-start sm:self-auto">
             <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Fijar n:</span>
-            {[10, 20, 30, 50, 100].map((size) => (
+            {[10, 20, 27, 30, 50, 100].map((size) => (
               <button
                 key={size}
                 type="button"
@@ -375,7 +476,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
               type="text"
               value={variableName}
               onChange={(e) => handleVariableNameChange(e.target.value)}
-              placeholder="Ej: Ocupaciones declaradas, Nivel de Ruido, Días de Licencia"
+              placeholder="Ej: Ocupaciones declaradas, Nivel de Ruido, Edades, Días de Licencia"
               className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
@@ -388,33 +489,58 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
               type="text"
               value={unit}
               onChange={(e) => handleUnitChange(e.target.value)}
-              placeholder="Ej: Trabajadores, Operarios, Casos, dBA, Días"
+              placeholder="Ej: Trabajadores, Operarios, Casos, dBA, Años, Días"
               className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
             />
           </div>
         </div>
 
-        {/* Datos en Bruto */}
+        {/* Datos en Bruto con Indicaciones de Formato y Delimitadores Contextuales */}
         <div>
           <div className="flex items-center justify-between mb-1">
             <label className="text-[11px] font-bold text-slate-600 uppercase">
-              {variableType === 'qualitative' 
-                ? 'Valores Cualitativos (separados por ; o saltos de línea)'
-                : 'Datos en Bruto (separados por ;)'}
+              {mode === 'grouped'
+                ? (groupedVariableType === 'continuous'
+                    ? 'Datos en Bruto (separados solo por punto y coma \';\')'
+                    : 'Datos en Bruto (separados por coma \',\' o punto y coma \';\')')
+                : (variableType === 'qualitative'
+                    ? 'Valores Cualitativos (separados por \';\', \',\' o saltos de línea)'
+                    : 'Datos en Bruto (acepta comas decimales y delimitación por \';\' o \',\')')}
             </label>
             <span className="text-[11px] font-mono text-[#1B8A5A] font-semibold bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">
               n actual = {n} {variableType === 'qualitative' ? 'casos' : 'datos'}
             </span>
           </div>
+
           <textarea
             rows={2}
             value={rawInput}
             onChange={(e) => handleRawInputChange(e.target.value)}
-            placeholder={variableType === 'qualitative' 
-              ? 'Ingrese categorías separadas por punto y coma (ej: Empleado/a; Emprendedora; Estudiante; Empleado/a; ...)'
-              : 'Ingrese números separados por punto y coma (ej: 0; 2; 5; 0; 14; 3; ...)'}
+            placeholder={
+              mode === 'grouped'
+                ? (groupedVariableType === 'continuous'
+                    ? 'Ingrese mediciones separadas por punto y coma (ej: 78,4; 82,1; 85,6; 88,0 o 78.4; 82.1)'
+                    : 'Ingrese números separados por coma o punto y coma (ej: 21, 24, 28, 35, 42 o 21; 24; 28; 35)')
+                : (variableType === 'qualitative'
+                    ? 'Ingrese categorías separadas por coma o punto y coma (ej: Empleado/a; Emprendedora; Estudiante o Empleado/a, Emprendedora)'
+                    : 'Ingrese números separados por punto y coma o coma (ej: 0; 2; 5; 0 o 1,5; 2,5 o 1, 2, 3, 4)')
+            }
             className="w-full text-xs font-mono p-3 rounded-lg border border-slate-200 bg-white text-slate-800 focus:ring-1 focus:ring-[#0F2942] outline-none leading-relaxed resize-y"
           />
+
+          {/* Ayuda de Formato según la selección */}
+          <div className="mt-1 text-[11px] text-slate-500">
+            {mode === 'grouped' && groupedVariableType === 'continuous' && (
+              <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block">
+                💡 <strong>Variable Continua:</strong> Utilice punto y coma (;) como separador para permitir decimales con coma (ej: 78,4; 82,1; 85,6).
+              </span>
+            )}
+            {mode === 'grouped' && groupedVariableType === 'discrete' && (
+              <span className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+                💡 <strong>Variable Discreta:</strong> Puede separar los datos usando comas (,) o punto y coma (;).
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Parámetros Manuales Plegables (Solo en agrupadas) */}
