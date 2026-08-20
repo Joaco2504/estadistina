@@ -1,15 +1,18 @@
 // src/components/layout/Navbar.tsx
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { HeaderLogo } from './HeaderLogo';
 import { 
   BookOpen, 
   BarChart3, 
   Table2, 
   Layers, 
-  FileText
+  FileText,
+  Sun,
+  Moon
 } from 'lucide-react';
+import { getInitialTheme, applyTheme, ThemeMode } from '@/lib/utils';
 
 interface NavbarProps {
   activeTab: string;
@@ -22,6 +25,28 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   onOpenGlossary,
 }) => {
+  const [theme, setTheme] = useState<ThemeMode>('light');
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    const initial = getInitialTheme();
+    setTheme(initial);
+    applyTheme(initial);
+    setMounted(true);
+
+    const handleThemeChange = (e: any) => {
+      if (e.detail) setTheme(e.detail);
+    };
+    window.addEventListener('theme-change', handleThemeChange);
+    return () => window.removeEventListener('theme-change', handleThemeChange);
+  }, []);
+
+  const toggleTheme = () => {
+    const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    applyTheme(nextTheme);
+  };
+
   // Orden estricto solicitado: 1. Simples, 2. Agrupadas, 3. Contingencia, 4. Apuntes
   const navItems = [
     { id: 'simple', label: 'Frecuencias Simples', icon: BarChart3 },
@@ -31,21 +56,21 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-[#0F2942] border-b border-[#1C4874] shadow-md">
+    <header className="sticky top-0 z-50 w-full bg-[#0F2942] dark:bg-[#080D1A] border-b border-[#1C4874] dark:border-[#1E293B] shadow-md transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="flex items-center justify-between h-16 gap-3">
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
           {/* Logo e Identidad Institucional */}
           <button 
             type="button"
             onClick={() => onSelectTab('simple')}
             className="flex items-center text-left hover:opacity-95 transition-opacity cursor-pointer flex-shrink-0"
           >
-            <HeaderLogo size="sm" showSubtitle={true} className="sm:hidden" />
-            <HeaderLogo size="md" showSubtitle={true} className="hidden sm:flex" />
+            <HeaderLogo size="sm" showSubtitle={false} className="xs:hidden" />
+            <HeaderLogo size="md" showSubtitle={true} className="hidden xs:flex" />
           </button>
 
           {/* Navegación Desktop: Segmented Control Centrado */}
-          <nav className="hidden lg:flex items-center gap-1 bg-[#0A1D30] p-1.5 rounded-2xl border border-[#1C4874]">
+          <nav className="hidden lg:flex items-center gap-1 bg-[#0A1D30] dark:bg-[#0F172A] p-1.5 rounded-2xl border border-[#1C4874] dark:border-[#1E293B]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -56,7 +81,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onSelectTab(item.id)}
                   className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     isActive
-                      ? 'bg-[#1B8A5A] text-white shadow-sm ring-1 ring-emerald-400/30'
+                      ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400/30'
                       : 'text-slate-300 hover:text-white hover:bg-white/5'
                   }`}
                 >
@@ -66,8 +91,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span
                       className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
                         isActive
-                          ? 'bg-[#0F2942] text-white'
-                          : 'bg-[#15385B] text-slate-300 border border-slate-600'
+                          ? 'bg-[#0F2942] dark:bg-[#080D1A] text-white'
+                          : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300 border border-slate-600 dark:border-slate-700'
                       }`}
                     >
                       {item.badge}
@@ -78,22 +103,38 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Botón Glosario / Formulario */}
+          {/* Acciones del Header: Toggle Modo Oscuro + Botón Formulario */}
           <div className="flex items-center gap-2 flex-shrink-0">
+            {/* Botón Switch Modo Oscuro / Claro */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="p-2 sm:p-2.5 rounded-xl bg-[#0A1D30] dark:bg-[#0F172A] hover:bg-[#15385B] dark:hover:bg-[#1E293B] text-amber-400 dark:text-amber-300 border border-[#1C4874] dark:border-[#1E293B] transition-all cursor-pointer shadow-xs active:scale-95 flex items-center justify-center"
+              title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Noche'}
+              aria-label="Alternar tema oscuro o claro"
+            >
+              {mounted && theme === 'dark' ? (
+                <Sun className="w-4 h-4 text-amber-300 animate-in spin-in-180 duration-200" />
+              ) : (
+                <Moon className="w-4 h-4 text-slate-200 animate-in spin-in-180 duration-200" />
+              )}
+            </button>
+
+            {/* Botón Glosario / Formulario */}
             <button
               type="button"
               onClick={onOpenGlossary}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-[#E67E22] hover:bg-[#D35400] text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#E67E22] to-[#D35400] hover:brightness-110 active:scale-95 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
               title="Consultar fórmulas oficiales de la cátedra"
             >
               <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span>Formulario</span>
+              <span className="hidden xxs:inline">Formulario</span>
             </button>
           </div>
         </div>
 
-        {/* Barra de Pestañas Móvil Siempre Visible (Scroll Horizontal Suave) */}
-        <div className="lg:hidden pb-2.5 pt-0.5 overflow-x-auto no-scrollbar flex items-center gap-1.5 border-t border-[#1C4874]/60">
+        {/* Barra de Pestañas Móvil (Scroll Horizontal Táctil y Suave) */}
+        <div className="lg:hidden pb-2.5 pt-1 overflow-x-auto no-scrollbar flex items-center gap-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -102,17 +143,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectTab(item.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer active:scale-95 ${
                   isActive
-                    ? 'bg-[#1B8A5A] text-white shadow-xs'
-                    : 'bg-[#0A1D30] text-slate-300 border border-[#1C4874] hover:text-white'
+                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
+                    : 'bg-[#0A1D30] dark:bg-[#0F172A] text-slate-300 dark:text-slate-300 border border-[#1C4874] dark:border-[#1E293B] hover:text-white'
                 }`}
               >
                 <Icon className="w-3.5 h-3.5" />
                 <span>{item.label}</span>
                 {item.badge && (
                   <span className={`text-[8px] px-1 rounded font-mono ${
-                    isActive ? 'bg-[#0F2942] text-white' : 'bg-[#15385B] text-slate-300'
+                    isActive ? 'bg-[#0F2942] dark:bg-[#080D1A] text-white' : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300'
                   }`}>
                     {item.badge}
                   </span>
@@ -125,3 +166,4 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
+

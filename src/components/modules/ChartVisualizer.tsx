@@ -156,6 +156,28 @@ function getDescriptiveYLabel(variableName: string, unit: string, mode: 'absolut
   return 'Número de observaciones registradas';
 }
 
+function useIsDarkMode(): boolean {
+  const [isDark, setIsDark] = useState(false);
+
+  useEffect(() => {
+    const checkTheme = () => {
+      if (typeof document !== 'undefined') {
+        setIsDark(document.documentElement.classList.contains('dark'));
+      }
+    };
+    checkTheme();
+    window.addEventListener('theme-change', checkTheme);
+    const observer = new MutationObserver(checkTheme);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => {
+      window.removeEventListener('theme-change', checkTheme);
+      observer.disconnect();
+    };
+  }, []);
+
+  return isDark;
+}
+
 /* -------------------------------------------------------------------------- */
 /* 1. VISUALIZADOR DE DATOS AGRUPADOS MULTI-TIPO                              */
 /* (Histograma, Polígono, Circular/Torta, Ojiva)                              */
@@ -185,6 +207,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [chartType, setChartType] = useState<'histogram' | 'polygon' | 'pie' | 'ogive'>('histogram');
+  const isDark = useIsDarkMode();
 
   useEffect(() => {
     setIsMounted(true);
@@ -201,14 +224,14 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   );
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
+    <div className="bg-white dark:bg-[#0F172A] rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 dark:border-slate-800 mt-6 transition-all">
       {/* Barra de Control de Tipo de Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-[#0F2942] uppercase tracking-wide">
+          <h3 className="text-sm sm:text-base font-bold text-[#0F2942] dark:text-slate-100 uppercase tracking-wide">
             {title}
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {chartType === 'histogram' && `Histograma: Distribución de ${variableName}`}
             {chartType === 'polygon' && `Polígono de Frecuencias: Marcas de Clase Mc (${unit})`}
             {chartType === 'pie' && `Distribución Porcentual Relativa (%) de ${variableName}`}
@@ -217,14 +240,14 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos con Scroll Horizontal */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#131C2E] p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartType('histogram')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'histogram'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
             title="Histograma de Barras Continuas"
           >
@@ -237,8 +260,8 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             onClick={() => setChartType('polygon')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'polygon'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
             title="Polígono de Frecuencias"
           >
@@ -251,8 +274,8 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             onClick={() => setChartType('pie')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'pie'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
             title="Gráfico Circular de Porcentajes"
           >
@@ -265,8 +288,8 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
             onClick={() => setChartType('ogive')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'ogive'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
             title="Ojiva de Frecuencias Acumuladas"
           >
@@ -287,27 +310,27 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
                 barCategoryGap={0}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
                 <XAxis
                   dataKey="intervalLabel"
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 10,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                     style: { textAnchor: 'middle' }
@@ -315,7 +338,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   allowDecimals={false}
                 />
                 <Tooltip content={<CustomCartesianTooltip />} />
-                <Bar dataKey="fa" name="Observaciones Registradas" stroke="#0F2942" strokeWidth={1}>
+                <Bar dataKey="fa" name="Observaciones Registradas" stroke={isDark ? '#0F172A' : '#0F2942'} strokeWidth={1}>
                   {data.map((_, idx) => (
                     <Cell 
                       key={`hist-cell-${idx}`} 
@@ -338,27 +361,27 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                     <stop offset="95%" stopColor="#1B8A5A" stopOpacity={0.05}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
                 <XAxis
                   dataKey="marcaDeClase"
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: `Marca de Clase (Mc) [${unit ? `${variableName} (${unit})` : variableName}]`,
                     position: 'insideBottom',
                     offset: -15,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 10,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                     style: { textAnchor: 'middle' }
@@ -385,7 +408,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 <Legend 
                   verticalAlign="bottom" 
                   height={36} 
-                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700">{value}</span>}
+                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{value}</span>}
                 />
                 <Pie
                   data={data}
@@ -403,7 +426,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                     <Cell 
                       key={`pie-cell-${idx}`} 
                       fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                      stroke="#FFFFFF"
+                      stroke={isDark ? '#0F172A' : '#FFFFFF'}
                       strokeWidth={2}
                     />
                   ))}
@@ -417,27 +440,27 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 data={data}
                 margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
                 <XAxis
                   dataKey="intervalLabel"
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: 'Total acumulado de casos (Fa)',
                     angle: -90,
                     position: 'insideLeft',
                     offset: 10,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                     style: { textAnchor: 'middle' }
@@ -449,22 +472,22 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   type="monotone"
                   dataKey="Fa"
                   name="Frecuencia Acumulada (Fa)"
-                  stroke="#E67E22"
+                  stroke="#8B5CF6"
                   strokeWidth={3.5}
-                  dot={{ r: 6, fill: '#E67E22', stroke: '#FFF', strokeWidth: 2 }}
+                  dot={{ r: 6, fill: '#8B5CF6', stroke: '#FFF', strokeWidth: 2 }}
                 />
               </LineChart>
             )}
           </ResponsiveContainer>
         ) : (
-          <div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-xl">
+          <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-xl">
             <span className="text-xs text-slate-400">Cargando gráfico estadístico...</span>
           </div>
         )}
       </div>
 
       {/* Pie Institucional */}
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
         <span className="font-mono text-[11px] text-slate-400">Visualización Didáctica</span>
       </div>
@@ -473,18 +496,18 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
 };
 
 /* -------------------------------------------------------------------------- */
-/* 2. VISUALIZADOR DE FRECUENCIAS SIMPLES (Cuantitativas y Cualitativas)      */
-/* (Barras, Circular/Torta, Líneas)                                          */
+/* 2. VISUALIZADOR DE DATOS SIMPLES MULTI-TIPO                                */
+/* (Barras Multicolor, Circular/Torta %, Líneas)                             */
 /* -------------------------------------------------------------------------- */
 interface SimpleChartProps {
   title: string;
   variableName: string;
-  unit: string;
+  unit?: string;
   variableType?: 'quantitative' | 'qualitative';
   xLabel?: string;
   yLabel?: string;
   data: {
-    variableValue: number | string;
+    variableValue: string | number;
     fa: number;
     p: number;
   }[];
@@ -501,6 +524,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'pie' | 'line'>('bar');
+  const isDark = useIsDarkMode();
 
   useEffect(() => {
     setIsMounted(true);
@@ -520,19 +544,19 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
   // Eje Y: Título cotidiano y descriptivo
   const dynamicYLabel = yLabel || getDescriptiveYLabel(
     variableName,
-    unit,
+    unit || '',
     chartType === 'pie' ? 'percentage' : 'absolute'
   );
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
+    <div className="bg-white dark:bg-[#0F172A] rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 dark:border-slate-800 mt-6 transition-all">
       {/* Barra de Control de Tipo de Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-[#0F2942] uppercase tracking-wide">
+          <h3 className="text-sm sm:text-base font-bold text-[#0F2942] dark:text-slate-100 uppercase tracking-wide">
             {title}
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {chartType === 'bar' && `Diagrama de Barras: ${formattedXLabel}`}
             {chartType === 'pie' && `Distribución Porcentual (%) de ${variableName}`}
             {chartType === 'line' && `Gráfico de Frecuencias de ${variableName}`}
@@ -540,14 +564,14 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#131C2E] p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartType('bar')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'bar'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
           >
             <BarChart2 className="w-3.5 h-3.5" />
@@ -559,8 +583,8 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
             onClick={() => setChartType('pie')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'pie'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
           >
             <PieIcon className="w-3.5 h-3.5" />
@@ -572,8 +596,8 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
             onClick={() => setChartType('line')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartType === 'line'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
@@ -592,27 +616,27 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                 data={data} 
                 margin={{ top: 15, right: 25, left: 60, bottom: 25 }}
               >
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
                 <XAxis
                   dataKey="variableValue"
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 10,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                     style: { textAnchor: 'middle' }
@@ -642,7 +666,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                 <Legend 
                   verticalAlign="bottom" 
                   height={36} 
-                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700">{value}</span>}
+                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{value}</span>}
                 />
                 <Pie
                   data={data}
@@ -660,7 +684,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                     <Cell 
                       key={`pie-simple-${idx}`} 
                       fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                      stroke="#FFFFFF"
+                      stroke={isDark ? '#0F172A' : '#FFFFFF'}
                       strokeWidth={2}
                     />
                   ))}
@@ -671,27 +695,27 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
             {/* 3. LÍNEAS */}
             {chartType === 'line' && (
               <LineChart data={data} margin={{ top: 15, right: 25, left: 60, bottom: 25 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
                 <XAxis
                   dataKey="variableValue"
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: formattedXLabel,
                     position: 'insideBottom',
                     offset: -15,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                   }}
                 />
                 <YAxis
-                  tick={{ fontSize: 11, fill: '#475569' }}
+                  tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                   label={{
                     value: dynamicYLabel,
                     angle: -90,
                     position: 'insideLeft',
                     offset: 10,
-                    fill: '#0F2942',
+                    fill: isDark ? '#F1F5F9' : '#0F2942',
                     fontWeight: 700,
                     fontSize: 11,
                     style: { textAnchor: 'middle' }
@@ -711,14 +735,14 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
             )}
           </ResponsiveContainer>
         ) : (
-          <div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-xl">
+          <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-xl">
             <span className="text-xs text-slate-400">Cargando gráfico...</span>
           </div>
         )}
       </div>
 
       {/* Pie Institucional */}
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
         <span className="font-mono text-[11px] text-slate-400">Diagrama Estadístico</span>
       </div>
@@ -753,6 +777,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
 }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [chartMode, setChartMode] = useState<'grouped' | 'stacked'>('grouped');
+  const isDark = useIsDarkMode();
 
   useEffect(() => {
     setIsMounted(true);
@@ -762,14 +787,14 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
   const dynamicYLabel = yLabel || 'Número de casos observados';
 
   return (
-    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 mt-6">
+    <div className="bg-white dark:bg-[#0F172A] rounded-2xl p-4 sm:p-6 shadow-xs border border-slate-200 dark:border-slate-800 mt-6 transition-all">
       {/* Barra de Control de Tipo de Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 pb-4 border-b border-slate-100 dark:border-slate-800">
         <div>
-          <h3 className="text-sm sm:text-base font-bold text-[#0F2942] uppercase tracking-wide">
+          <h3 className="text-sm sm:text-base font-bold text-[#0F2942] dark:text-slate-100 uppercase tracking-wide">
             {title}
           </h3>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
             {chartMode === 'grouped'
               ? `Distribución Conjunta: ${variableX} vs. ${variableY} (Barras Agrupadas)`
               : `Distribución Acumulada: ${variableX} vs. ${variableY} (Barras Apiladas)`}
@@ -777,14 +802,14 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#131C2E] p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartMode('grouped')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartMode === 'grouped'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
           >
             <BarChart2 className="w-3.5 h-3.5" />
@@ -796,8 +821,8 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
             onClick={() => setChartMode('stacked')}
             className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
               chartMode === 'stacked'
-                ? 'bg-[#0F2942] text-white shadow-xs'
-                : 'text-slate-600 hover:text-[#0F2942] hover:bg-white/60'
+                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
             }`}
           >
             <StackIcon className="w-3.5 h-3.5" />
@@ -811,27 +836,27 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 15, right: 25, left: 60, bottom: 25 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
               <XAxis
                 dataKey="categoryX"
-                tick={{ fontSize: 11, fill: '#475569' }}
+                tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                 label={{
                   value: formattedXLabel,
                   position: 'insideBottom',
                   offset: -15,
-                  fill: '#0F2942',
+                  fill: isDark ? '#F1F5F9' : '#0F2942',
                   fontWeight: 700,
                   fontSize: 11,
                 }}
               />
               <YAxis
-                tick={{ fontSize: 11, fill: '#475569' }}
+                tick={{ fontSize: 11, fill: isDark ? '#94A3B8' : '#475569' }}
                 label={{
                   value: dynamicYLabel,
                   angle: -90,
                   position: 'insideLeft',
                   offset: 10,
-                  fill: '#0F2942',
+                  fill: isDark ? '#F1F5F9' : '#0F2942',
                   fontWeight: 700,
                   fontSize: 11,
                   style: { textAnchor: 'middle' }
@@ -842,7 +867,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
               <Legend 
                 verticalAlign="top" 
                 height={36} 
-                formatter={(value: string) => <span className="text-xs font-bold text-slate-700">{value}</span>}
+                formatter={(value: string) => <span className="text-xs font-bold text-slate-700 dark:text-slate-300">{value}</span>}
               />
 
               {categoriesY.map((catY, idx) => (
@@ -858,14 +883,14 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
             </BarChart>
           </ResponsiveContainer>
         ) : (
-          <div className="h-full w-full flex items-center justify-center bg-slate-50 rounded-xl">
+          <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-xl">
             <span className="text-xs text-slate-400">Cargando gráfico bivariado...</span>
           </div>
         )}
       </div>
 
       {/* Pie Institucional */}
-      <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+      <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
         <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
         <span className="font-mono text-[11px] text-slate-400">Gráfico Bivariado</span>
       </div>

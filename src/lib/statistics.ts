@@ -530,13 +530,14 @@ export function generateContingencyTable(
 }
 
 /**
- * CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE (CUANTITATIVOS Y CUALITATIVOS)
+ * CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE
  */
 export const SAFETY_PRESETS: SafetyPreset[] = [
   // --- FRECUENCIAS SIMPLES: CUALITATIVAS ---
   {
     id: 'cualitativa-ocupaciones',
     title: 'Ocupaciones Declaradas en Planta',
+    chipLabel: 'Ocupaciones',
     category: 'Siniestralidad y Recursos Humanos',
     variableName: 'Ocupaciones declaradas',
     unit: 'Trabajadores',
@@ -555,6 +556,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'cualitativa-lesiones',
     title: 'Tipo de Lesión más Frecuente en Planta',
+    chipLabel: 'Tipos de Lesión',
     category: 'Siniestralidad y Medicina',
     variableName: 'Naturaleza de la Lesión',
     unit: 'Casos registrados',
@@ -573,6 +575,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'cualitativa-epp-estado',
     title: 'Estado del Equipo de Protección (EPP)',
+    chipLabel: 'Estado de EPP',
     category: 'Seguridad Operativa',
     variableName: 'Condición Operativa del EPP',
     unit: 'Elementos inspeccionados',
@@ -590,6 +593,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'cualitativa-riesgo-ergo',
     title: 'Nivel de Riesgo Ergonómico en Puestos',
+    chipLabel: 'Riesgo Ergonómico',
     category: 'Ergonomía Laboral',
     variableName: 'Nivel de Riesgo (Método RULA)',
     unit: 'Puestos evaluados',
@@ -610,6 +614,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'dias-baja',
     title: 'Días de Licencia por Accidente',
+    chipLabel: 'Días de Licencia',
     category: 'Costos y Siniestralidad',
     variableName: 'Jornadas de Trabajo Perdidas',
     unit: 'Días corridos',
@@ -625,6 +630,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'incidentes-mes',
     title: 'Incidentes Mensuales por Sector',
+    chipLabel: 'Incidentes / Mes',
     category: 'Siniestralidad',
     variableName: 'Conteo de Cuasi-Accidentes Mensuales',
     unit: 'Incidentes',
@@ -641,6 +647,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'auditorias-5s',
     title: 'Puntaje de Auditoría 5S',
+    chipLabel: 'Auditorías 5S',
     category: 'Prevención Operativa',
     variableName: 'Calificación de Orden y Limpieza',
     unit: 'Puntos',
@@ -659,6 +666,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'ruido-db',
     title: 'Niveles de Ruido en Taller Metalúrgico',
+    chipLabel: 'Ruido Sonoro (dBA)',
     category: 'Higiene Industrial',
     variableName: 'Nivel Sonoro Continuo Equivalente',
     unit: 'dBA',
@@ -675,6 +683,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'edades-operarios',
     title: 'Edades de Trabajadores en Obras',
+    chipLabel: 'Edades (Años)',
     category: 'Ergonomía y Salud',
     variableName: 'Edad del Personal Operativo',
     unit: 'Años',
@@ -691,6 +700,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'iluminacion-lux',
     title: 'Nivel de Iluminación en Ensamble',
+    chipLabel: 'Iluminación (Lux)',
     category: 'Higiene Industrial',
     variableName: 'Iluminancia en Plano de Trabajo',
     unit: 'Lux',
@@ -707,6 +717,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'co-mineria',
     title: 'Monóxido de Carbono en Minería',
+    chipLabel: 'Monóxido CO (ppm)',
     category: 'Toxicología y Ventilación',
     variableName: 'Concentración de CO en Galerías',
     unit: 'ppm',
@@ -723,6 +734,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'tgbh-termico',
     title: 'Estrés Térmico TGBH en Fundición',
+    chipLabel: 'Estrés Térmico (°C)',
     category: 'Higiene Industrial',
     variableName: 'Índice TGBH Interior',
     unit: '°C',
@@ -738,6 +750,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'polvo-cantera',
     title: 'Polvo Respirable en Molienda',
+    chipLabel: 'Polvo Respirable',
     category: 'Control Ambiental',
     variableName: 'Fracción Respirable de Polvo',
     unit: 'mg/m³',
@@ -755,6 +768,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'contingencia-epp',
     title: 'Sector vs. Cumplimiento de EPP',
+    chipLabel: 'Sector vs. EPP',
     category: 'Seguridad Operativa',
     variableName: 'Sector vs. Uso de EPP',
     unit: 'Observaciones',
@@ -786,6 +800,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'contingencia-turnos',
     title: 'Turno vs. Gravedad del Incidente',
+    chipLabel: 'Turno vs. Gravedad',
     category: 'Costos y Siniestralidad',
     variableName: 'Turno vs. Gravedad',
     unit: 'Incidentes',
@@ -816,6 +831,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'contingencia-permisos',
     title: 'Tarea Crítica vs. Estado de Permiso ATS',
+    chipLabel: 'Riesgo vs. Permiso ATS',
     category: 'Control de Riesgos',
     variableName: 'Tarea vs. Autorización ATS',
     unit: 'Trabajos',
@@ -847,6 +863,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'contingencia-lesion-cuerpo',
     title: 'Naturaleza de Lesión vs. Zona Corporal Afectada',
+    chipLabel: 'Lesión vs. Zona Cuerpo',
     category: 'Medicina Laboral y Traumatología',
     variableName: 'Tipo de Lesión vs. Zona del Cuerpo',
     unit: 'Casos clínicos',
@@ -878,6 +895,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'contingencia-antiguedad-desvios',
     title: 'Antigüedad Laboral vs. Tipo de Acto Inseguro',
+    chipLabel: 'Antigüedad vs. Desvío',
     category: 'Psicología y Comportamiento Seguro',
     variableName: 'Experiencia vs. Acto Inseguro',
     unit: 'Observaciones preventivas',
@@ -908,6 +926,7 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
   {
     id: 'contingencia-ruido-proteccion',
     title: 'Nivel Sonoro del Área vs. Uso de Protección Auditiva',
+    chipLabel: 'Ruido vs. Protección',
     category: 'Higiene y Salud Auditiva',
     variableName: 'Nivel Sonoro vs. Adhesión a Protector',
     unit: 'Operarios auditados',

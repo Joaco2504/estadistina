@@ -246,35 +246,35 @@ export const ContingencyTableModule: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Panel de Control y Presets Bivariados */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-        <div className="bg-[#0F2942] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="bg-[#0F2942] dark:bg-[#080D1A] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3 border-b border-[#1C4874] dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Split className="w-4 h-4 text-[#E67E22]" />
+            <Split className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
             <h2 className="text-sm sm:text-base font-bold tracking-wide">
               Módulo 3: Tabla de Contingencia Bivariada
             </h2>
-            <span className="text-xs font-mono text-slate-300">
+            <span className="text-xs font-mono text-slate-300 dark:text-slate-400">
               (n = {grandTotal} casos)
             </span>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-[#15385B] px-2.5 py-1 rounded-lg border border-[#1C4874]">
-              <label className="text-xs text-slate-300 font-medium">Muestra (n):</label>
+            <div className="flex items-center gap-1.5 bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded-lg border border-[#1C4874] dark:border-slate-700">
+              <label className="text-xs text-slate-200 dark:text-slate-300 font-medium">Muestra (n):</label>
               <input
                 type="number"
                 min={5}
                 max={500}
                 value={customN}
                 onChange={(e) => setCustomN(Number(e.target.value))}
-                className="w-12 sm:w-14 bg-[#0A1D30] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
+                className="w-12 sm:w-14 bg-[#0A1D30] dark:bg-[#0F172A] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
               />
             </div>
 
             <button
               type="button"
               onClick={() => handleRandomize()}
-              className="flex items-center gap-1 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
             >
               <Dices className="w-3.5 h-3.5" />
               <span>Simulación</span>
@@ -282,10 +282,10 @@ export const ContingencyTableModule: React.FC = () => {
           </div>
         </div>
 
-        {/* 6 Casos Rápidos de SySO */}
-        <div className="p-4 bg-slate-50 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+        {/* Casos Rápidos de SySO */}
+        <div className="p-4 bg-slate-50 dark:bg-[#131C2E] border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos Bivariados:</span>
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Casos Bivariados:</span>
             {SAFETY_PRESETS.filter(p => p.recommendedType === 'contingency').map((preset) => (
               <button
                 key={preset.id}
@@ -293,17 +293,17 @@ export const ContingencyTableModule: React.FC = () => {
                 onClick={() => handleLoadPreset(preset.id)}
                 className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] text-white shadow-2xs'
-                    : 'bg-white text-slate-700 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-white dark:bg-[#0A1322] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >
-                <span>[{preset.category.split(' ')[0]}] {preset.title.split('vs.')[0]} vs.{preset.title.split('vs.')[1] || ''}</span>
+                <span>{preset.chipLabel || preset.title}</span>
               </button>
             ))}
           </div>
 
           <div className="flex items-center gap-1 text-xs">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Fijar n:</span>
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Fijar n:</span>
             {[20, 35, 50, 80, 150].map((size) => (
               <button
                 key={size}
@@ -311,8 +311,8 @@ export const ContingencyTableModule: React.FC = () => {
                 onClick={() => handleRandomize(size)}
                 className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer ${
                   customN === size
-                    ? 'bg-[#1B8A5A] text-white shadow-2xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >
                 {size}
@@ -322,9 +322,9 @@ export const ContingencyTableModule: React.FC = () => {
         </div>
 
         {/* Definición de Variables y Títulos */}
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white">
+        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-[#0F172A]">
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
               Variable 1 (Filas - Factor X)
             </label>
             <div className="relative">
@@ -332,14 +332,14 @@ export const ContingencyTableModule: React.FC = () => {
                 type="text"
                 value={variableX}
                 onChange={(e) => setVariableX(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] font-bold text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none"
               />
               <Edit3 className="w-3.5 h-3.5 absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
             </div>
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
               Variable 2 (Columnas - Factor Y)
             </label>
             <div className="relative">
@@ -347,7 +347,7 @@ export const ContingencyTableModule: React.FC = () => {
                 type="text"
                 value={variableY}
                 onChange={(e) => setVariableY(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-bold text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
+                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] font-bold text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none"
               />
               <Edit3 className="w-3.5 h-3.5 absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
             </div>
@@ -356,47 +356,47 @@ export const ContingencyTableModule: React.FC = () => {
       </div>
 
       {/* 1. DESGLOSE DIDÁCTICO PASO A PASO */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
         <div 
           onClick={() => setShowDidacticSteps(!showDidacticSteps)}
-          className="px-5 py-3 bg-slate-50 flex items-center justify-between cursor-pointer border-b border-slate-100"
+          className="px-4 sm:px-5 py-3 bg-slate-50 dark:bg-[#0A1322] flex items-center justify-between cursor-pointer border-b border-slate-100 dark:border-slate-800"
         >
-          <div className="flex items-center gap-2 text-[#0F2942]">
-            <Info className="w-4 h-4 text-[#E67E22]" />
+          <div className="flex items-center gap-2 text-[#0F2942] dark:text-slate-200">
+            <Info className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
             <span className="text-xs font-bold uppercase tracking-wide">
               Desglose Didáctico de Frecuencias Simples, Conjuntas y Marginales
             </span>
           </div>
-          <button type="button" className="text-slate-400 hover:text-slate-700">
+          <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
             {showDidacticSteps ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
         </div>
 
         {showDidacticSteps && (
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/50">
-            <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+          <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/50 dark:bg-[#131C2E]">
+            <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
                 1. Frecuencias Simples
               </span>
-              <div className="space-y-1 text-slate-600 font-mono text-[11px]">
+              <div className="space-y-1 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
                 <p><strong>{variableX}:</strong> {result.didacticSteps.step1SimpleFrequencies.varXCounts.map(i => `${i.category}(${i.count})`).join(', ')}</p>
                 <p><strong>{variableY}:</strong> {result.didacticSteps.step1SimpleFrequencies.varYCounts.map(i => `${i.category}(${i.count})`).join(', ')}</p>
               </div>
             </div>
 
-            <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+            <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
                 2. Frecuencias Dobles (fa_ij)
               </span>
-              <p className="text-[11px] text-slate-600 mb-1">Conteo conjunto en cada celda interior:</p>
+              <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-1">Conteo conjunto en cada celda interior:</p>
               <MathFormula formula="fa_{ij} = \text{Conteo de } (X_i \cap Y_j)" />
             </div>
 
-            <div className="bg-white p-3 rounded-xl border border-slate-200 text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 block mb-1">
+            <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
+              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
                 3. Totales Marginales
               </span>
-              <p className="text-[11px] text-slate-600">
+              <p className="text-[11px] text-slate-600 dark:text-slate-300">
                 Suma por filas y columnas = <strong>Gran Total ({result.grandTotal})</strong>
               </p>
             </div>
@@ -405,10 +405,10 @@ export const ContingencyTableModule: React.FC = () => {
       </div>
 
       {/* 2. TABLA DE CONTINGENCIA INTERACTIVA Y EDITABLE */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-        <div className="bg-[#0F2942] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="bg-[#0F2942] dark:bg-[#080D1A] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3 border-b border-[#1C4874] dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Table className="w-4 h-4 text-[#1B8A5A]" />
+            <Table className="w-4 h-4 text-[#1B8A5A] dark:text-emerald-400" />
             <h3 className="text-sm sm:text-base font-bold tracking-wide">
               Tabla Bivariada: {variableX} × {variableY}
             </h3>
@@ -418,54 +418,54 @@ export const ContingencyTableModule: React.FC = () => {
             <button
               type="button"
               onClick={() => exportContingencyTableToExcel(result)}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Exportar a Excel</span>
+              <span className="hidden xs:inline">Exportar a Excel</span>
             </button>
 
-            <span className="text-xs font-mono bg-[#15385B] px-2.5 py-1 rounded text-white border border-[#1C4874] hidden sm:inline">
+            <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-white border border-[#1C4874] dark:border-slate-700 hidden sm:inline">
               Gran Total: {grandTotal}
             </span>
           </div>
         </div>
 
         {/* Barra de Herramientas de Edición de Filas y Columnas */}
-        <div className="px-4 py-2 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-slate-600 font-medium">
-            <Edit3 className="w-3.5 h-3.5 text-[#E67E22]" />
+        <div className="px-4 py-2 bg-slate-50 dark:bg-[#0A1322] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-medium">
+            <Edit3 className="w-3.5 h-3.5 text-[#E67E22] dark:text-amber-400" />
             <span>Haz clic en cualquier celda o encabezado para editar su texto o valor numérico:</span>
           </div>
           <div className="flex items-center gap-1.5">
             <button
               type="button"
               onClick={handleAddRow}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
             >
-              <Plus className="w-3 h-3 text-[#1B8A5A]" />
+              <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
               <span>+ Fila</span>
             </button>
             <button
               type="button"
               onClick={handleAddCol}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-100 font-semibold cursor-pointer"
+              className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
             >
-              <Plus className="w-3 h-3 text-[#1B8A5A]" />
+              <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
               <span>+ Columna</span>
             </button>
           </div>
         </div>
 
-        <div className="overflow-x-auto p-4">
+        <div className="overflow-x-auto p-3 sm:p-4">
           <table className="stat-table">
             <thead>
               <tr>
-                <th className="bg-[#0A1D30] text-left text-xs font-bold">
+                <th className="bg-[#0A1D30] dark:bg-[#080D1A] text-left text-xs font-bold text-white">
                   {variableX} \ {variableY}
                 </th>
                 {colCategories.map((colCat, cIdx) => (
-                  <th key={`col-header-${cIdx}`} className="bg-[#0F2942]">
+                  <th key={`col-header-${cIdx}`} className="bg-[#0F2942] dark:bg-[#0B132B]">
                     <div className="flex items-center justify-between gap-1">
                       <input
                         type="text"
@@ -486,7 +486,7 @@ export const ContingencyTableModule: React.FC = () => {
                     </div>
                   </th>
                 ))}
-                <th className="bg-[#183C5F] text-amber-300 font-bold text-xs">
+                <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs">
                   Total por fila
                 </th>
               </tr>
@@ -494,13 +494,13 @@ export const ContingencyTableModule: React.FC = () => {
             <tbody>
               {rowCategories.map((rowCat, rIdx) => (
                 <tr key={`row-body-${rIdx}`}>
-                  <td className="text-left font-bold text-[#0F2942] bg-slate-50">
+                  <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322]">
                     <div className="flex items-center justify-between gap-1">
                       <input
                         type="text"
                         value={rowCat}
                         onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
-                        className="bg-transparent font-bold text-xs text-[#0F2942] focus:outline-none focus:bg-white px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300"
+                        className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600"
                       />
                       {rowCategories.length > 2 && (
                         <button
@@ -523,13 +523,13 @@ export const ContingencyTableModule: React.FC = () => {
                         min={0}
                         value={matrix[rIdx]?.[cIdx] ?? 0}
                         onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
-                        className="w-full text-center font-mono font-bold text-slate-800 bg-slate-50 hover:bg-white focus:bg-white focus:ring-1 focus:ring-[#1B8A5A] rounded px-1 py-1 border border-slate-200 text-xs"
+                        className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-1 focus:ring-[#1B8A5A] rounded px-1 py-1 border border-slate-200 dark:border-slate-700 text-xs"
                       />
                     </td>
                   ))}
 
                   {/* Total por fila */}
-                  <td className="font-mono font-extrabold text-[#1B8A5A] bg-emerald-50/50 text-xs">
+                  <td className="font-mono font-extrabold text-[#1B8A5A] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs">
                     {rowMarginalTotals[rIdx]}
                   </td>
                 </tr>
@@ -537,15 +537,15 @@ export const ContingencyTableModule: React.FC = () => {
 
               {/* Totales Marginales por Columna y Gran Total */}
               <tr className="total-row">
-                <td className="text-left uppercase font-extrabold text-[#0F2942] text-xs">
+                <td className="text-left uppercase font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
                   Total por columna
                 </td>
                 {colCategories.map((_, cIdx) => (
-                  <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] text-xs">
+                  <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
                     {colMarginalTotals[cIdx]}
                   </td>
                 ))}
-                <td className="font-mono font-black text-white bg-[#0F2942] text-xs">
+                <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs">
                   {grandTotal}
                 </td>
               </tr>

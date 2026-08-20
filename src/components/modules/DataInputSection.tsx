@@ -292,15 +292,15 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden mb-6 transition-all">
+    <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden mb-6 transition-all">
       {/* Encabezado Minimalista y Compacto */}
-      <div className="bg-[#0F2942] px-4 sm:px-5 py-3 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-[#0F2942] dark:bg-[#080D1A] px-4 sm:px-5 py-3 text-white flex flex-wrap items-center justify-between gap-3 border-b border-[#1C4874] dark:border-slate-800">
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg bg-[#1B8A5A] text-white flex-shrink-0">
+          <div className="p-1.5 rounded-lg bg-[#1B8A5A] dark:bg-emerald-600 text-white flex-shrink-0">
             <Sliders className="w-4 h-4" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-bold tracking-wide">
+            <h2 className="text-sm sm:text-base font-bold tracking-wide text-white">
               {mode === 'grouped' 
                 ? (groupedVariableType === 'discrete'
                     ? 'Frecuencias Agrupadas: Variable Cuantitativa Discreta'
@@ -309,7 +309,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                     ? 'Frecuencias Simples: Variable Cualitativa'
                     : 'Frecuencias Simples: Variable Cuantitativa Discreta')}
             </h2>
-            <span className="text-[11px] text-slate-300 hidden sm:inline">
+            <span className="text-[11px] text-slate-300 dark:text-slate-400 hidden sm:inline">
               Personaliza el tipo de variable, el individuo, la muestra o ingresa tus propios datos
             </span>
           </div>
@@ -317,22 +317,22 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
 
         {/* Acciones de Muestra Rápida */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-          <div className="flex items-center gap-1.5 bg-[#15385B] px-2.5 py-1 rounded-lg border border-[#1C4874]">
-            <label className="text-xs text-slate-300 font-medium">Muestra (n):</label>
+          <div className="flex items-center gap-1.5 bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded-lg border border-[#1C4874] dark:border-slate-700">
+            <label className="text-xs text-slate-200 dark:text-slate-300 font-medium">Muestra (n):</label>
             <input
               type="number"
               min={3}
               max={500}
               value={customSampleSize}
               onChange={(e) => setCustomSampleSize(Number(e.target.value))}
-              className="w-12 sm:w-14 bg-[#0A1D30] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
+              className="w-12 sm:w-14 bg-[#0A1D30] dark:bg-[#0F172A] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
             />
           </div>
 
           <button
             type="button"
             onClick={() => handleGenerateCustomN()}
-            className="flex items-center gap-1 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-xs"
+            className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-xs"
             title="Generar nueva muestra aleatoria del tamaño seleccionado"
           >
             <Dices className="w-3.5 h-3.5" />
@@ -344,21 +344,21 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       <div className="p-4 sm:p-5 space-y-4">
         {/* Selector de Naturaleza de Variable en Frecuencias Simples */}
         {mode === 'simple' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-            <span className="text-xs font-bold text-[#0F2942] uppercase tracking-wide">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200 dark:border-slate-800">
+            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
               Tipo de Variable en Estudio:
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => handleSimpleTypeChange('quantitative')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   variableType === 'quantitative'
-                    ? 'bg-[#0F2942] text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#0F2942] text-white shadow-xs dark:bg-emerald-600'
+                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >
-                <Hash className="w-3.5 h-3.5 text-[#1B8A5A]" />
+                <Hash className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-300" />
                 <span>Cuantitativa Discreta (Números)</span>
               </button>
 
@@ -367,11 +367,11 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 onClick={() => handleSimpleTypeChange('qualitative')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   variableType === 'qualitative'
-                    ? 'bg-[#1B8A5A] text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >
-                <Tag className="w-3.5 h-3.5 text-amber-300" />
+                <Tag className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
                 <span>Cualitativa (Categorías / Texto)</span>
               </button>
             </div>
@@ -380,21 +380,21 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
 
         {/* Selector de Tipo de Variable Cuantitativa en Frecuencias Agrupadas (Discreta o Continua) */}
         {mode === 'grouped' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-slate-50 border border-slate-200">
-            <span className="text-xs font-bold text-[#0F2942] uppercase tracking-wide">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200 dark:border-slate-800">
+            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
               Tipo de Variable a Agrupar en Intervalos:
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex flex-wrap items-center gap-1.5">
               <button
                 type="button"
                 onClick={() => handleGroupedTypeChange('continuous')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   groupedVariableType === 'continuous'
-                    ? 'bg-[#0F2942] text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >
-                <Activity className="w-3.5 h-3.5 text-[#1B8A5A]" />
+                <Activity className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-300" />
                 <span>Cuantitativa Continua (Mediciones / Decimales)</span>
               </button>
 
@@ -403,8 +403,8 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 onClick={() => handleGroupedTypeChange('discrete')}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   groupedVariableType === 'discrete'
-                    ? 'bg-[#1B8A5A] text-white shadow-xs'
-                    : 'bg-white text-slate-600 hover:bg-slate-200 border border-slate-200'
+                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >
                 <Binary className="w-3.5 h-3.5 text-white" />
@@ -415,10 +415,10 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
         )}
 
         {/* Casos Prácticos Rápidos de SySO & Chips de Tamaño Muestral */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
-          {/* Casos Prácticos */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          {/* Casos Prácticos con chipLabel limpio */}
           <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Casos:</span>
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Casos:</span>
             {SAFETY_PRESETS.filter((p) => {
               if (mode === 'grouped') {
                 return p.recommendedType === 'grouped' && (p.groupedVariableType === groupedVariableType || (!p.groupedVariableType && groupedVariableType === 'continuous'));
@@ -430,25 +430,25 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => handleLoadPreset(preset.id)}
-                className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60'
                 }`}
               >
-                {preset.id.includes('ruido') && <Volume2 className="w-3 h-3 text-[#E67E22]" />}
-                {preset.id.includes('edad') && <Activity className="w-3 h-3 text-[#1B8A5A]" />}
-                {preset.id.includes('dias') && <Calendar className="w-3 h-3 text-blue-500" />}
-                {preset.id.includes('lux') && <Sun className="w-3 h-3 text-amber-500" />}
-                {preset.id.includes('cualitativa') && <ShieldCheck className="w-3 h-3 text-[#1B8A5A]" />}
-                <span>{preset.title.split(' ')[0]} {preset.title.split(' ')[1] || ''}</span>
+                {preset.id.includes('ruido') && <Volume2 className="w-3 h-3 text-[#E67E22] dark:text-amber-400" />}
+                {preset.id.includes('edad') && <Activity className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />}
+                {preset.id.includes('dias') && <Calendar className="w-3 h-3 text-blue-500 dark:text-blue-400" />}
+                {preset.id.includes('lux') && <Sun className="w-3 h-3 text-amber-500 dark:text-amber-400" />}
+                {preset.id.includes('cualitativa') && <ShieldCheck className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />}
+                <span>{preset.chipLabel || preset.title}</span>
               </button>
             ))}
           </div>
 
           {/* Chips de Tamaño Rápido de Muestra */}
           <div className="flex items-center gap-1 text-xs self-start sm:self-auto">
-            <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Fijar n:</span>
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Fijar n:</span>
             {[10, 20, 27, 30, 50, 100].map((size) => (
               <button
                 key={size}
@@ -456,8 +456,8 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 onClick={() => handleGenerateCustomN(size)}
                 className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer ${
                   customSampleSize === size
-                    ? 'bg-[#1B8A5A] text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-2xs'
+                    : 'bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
               >
                 {size}
@@ -469,7 +469,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
         {/* Datos de la Variable y Medida / Individuo */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="sm:col-span-2">
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
               Variable en Estudio
             </label>
             <input
@@ -477,12 +477,12 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
               value={variableName}
               onChange={(e) => handleVariableNameChange(e.target.value)}
               placeholder="Ej: Ocupaciones declaradas, Nivel de Ruido, Edades, Días de Licencia"
-              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
+              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] font-medium text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[11px] font-bold text-slate-600 uppercase mb-1">
+            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
               Individuo
             </label>
             <input
@@ -490,7 +490,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
               value={unit}
               onChange={(e) => handleUnitChange(e.target.value)}
               placeholder="Ej: Trabajadores, Operarios, Casos, dBA, Años, Días"
-              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 bg-white font-medium text-[#0F2942] focus:ring-1 focus:ring-[#0F2942] outline-none"
+              className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] font-medium text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none"
             />
           </div>
         </div>
@@ -498,7 +498,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
         {/* Datos en Bruto con Indicaciones de Formato y Delimitadores Contextuales */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="text-[11px] font-bold text-slate-600 uppercase">
+            <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase">
               {mode === 'grouped'
                 ? (groupedVariableType === 'continuous'
                     ? 'Datos en Bruto (separados solo por punto y coma \';\')'
@@ -507,7 +507,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                     ? 'Valores Cualitativos (separados por \';\', \',\' o saltos de línea)'
                     : 'Datos en Bruto (acepta comas decimales y delimitación por \';\' o \',\')')}
             </label>
-            <span className="text-[11px] font-mono text-[#1B8A5A] font-semibold bg-emerald-50 px-2 py-0.2 rounded border border-emerald-200">
+            <span className="text-[11px] font-mono text-[#1B8A5A] dark:text-emerald-300 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.2 rounded border border-emerald-200 dark:border-emerald-800">
               n actual = {n} {variableType === 'qualitative' ? 'casos' : 'datos'}
             </span>
           </div>
@@ -525,18 +525,18 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                     ? 'Ingrese categorías separadas por coma o punto y coma (ej: Empleado/a; Emprendedora; Estudiante o Empleado/a, Emprendedora)'
                     : 'Ingrese números separados por punto y coma o coma (ej: 0; 2; 5; 0 o 1,5; 2,5 o 1, 2, 3, 4)')
             }
-            className="w-full text-xs font-mono p-3 rounded-lg border border-slate-200 bg-white text-slate-800 focus:ring-1 focus:ring-[#0F2942] outline-none leading-relaxed resize-y"
+            className="w-full text-xs font-mono p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none leading-relaxed resize-y"
           />
 
           {/* Ayuda de Formato según la selección */}
-          <div className="mt-1 text-[11px] text-slate-500">
+          <div className="mt-1.5 text-[11px]">
             {mode === 'grouped' && groupedVariableType === 'continuous' && (
-              <span className="text-amber-800 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block">
+              <span className="text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/30 px-2 py-0.5 rounded border border-amber-200 dark:border-amber-800/50 inline-block">
                 💡 <strong>Variable Continua:</strong> Utilice punto y coma (;) como separador para permitir decimales con coma (ej: 78,4; 82,1; 85,6).
               </span>
             )}
             {mode === 'grouped' && groupedVariableType === 'discrete' && (
-              <span className="text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block">
+              <span className="text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/30 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800/50 inline-block">
                 💡 <strong>Variable Discreta:</strong> Puede separar los datos usando comas (,) o punto y coma (;).
               </span>
             )}
@@ -549,15 +549,15 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
             <button
               type="button"
               onClick={() => setShowManualParams(!showManualParams)}
-              className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 font-medium transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer"
             >
               <span>Personalizar Parámetros Manuales (R, k, A) - Opcional</span>
             </button>
 
             {showManualParams && (
-              <div className="mt-2.5 p-3 rounded-xl bg-slate-50 border border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="mt-2.5 p-3 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200 dark:border-slate-800 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">
                     Rango Manual (R)
                   </label>
                   <input
@@ -566,12 +566,12 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                     value={rango}
                     onChange={(e) => setRango(e.target.value)}
                     placeholder="Automático (Xmax - Xmin)"
-                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 bg-white font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-slate-800 dark:text-slate-100 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">
                     Intervalos (k)
                   </label>
                   <input
@@ -580,12 +580,12 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                     value={kValue}
                     onChange={(e) => setKValue(e.target.value)}
                     placeholder="Automático (k = √n)"
-                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 bg-white font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-slate-800 dark:text-slate-100 font-mono"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1">
+                  <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">
                     Amplitud (A)
                   </label>
                   <input
@@ -594,7 +594,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                     value={amplitud}
                     onChange={(e) => setAmplitud(e.target.value)}
                     placeholder="Automático (A = R / k)"
-                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 bg-white font-mono"
+                    className="w-full text-xs px-2.5 py-1.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-slate-800 dark:text-slate-100 font-mono"
                   />
                 </div>
               </div>
@@ -607,9 +607,9 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           <button
             type="button"
             onClick={() => onCalculateWithValues()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0F2942] hover:bg-[#15385B] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer active:scale-98"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0F2942] dark:bg-emerald-600 hover:bg-[#15385B] dark:hover:bg-emerald-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer active:scale-98"
           >
-            <Sparkles className="w-4 h-4 text-[#E67E22]" />
+            <Sparkles className="w-4 h-4 text-[#E67E22] dark:text-amber-300" />
             <span>Actualizar Tabla y Gráfico</span>
           </button>
         </div>

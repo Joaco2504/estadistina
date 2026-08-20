@@ -64,62 +64,62 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
     <div className="space-y-6">
       {/* 1. SECCIÓN EXPLICATIVA PASO A PASO (R, k, A) MINIMALISTA Y PLEGABLE */}
       {data.stepByStepDerivation && (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
           <div 
             onClick={() => setShowDerivation(!showDerivation)}
-            className="px-5 py-3 bg-slate-50 flex items-center justify-between cursor-pointer border-b border-slate-100"
+            className="px-4 sm:px-5 py-3 bg-slate-50 dark:bg-[#0A1322] flex items-center justify-between cursor-pointer border-b border-slate-100 dark:border-slate-800"
           >
-            <div className="flex items-center gap-2 text-[#0F2942]">
-              <Calculator className="w-4 h-4 text-[#1B8A5A]" />
+            <div className="flex items-center gap-2 text-[#0F2942] dark:text-slate-200">
+              <Calculator className="w-4 h-4 text-[#1B8A5A] dark:text-emerald-400" />
               <span className="text-xs font-bold uppercase tracking-wide">
                 Paso Previo: Determinación de Parámetros (R, k, A)
               </span>
-              <span className="text-[10px] font-mono font-semibold text-[#1B8A5A] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+              <span className="text-[10px] font-mono font-semibold text-[#1B8A5A] dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                 k = √{data.sampleSize} = {data.parameters.k}
               </span>
             </div>
-            <button type="button" className="text-slate-400 hover:text-slate-700">
+            <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
               {showDerivation ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
             </button>
           </div>
 
           {showDerivation && (
-            <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gradient-to-br from-slate-50/50 to-emerald-50/20">
+            <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gradient-to-br from-slate-50/50 to-emerald-50/20 dark:from-[#0F172A] dark:to-[#0B132B]">
               {/* Rango */}
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+              <div className="bg-white dark:bg-[#0A1322] p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">
                   1. Rango Muestral (R)
                 </span>
-                <div className="text-xs font-mono text-slate-700 mb-1">
-                  {data.parameters.xmax} - {data.parameters.xmin} = <strong>{data.parameters.rango}</strong>
+                <div className="text-xs font-mono text-slate-700 dark:text-slate-300 mb-1">
+                  {data.parameters.xmax} - {data.parameters.xmin} = <strong className="text-[#0F2942] dark:text-white">{data.parameters.rango}</strong>
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   <MathFormula formula="R = X_{\text{max}} - X_{\text{min}}" />
                 </div>
               </div>
 
               {/* Cantidad de Clases (Regla de la Raíz) */}
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+              <div className="bg-white dark:bg-[#0A1322] p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">
                   2. Cantidad de Clases (k = √n)
                 </span>
-                <div className="text-xs font-mono text-slate-700 mb-1">
-                  √{data.sampleSize} ≈ {(Math.sqrt(data.sampleSize)).toFixed(2)} → <strong>k = {data.parameters.k}</strong>
+                <div className="text-xs font-mono text-slate-700 dark:text-slate-300 mb-1">
+                  √{data.sampleSize} ≈ {(Math.sqrt(data.sampleSize)).toFixed(2)} → <strong className="text-[#0F2942] dark:text-white">k = {data.parameters.k}</strong>
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   <MathFormula formula="k = \sqrt{n}" />
                 </div>
               </div>
 
               {/* Amplitud */}
-              <div className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-2xs">
-                <span className="text-[10px] font-bold text-slate-500 uppercase block mb-1">
+              <div className="bg-white dark:bg-[#0A1322] p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs">
+                <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase block mb-1">
                   3. Amplitud de Clase (A)
                 </span>
-                <div className="text-xs font-mono text-slate-700 mb-1">
-                  {data.parameters.rango} / {data.parameters.k} = <strong>{data.parameters.amplitud} {data.unit}</strong>
+                <div className="text-xs font-mono text-slate-700 dark:text-slate-300 mb-1">
+                  {data.parameters.rango} / {data.parameters.k} = <strong className="text-[#0F2942] dark:text-white">{data.parameters.amplitud} {data.unit}</strong>
                 </div>
-                <div className="text-[11px] text-slate-500">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400">
                   <MathFormula formula="A = \frac{R}{k}" />
                 </div>
               </div>
@@ -129,14 +129,14 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
       )}
 
       {/* 2. TABLA DE FRECUENCIAS AGRUPADAS */}
-      <div className="bg-white rounded-2xl shadow-xs border border-slate-200 overflow-hidden">
-        <div className="bg-[#0F2942] px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden">
+        <div className="bg-[#0F2942] dark:bg-[#080D1A] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3 border-b border-[#1C4874] dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#1B8A5A]" />
+            <Layers className="w-4 h-4 text-[#1B8A5A] dark:text-emerald-400" />
             <h3 className="text-sm sm:text-base font-bold tracking-wide">
               Distribución de Frecuencias Agrupadas
             </h3>
-            <span className="text-xs font-mono text-slate-300">
+            <span className="text-xs font-mono text-slate-300 dark:text-slate-400">
               ({data.variableName} • n = {data.sampleSize})
             </span>
           </div>
@@ -146,14 +146,14 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
             <button
               type="button"
               onClick={() => exportGroupedTableToExcel(data)}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Exportar a Excel</span>
+              <span className="hidden xs:inline">Exportar a Excel</span>
             </button>
 
-            <span className="text-xs font-mono bg-[#15385B] px-2.5 py-1 rounded text-slate-200 border border-[#1C4874] hidden sm:inline">
+            <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-slate-200 border border-[#1C4874] dark:border-slate-700 hidden sm:inline">
               k = {data.parameters.k} | A = {data.parameters.amplitud}
             </span>
           </div>
@@ -161,9 +161,9 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
 
         {/* Indicador Dinámico de Iluminación en Tiempo Real (Sin titileo) */}
         {activeStep && (
-          <div className="bg-slate-900 text-white px-4 py-2.5 border-b border-slate-700 flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
+          <div className="bg-slate-900 dark:bg-[#0B132B] text-white px-4 py-2.5 border-b border-slate-700 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-[#E67E22] flex-shrink-0" />
+              <Sparkles className="w-4 h-4 text-[#E67E22] dark:text-amber-400 flex-shrink-0" />
               <span>
                 {activeStep === 'mc' && `Marca de Clase Mc = (${selectedRow.intervalLabel}) / 2 = ${selectedRow.marcaDeClase}`}
                 {activeStep === 'fr' && `Frecuencia Relativa fr = fa (${selectedRow.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow.frecuenciaRelativa.toFixed(2)}`}
@@ -193,33 +193,33 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
         )}
 
         {/* Tabla Didáctica Minimalista con Iluminación en Tiempo Real */}
-        <div className="overflow-x-auto p-4">
+        <div className="overflow-x-auto p-3 sm:p-4">
           <table className="stat-table">
             <thead>
               <tr>
                 <th>N°</th>
-                <th className={activeStep === 'mc' ? 'bg-amber-100 text-amber-950 font-bold' : ''}>
+                <th className={activeStep === 'mc' ? 'bg-amber-100 dark:bg-amber-950/70 text-amber-950 dark:text-amber-200 font-bold' : ''}>
                   Intervalo (I)
                 </th>
-                <th className={activeStep === 'mc' ? 'bg-amber-200 text-amber-950 font-black ring-2 ring-amber-400' : ''}>
+                <th className={activeStep === 'mc' ? 'bg-amber-200 dark:bg-amber-900/80 text-amber-950 dark:text-amber-100 font-black ring-2 ring-amber-400' : ''}>
                   Marca de Clase (Mc)
                 </th>
-                <th className={activeStep === 'fr' || activeStep === 'acum' ? 'bg-emerald-100 text-emerald-950 font-bold' : ''}>
+                <th className={activeStep === 'fr' || activeStep === 'acum' ? 'bg-emerald-100 dark:bg-emerald-950/70 text-emerald-950 dark:text-emerald-200 font-bold' : ''}>
                   Frec. Absoluta (fa)
                 </th>
-                <th className={activeStep === 'fr' || activeStep === 'p' ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-400' : ''}>
+                <th className={activeStep === 'fr' || activeStep === 'p' ? 'bg-emerald-200 dark:bg-emerald-900/80 text-emerald-950 dark:text-emerald-100 font-black ring-2 ring-emerald-400' : ''}>
                   Frec. Relativa (fr)
                 </th>
-                <th className={activeStep === 'p' ? 'bg-blue-200 text-blue-950 font-black ring-2 ring-blue-400' : ''}>
+                <th className={activeStep === 'p' ? 'bg-blue-200 dark:bg-blue-900/80 text-blue-950 dark:text-blue-100 font-black ring-2 ring-blue-400' : ''}>
                   Porcentaje (p %)
                 </th>
-                <th className={activeStep === 'acum' ? 'bg-purple-200 text-purple-950 font-black ring-2 ring-purple-400' : ''}>
+                <th className={activeStep === 'acum' ? 'bg-purple-200 dark:bg-purple-900/80 text-purple-950 dark:text-purple-100 font-black ring-2 ring-purple-400' : ''}>
                   Frec. Abs. Acum. (Fa)
                 </th>
-                <th className={activeStep === 'acum' ? 'bg-purple-100 text-purple-950 font-bold' : ''}>
+                <th className={activeStep === 'acum' ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-950 dark:text-purple-200 font-bold' : ''}>
                   Frec. Rel. Acum. (Fr)
                 </th>
-                <th className={activeStep === 'acum' ? 'bg-purple-100 text-purple-950 font-bold' : ''}>
+                <th className={activeStep === 'acum' ? 'bg-purple-100 dark:bg-purple-950/70 text-purple-950 dark:text-purple-200 font-bold' : ''}>
                   Porc. Acum. (P %)
                 </th>
                 <th>Detalle</th>
@@ -235,21 +235,21 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     key={row.index}
                     onClick={() => setSelectedRowIndex(row.index)}
                     className={`cursor-pointer transition-all ${
-                      isSelected ? 'bg-emerald-50/90 font-medium' : ''
+                      isSelected ? 'bg-emerald-50/90 dark:bg-emerald-950/30 font-medium' : ''
                     }`}
                   >
-                    <td className="font-bold text-[#0F2942]">{row.index}</td>
+                    <td className="font-bold text-[#0F2942] dark:text-slate-300">{row.index}</td>
                     
                     {/* Intervalo */}
                     <td className={`font-mono font-semibold transition-colors ${
-                      isSelected && activeStep === 'mc' ? 'bg-amber-100 text-amber-900 font-black ring-2 ring-amber-400' : 'text-slate-800'
+                      isSelected && activeStep === 'mc' ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-200 font-black ring-2 ring-amber-400' : 'text-slate-800 dark:text-slate-100'
                     }`}>
                       {row.intervalLabel}
                     </td>
 
                     {/* Marca de clase */}
                     <td className={`font-mono transition-colors ${
-                      isSelected && activeStep === 'mc' ? 'bg-amber-200 text-amber-950 font-black ring-2 ring-amber-500' : 'text-[#0F2942]'
+                      isSelected && activeStep === 'mc' ? 'bg-amber-200 dark:bg-amber-900/90 text-amber-950 dark:text-amber-100 font-black ring-2 ring-amber-500' : 'text-[#0F2942] dark:text-slate-200'
                     }`}>
                       {row.marcaDeClase}
                     </td>
@@ -257,10 +257,10 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* fa */}
                     <td className={`font-mono font-bold transition-colors ${
                       isSelected && activeStep === 'fr' 
-                        ? 'bg-emerald-200 text-emerald-950 ring-2 ring-emerald-500' 
+                        ? 'bg-emerald-200 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500' 
                         : isPriorForCumulative 
-                        ? 'bg-purple-100 text-purple-950 ring-1 ring-purple-300 font-black' 
-                        : 'text-[#1B8A5A]'
+                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 ring-1 ring-purple-300 font-black' 
+                        : 'text-[#1B8A5A] dark:text-emerald-400'
                     }`}>
                       {row.frecuenciaAbsoluta}
                     </td>
@@ -268,8 +268,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
                       isSelected && (activeStep === 'fr' || activeStep === 'p') 
-                        ? 'bg-emerald-200 text-emerald-950 font-black ring-2 ring-emerald-500' 
-                        : 'text-slate-700'
+                        ? 'bg-emerald-200 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-100 font-black ring-2 ring-emerald-500' 
+                        : 'text-slate-700 dark:text-slate-300'
                     }`}>
                       {row.frecuenciaRelativa.toFixed(2)}
                     </td>
@@ -277,8 +277,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* p */}
                     <td className={`font-mono transition-colors ${
                       isSelected && activeStep === 'p' 
-                        ? 'bg-blue-200 text-blue-950 font-black ring-2 ring-blue-500' 
-                        : 'text-slate-700'
+                        ? 'bg-blue-200 dark:bg-blue-900/90 text-blue-950 dark:text-blue-100 font-black ring-2 ring-blue-500' 
+                        : 'text-slate-700 dark:text-slate-300'
                     }`}>
                       {row.porcentaje.toFixed(2)}%
                     </td>
@@ -286,8 +286,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* Fa */}
                     <td className={`font-mono transition-colors ${
                       isSelected && activeStep === 'acum' 
-                        ? 'bg-purple-200 text-purple-950 font-black ring-2 ring-purple-500' 
-                        : 'text-slate-700'
+                        ? 'bg-purple-200 dark:bg-purple-900/90 text-purple-950 dark:text-purple-100 font-black ring-2 ring-purple-500' 
+                        : 'text-slate-700 dark:text-slate-300'
                     }`}>
                       {row.frecuenciaAbsolutaAcumulada}
                     </td>
@@ -295,8 +295,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* Fr (2 decimales) */}
                     <td className={`font-mono transition-colors ${
                       isSelected && activeStep === 'acum' 
-                        ? 'bg-purple-100 text-purple-950 font-bold ring-1 ring-purple-400' 
-                        : 'text-slate-700'
+                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 font-bold ring-1 ring-purple-400' 
+                        : 'text-slate-700 dark:text-slate-300'
                     }`}>
                       {row.frecuenciaRelativaAcumulada.toFixed(2)}
                     </td>
@@ -304,8 +304,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* P */}
                     <td className={`font-mono transition-colors ${
                       isSelected && activeStep === 'acum' 
-                        ? 'bg-purple-100 text-purple-950 font-bold ring-1 ring-purple-400' 
-                        : 'text-slate-700'
+                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 font-bold ring-1 ring-purple-400' 
+                        : 'text-slate-700 dark:text-slate-300'
                     }`}>
                       {row.porcentajeAcumulado.toFixed(2)}%
                     </td>
@@ -319,8 +319,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                         }}
                         className={`text-[11px] px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#1B8A5A] text-white'
-                            : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                            ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white'
+                            : 'bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
                         {isSelected ? 'Viendo' : 'Explicar'}
@@ -332,19 +332,19 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
 
               {/* Fila de Totales Estricta: Prohibición de Σ */}
               <tr className="total-row">
-                <td colSpan={3} className="text-right uppercase font-extrabold pr-4 text-[#0F2942]">
+                <td colSpan={3} className="text-right uppercase font-extrabold pr-4 text-[#0F2942] dark:text-slate-100">
                   {data.totals.label}
                 </td>
-                <td className="font-mono font-black text-[#1B8A5A]">
+                <td className="font-mono font-black text-[#1B8A5A] dark:text-emerald-400">
                   {data.totals.totalFa}
                 </td>
-                <td className="font-mono font-bold text-slate-800">
+                <td className="font-mono font-bold text-slate-800 dark:text-slate-200">
                   {data.totals.totalFr.toFixed(2)}
                 </td>
-                <td className="font-mono font-bold text-slate-800">
+                <td className="font-mono font-bold text-slate-800 dark:text-slate-200">
                   {data.totals.totalP.toFixed(2)}%
                 </td>
-                <td colSpan={4} className="text-[11px] text-slate-400 italic text-center font-normal">
+                <td colSpan={4} className="text-[11px] text-slate-400 dark:text-slate-500 italic text-center font-normal">
                   — No se totaliza —
                 </td>
               </tr>
@@ -354,14 +354,14 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
 
         {/* 3. DESGLOSE INTERACTIVO: TARJETAS AMPLIADAS CON SELECCIÓN FIJABLE */}
         {selectedRow && (
-          <div className="border-t border-slate-200 bg-slate-50/90 p-5 sm:p-6">
+          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-[#131C2E] p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
-              <div className="flex items-center gap-2 text-xs sm:text-sm text-[#0F2942] font-bold">
-                <Info className="w-4 h-4 text-[#E67E22]" />
-                <span>Cálculo paso a paso del Intervalo N° {selectedRow.index}: <span className="font-mono text-[#1B8A5A] font-extrabold">{selectedRow.intervalLabel}</span></span>
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-[#0F2942] dark:text-slate-100 font-bold">
+                <Info className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
+                <span>Cálculo paso a paso del Intervalo N° {selectedRow.index}: <span className="font-mono text-[#1B8A5A] dark:text-emerald-400 font-extrabold">{selectedRow.intervalLabel}</span></span>
               </div>
-              <span className="text-xs text-slate-500 font-medium">
-                ✨ Pasa el mouse para previsualizar o <strong className="text-slate-700">haz clic para fijar la iluminación</strong> en la tabla:
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                ✨ Pasa el mouse o <strong className="text-slate-700 dark:text-slate-200">haz clic para fijar la iluminación</strong> en la tabla:
               </span>
             </div>
 
@@ -373,30 +373,30 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 onClick={() => handleStepClick('mc')}
                 className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
                   pinnedStep === 'mc'
-                    ? 'bg-amber-50/90 border-amber-500 shadow-md ring-2 ring-amber-400'
+                    ? 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-500 shadow-md ring-2 ring-amber-400'
                     : hoveredStep === 'mc'
-                    ? 'bg-amber-50/50 border-amber-300 shadow-xs'
-                    : 'bg-white border-slate-200 hover:border-amber-300 shadow-2xs'
+                    ? 'bg-amber-50/50 dark:bg-amber-950/30 border-amber-300 shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] border-slate-200 dark:border-slate-700 hover:border-amber-300 shadow-2xs'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase text-amber-800 mb-2">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-amber-800 dark:text-amber-300 mb-2">
                     <span>1. Marca de Clase (Mc)</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                      pinnedStep === 'mc' ? 'bg-amber-500 text-white' : 'bg-amber-100 text-amber-900'
+                      pinnedStep === 'mc' ? 'bg-amber-500 text-white' : 'bg-amber-100 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200'
                     }`}>
                       {pinnedStep === 'mc' ? '📌 Fijado' : 'Paso 1'}
                     </span>
                   </div>
-                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                  <div className="bg-slate-50/90 dark:bg-[#0F172A] p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 dark:border-slate-800 mb-2">
                     <MathFormula formula={selectedRow.stepExplanations.mc} />
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 block text-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block text-center">
                     Punto medio: (Li + Ls) / 2
                   </span>
-                  <span className="text-[10px] text-amber-700/80 font-medium block text-center mt-1">
+                  <span className="text-[10px] text-amber-700/80 dark:text-amber-300/80 font-medium block text-center mt-1">
                     {pinnedStep === 'mc' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
                   </span>
                 </div>
@@ -409,30 +409,30 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 onClick={() => handleStepClick('fr')}
                 className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
                   pinnedStep === 'fr'
-                    ? 'bg-emerald-50/90 border-emerald-500 shadow-md ring-2 ring-emerald-400'
+                    ? 'bg-emerald-50/90 dark:bg-emerald-950/50 border-emerald-500 shadow-md ring-2 ring-emerald-400'
                     : hoveredStep === 'fr'
-                    ? 'bg-emerald-50/50 border-emerald-300 shadow-xs'
-                    : 'bg-white border-slate-200 hover:border-emerald-300 shadow-2xs'
+                    ? 'bg-emerald-50/50 dark:bg-emerald-950/30 border-emerald-300 shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] border-slate-200 dark:border-slate-700 hover:border-emerald-300 shadow-2xs'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase text-emerald-800 mb-2">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-emerald-800 dark:text-emerald-300 mb-2">
                     <span>2. Frec. Relativa (fr)</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                      pinnedStep === 'fr' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 text-emerald-900'
+                      pinnedStep === 'fr' ? 'bg-emerald-600 text-white' : 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200'
                     }`}>
                       {pinnedStep === 'fr' ? '📌 Fijado' : 'Paso 2'}
                     </span>
                   </div>
-                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                  <div className="bg-slate-50/90 dark:bg-[#0F172A] p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 dark:border-slate-800 mb-2">
                     <MathFormula formula={selectedRow.stepExplanations.fr} />
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 block text-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block text-center">
                     Proporción: fa / n (2 dec.)
                   </span>
-                  <span className="text-[10px] text-emerald-700/80 font-medium block text-center mt-1">
+                  <span className="text-[10px] text-emerald-700/80 dark:text-emerald-300/80 font-medium block text-center mt-1">
                     {pinnedStep === 'fr' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
                   </span>
                 </div>
@@ -445,30 +445,30 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 onClick={() => handleStepClick('p')}
                 className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
                   pinnedStep === 'p'
-                    ? 'bg-blue-50/90 border-blue-500 shadow-md ring-2 ring-blue-400'
+                    ? 'bg-blue-50/90 dark:bg-blue-950/50 border-blue-500 shadow-md ring-2 ring-blue-400'
                     : hoveredStep === 'p'
-                    ? 'bg-blue-50/50 border-blue-300 shadow-xs'
-                    : 'bg-white border-slate-200 hover:border-blue-300 shadow-2xs'
+                    ? 'bg-blue-50/50 dark:bg-blue-950/30 border-blue-300 shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] border-slate-200 dark:border-slate-700 hover:border-blue-300 shadow-2xs'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase text-blue-800 mb-2">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-blue-800 dark:text-blue-300 mb-2">
                     <span>3. Porcentaje (p %)</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                      pinnedStep === 'p' ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-900'
+                      pinnedStep === 'p' ? 'bg-blue-600 text-white' : 'bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200'
                     }`}>
                       {pinnedStep === 'p' ? '📌 Fijado' : 'Paso 3'}
                     </span>
                   </div>
-                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                  <div className="bg-slate-50/90 dark:bg-[#0F172A] p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 dark:border-slate-800 mb-2">
                     <MathFormula formula={selectedRow.stepExplanations.p} />
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 block text-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block text-center">
                     Porcentaje: fr × 100
                   </span>
-                  <span className="text-[10px] text-blue-700/80 font-medium block text-center mt-1">
+                  <span className="text-[10px] text-blue-700/80 dark:text-blue-300/80 font-medium block text-center mt-1">
                     {pinnedStep === 'p' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
                   </span>
                 </div>
@@ -481,30 +481,30 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 onClick={() => handleStepClick('acum')}
                 className={`p-4 sm:p-5 rounded-2xl border-2 transition-all cursor-pointer select-none flex flex-col justify-between ${
                   pinnedStep === 'acum'
-                    ? 'bg-purple-50/90 border-purple-500 shadow-md ring-2 ring-purple-400'
+                    ? 'bg-purple-50/90 dark:bg-purple-950/50 border-purple-500 shadow-md ring-2 ring-purple-400'
                     : hoveredStep === 'acum'
-                    ? 'bg-purple-50/50 border-purple-300 shadow-xs'
-                    : 'bg-white border-slate-200 hover:border-purple-300 shadow-2xs'
+                    ? 'bg-purple-50/50 dark:bg-purple-950/30 border-purple-300 shadow-xs'
+                    : 'bg-white dark:bg-[#0A1322] border-slate-200 dark:border-slate-700 hover:border-purple-300 shadow-2xs'
                 }`}
               >
                 <div>
-                  <div className="flex items-center justify-between text-xs font-bold uppercase text-purple-800 mb-2">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase text-purple-800 dark:text-purple-300 mb-2">
                     <span>4. Acumulados (Fa, Fr, P)</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
-                      pinnedStep === 'acum' ? 'bg-purple-600 text-white' : 'bg-purple-100 text-purple-900'
+                      pinnedStep === 'acum' ? 'bg-purple-600 text-white' : 'bg-purple-100 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200'
                     }`}>
                       {pinnedStep === 'acum' ? '📌 Fijado' : 'Paso 4'}
                     </span>
                   </div>
-                  <div className="bg-slate-50/90 p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 mb-2">
+                  <div className="bg-slate-50/90 dark:bg-[#0F172A] p-2.5 rounded-xl text-center text-sm sm:text-base border border-slate-100 dark:border-slate-800 mb-2">
                     <MathFormula formula={selectedRow.stepExplanations.faAcum} />
                   </div>
                 </div>
                 <div>
-                  <span className="text-[11px] text-slate-500 block text-center">
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block text-center">
                     Suma sucesiva de frecuencias fa
                   </span>
-                  <span className="text-[10px] text-purple-700/80 font-medium block text-center mt-1">
+                  <span className="text-[10px] text-purple-700/80 dark:text-purple-300/80 font-medium block text-center mt-1">
                     {pinnedStep === 'acum' ? '✓ Fijado • Clic para soltar' : 'Haz clic para fijar en tabla'}
                   </span>
                 </div>

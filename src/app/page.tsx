@@ -117,7 +117,7 @@ export default function HomePage() {
   }, [handleCalculate]);
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#F8FAFC]">
+    <div className="min-h-screen flex flex-col bg-[#F8FAFC] dark:bg-[#080D1A] transition-colors duration-150">
       {/* Navbar Superior Unificada */}
       <Navbar
         activeTab={activeTab}

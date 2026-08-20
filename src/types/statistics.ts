@@ -169,6 +169,7 @@ export interface ContingencyTableResult {
 export interface SafetyDataPreset {
   id: string;
   title: string;
+  chipLabel?: string;
   category: string;
   variableName: string;
   unit: string;
