@@ -26,6 +26,7 @@ import {
   Layers as StackIcon,
   Activity
 } from 'lucide-react';
+import { formatPercentage } from '@/lib/statistics';
 
 // Paleta cromática luminosa, vibrante y de alto contraste
 const DYNAMIC_CHART_COLORS = [
@@ -50,7 +51,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0];
     const categoryName = data.name || data.payload?.variableValue || data.payload?.intervalLabel || 'Categoría';
-    const percent = Number(data.value).toFixed(2);
+    const percent = formatPercentage(Number(data.value));
     const count = data.payload?.fa ?? data.payload?.frecuenciaAbsoluta ?? data.payload?.value ?? 0;
     const color = data.payload?.fill || data.color || '#1B8A5A';
 
@@ -62,7 +63,7 @@ const CustomPieTooltip = ({ active, payload }: any) => {
         </div>
         <div className="flex items-baseline justify-between gap-3 font-mono">
           <span className="text-slate-300 text-[11px]">Porcentaje:</span>
-          <span className="text-emerald-300 font-extrabold text-sm">{percent}%</span>
+          <span className="text-emerald-300 font-extrabold text-sm">{percent}</span>
         </div>
         <div className="flex items-baseline justify-between gap-3 font-mono text-[11px]">
           <span className="text-slate-400">Recuento exacto:</span>
@@ -188,6 +189,10 @@ interface GroupedChartProps {
   unit: string;
   xLabel?: string;
   yLabel?: string;
+  selectedIndex?: number | null;
+  onSelectIndex?: (index: number | null) => void;
+  hoveredIndex?: number | null;
+  onHoverIndex?: (index: number | null) => void;
   data: {
     intervalLabel: string;
     marcaDeClase: number;
@@ -203,6 +208,10 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   unit,
   xLabel,
   yLabel,
+  selectedIndex,
+  onSelectIndex,
+  hoveredIndex,
+  onHoverIndex,
   data,
 }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -339,12 +348,23 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 />
                 <Tooltip content={<CustomCartesianTooltip />} />
                 <Bar dataKey="fa" name="Observaciones Registradas" stroke={isDark ? '#0F172A' : '#0F2942'} strokeWidth={1}>
-                  {data.map((_, idx) => (
-                    <Cell 
-                      key={`hist-cell-${idx}`} 
-                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                    />
-                  ))}
+                  {data.map((_, idx) => {
+                    const isTarget = (selectedIndex != null && selectedIndex === (idx + 1)) || (hoveredIndex != null && hoveredIndex === (idx + 1));
+                    const baseColor = DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length];
+                    return (
+                      <Cell 
+                        key={`hist-cell-${idx}`} 
+                        fill={isTarget ? '#F59E0B' : baseColor}
+                        stroke={isTarget ? (isDark ? '#FDE68A' : '#78350F') : (isDark ? '#0F172A' : '#0F2942')}
+                        strokeWidth={isTarget ? 3 : 1}
+                        opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.45) : 1}
+                        className="cursor-pointer transition-all duration-150"
+                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
+                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
+                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             )}
@@ -419,17 +439,25 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   outerRadius={95}
                   innerRadius={35}
                   paddingAngle={3}
-                  label={(props: any) => `${Number(props.value || 0).toFixed(1)}%`}
+                  label={(props: any) => formatPercentage(Number(props.value || 0))}
                   labelLine={true}
                 >
-                  {data.map((_, idx) => (
-                    <Cell 
-                      key={`pie-cell-${idx}`} 
-                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                      stroke={isDark ? '#0F172A' : '#FFFFFF'}
-                      strokeWidth={2}
-                    />
-                  ))}
+                  {data.map((_, idx) => {
+                    const isTarget = (selectedIndex != null && selectedIndex === (idx + 1)) || (hoveredIndex != null && hoveredIndex === (idx + 1));
+                    return (
+                      <Cell 
+                        key={`pie-cell-${idx}`} 
+                        fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                        stroke={isTarget ? '#F59E0B' : (isDark ? '#0F172A' : '#FFFFFF')}
+                        strokeWidth={isTarget ? 3.5 : 2}
+                        opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.4) : 1}
+                        className="cursor-pointer transition-all duration-150"
+                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
+                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
+                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                      />
+                    );
+                  })}
                 </Pie>
               </PieChart>
             )}
@@ -506,6 +534,10 @@ interface SimpleChartProps {
   variableType?: 'quantitative' | 'qualitative';
   xLabel?: string;
   yLabel?: string;
+  selectedIndex?: number | null;
+  onSelectIndex?: (index: number | null) => void;
+  hoveredIndex?: number | null;
+  onHoverIndex?: (index: number | null) => void;
   data: {
     variableValue: string | number;
     fa: number;
@@ -520,6 +552,10 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
   variableType = 'quantitative',
   xLabel,
   yLabel,
+  selectedIndex,
+  onSelectIndex,
+  hoveredIndex,
+  onHoverIndex,
   data,
 }) => {
   const [isMounted, setIsMounted] = useState(false);
@@ -649,12 +685,23 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   name="Cantidad de Casos" 
                   radius={[6, 6, 0, 0]}
                 >
-                  {data.map((_, idx) => (
-                    <Cell 
-                      key={`bar-cell-${idx}`} 
-                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                    />
-                  ))}
+                  {data.map((_, idx) => {
+                    const isTarget = (selectedIndex != null && selectedIndex === (idx + 1)) || (hoveredIndex != null && hoveredIndex === (idx + 1));
+                    const baseColor = DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length];
+                    return (
+                      <Cell 
+                        key={`bar-cell-${idx}`} 
+                        fill={isTarget ? '#F59E0B' : baseColor}
+                        stroke={isTarget ? (isDark ? '#FDE68A' : '#78350F') : undefined}
+                        strokeWidth={isTarget ? 3 : 0}
+                        opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.45) : 1}
+                        className="cursor-pointer transition-all duration-150"
+                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
+                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
+                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                      />
+                    );
+                  })}
                 </Bar>
               </BarChart>
             )}
@@ -677,20 +724,29 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   outerRadius={95}
                   innerRadius={35}
                   paddingAngle={3}
-                  label={(props: any) => `${Number(props.value || 0).toFixed(1)}%`}
+                  label={(props: any) => formatPercentage(Number(props.value || 0))}
                   labelLine={true}
                 >
-                  {data.map((_, idx) => (
-                    <Cell 
-                      key={`pie-simple-${idx}`} 
-                      fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                      stroke={isDark ? '#0F172A' : '#FFFFFF'}
-                      strokeWidth={2}
-                    />
-                  ))}
+                  {data.map((_, idx) => {
+                    const isTarget = (selectedIndex != null && selectedIndex === (idx + 1)) || (hoveredIndex != null && hoveredIndex === (idx + 1));
+                    return (
+                      <Cell 
+                        key={`pie-simple-${idx}`} 
+                        fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
+                        stroke={isTarget ? '#F59E0B' : (isDark ? '#0F172A' : '#FFFFFF')}
+                        strokeWidth={isTarget ? 3.5 : 2}
+                        opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.4) : 1}
+                        className="cursor-pointer transition-all duration-150"
+                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
+                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
+                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                      />
+                    );
+                  })}
                 </Pie>
               </PieChart>
             )}
+
 
             {/* 3. LÍNEAS */}
             {chartType === 'line' && (

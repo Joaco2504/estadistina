@@ -6,6 +6,7 @@ import dynamic from 'next/dynamic';
 import { SimpleFrequencyTableResult } from '@/types/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
 import { exportSimpleTableToExcel } from '@/lib/excelExport';
+import { formatPercentage } from '@/lib/statistics';
 import { 
   BarChart2, 
   Info,
@@ -35,6 +36,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
   data,
 }) => {
   const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(1);
+  const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
   const [hoveredStep, setHoveredStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
   const [pinnedStep, setPinnedStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
 
@@ -99,7 +101,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               <Sparkles className="w-4 h-4 text-[#E67E22] dark:text-amber-400 flex-shrink-0" />
               <span>
                 {activeStep === 'fr' && `Frecuencia Relativa fr = fa (${selectedRow?.frecuenciaAbsoluta}) / n (${data.sampleSize}) = ${selectedRow?.frecuenciaRelativa.toFixed(2)}`}
-                {activeStep === 'p' && `Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(2)}) × 100 = ${selectedRow?.porcentaje.toFixed(2)}%`}
+                {activeStep === 'p' && `Porcentaje p = fr (${selectedRow?.frecuenciaRelativa.toFixed(2)}) × 100 = ${formatPercentage(selectedRow?.porcentaje || 0)}`}
                 {activeStep === 'acum' && `Frecuencia Acumulada Fa = Suma de frecuencias fa hasta fila ${selectedRow?.index} = ${selectedRow?.frecuenciaAbsolutaAcumulada}`}
               </span>
             </div>
@@ -124,7 +126,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
           </div>
         )}
 
-        {/* Tabla Didáctica */}
+        {/* Tabla Didáctica con Tooltips de Operación */}
         <div className="overflow-x-auto p-3 sm:p-4">
           <table className="stat-table">
             <thead>
@@ -153,77 +155,159 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               </tr>
             </thead>
             <tbody>
-              {data.rows.map((row) => {
+              {data.rows.map((row, idx) => {
                 const isSelected = selectedRowIndex === row.index;
+                const isHovered = hoveredRowIndex === row.index;
                 const isPriorForCumulative = activeStep === 'acum' && row.index <= (selectedRowIndex || 1);
+                const prevFa = idx > 0 ? data.rows[idx - 1].frecuenciaAbsolutaAcumulada : null;
+
+                const tooltipFa = `Cantidad de ${data.variableName} por ${row.variableValue}: ${row.frecuenciaAbsoluta} casos`;
+                const tooltipFr = `${row.frecuenciaAbsoluta}/${data.sampleSize} = ${row.frecuenciaRelativa.toFixed(2)}`;
+                const tooltipP = `${row.frecuenciaRelativa.toFixed(2)} x 100 % = ${formatPercentage(row.porcentaje)}`;
+                const tooltipFaAcum = prevFa !== null ? `${prevFa} + ${row.frecuenciaAbsoluta} = ${row.frecuenciaAbsolutaAcumulada}` : `Cantidad acumulada: ${row.frecuenciaAbsoluta} casos`;
+                const tooltipFrAcum = `${row.frecuenciaAbsolutaAcumulada}/${data.sampleSize} = ${row.frecuenciaRelativaAcumulada.toFixed(2)}`;
+                const tooltipPAcum = `${row.frecuenciaRelativaAcumulada.toFixed(2)} x 100 % = ${formatPercentage(row.porcentajeAcumulado)}`;
 
                 return (
                   <tr
                     key={row.index}
                     onClick={() => setSelectedRowIndex(row.index)}
+                    onMouseEnter={() => setHoveredRowIndex(row.index)}
+                    onMouseLeave={() => setHoveredRowIndex(null)}
                     className={`cursor-pointer transition-all ${
-                      isSelected ? 'selected-row font-medium' : ''
+                      isSelected || isHovered ? 'selected-row font-medium' : ''
                     }`}
                   >
-                    <td className="font-bold text-[#0F2942] dark:text-slate-300">{row.index}</td>
-                    <td className="font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm">
-                      {row.variableValue}
+                    {/* N° */}
+                    <td className="font-bold text-[#0F2942] dark:text-slate-300 relative group/cell" title={`Fila N° ${row.index}`}>
+                      <span>{row.index}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          Fila N° {row.index}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
+                    </td>
+
+                    {/* xi */}
+                    <td className="font-bold text-slate-800 dark:text-slate-100 text-xs sm:text-sm relative group/cell" title={`Categoría: "${row.variableValue}"`}>
+                      <span>{row.variableValue}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {isQualitative ? `Categoría: "${row.variableValue}"` : `Valor: ${row.variableValue}`}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
                     
                     {/* fa */}
-                    <td className={`font-mono font-bold transition-colors ${
-                      isSelected && activeStep === 'fr' 
-                        ? 'bg-emerald-200 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500' 
-                        : isPriorForCumulative 
-                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 ring-1 ring-purple-300 font-black' 
-                        : 'text-[#1B8A5A] dark:text-emerald-400'
-                    }`}>
-                      {row.frecuenciaAbsoluta}
+                    <td 
+                      title={tooltipFa}
+                      className={`font-mono font-bold transition-colors relative group/cell ${
+                        isSelected && activeStep === 'fr' 
+                          ? 'bg-emerald-200 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-100 ring-2 ring-emerald-500' 
+                          : isPriorForCumulative 
+                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 ring-1 ring-purple-300 font-black' 
+                          : 'text-[#1B8A5A] dark:text-emerald-400'
+                      }`}
+                    >
+                      <span>{row.frecuenciaAbsoluta}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {tooltipFa}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
 
                     {/* fr (2 decimales) */}
-                    <td className={`font-mono transition-colors ${
-                      isSelected && (activeStep === 'fr' || activeStep === 'p') 
-                        ? 'bg-emerald-200 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-100 font-black ring-2 ring-emerald-500' 
-                        : 'text-slate-700 dark:text-slate-300'
-                    }`}>
-                      {row.frecuenciaRelativa.toFixed(2)}
+                    <td 
+                      title={tooltipFr}
+                      className={`font-mono transition-colors relative group/cell ${
+                        isSelected && (activeStep === 'fr' || activeStep === 'p') 
+                          ? 'bg-emerald-200 dark:bg-emerald-900/90 text-emerald-950 dark:text-emerald-100 font-black ring-2 ring-emerald-500' 
+                          : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{row.frecuenciaRelativa.toFixed(2)}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {tooltipFr}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
 
                     {/* p */}
-                    <td className={`font-mono transition-colors ${
-                      isSelected && activeStep === 'p' 
-                        ? 'bg-blue-200 dark:bg-blue-900/90 text-blue-950 dark:text-blue-100 font-black ring-2 ring-blue-500' 
-                        : 'text-slate-700 dark:text-slate-300'
-                    }`}>
-                      {row.porcentaje.toFixed(2)}%
+                    <td 
+                      title={tooltipP}
+                      className={`font-mono transition-colors relative group/cell ${
+                        isSelected && activeStep === 'p' 
+                          ? 'bg-blue-200 dark:bg-blue-900/90 text-blue-950 dark:text-blue-100 font-black ring-2 ring-blue-500' 
+                          : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{formatPercentage(row.porcentaje)}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {tooltipP}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
 
                     {/* Fa */}
-                    <td className={`font-mono transition-colors ${
-                      isSelected && activeStep === 'acum' 
-                        ? 'bg-purple-200 dark:bg-purple-900/90 text-purple-950 dark:text-purple-100 font-black ring-2 ring-purple-500' 
-                        : 'text-slate-700 dark:text-slate-300'
-                    }`}>
-                      {row.frecuenciaAbsolutaAcumulada}
+                    <td 
+                      title={tooltipFaAcum}
+                      className={`font-mono transition-colors relative group/cell ${
+                        isSelected && activeStep === 'acum' 
+                          ? 'bg-purple-200 dark:bg-purple-900/90 text-purple-950 dark:text-purple-100 font-black ring-2 ring-purple-500' 
+                          : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{row.frecuenciaAbsolutaAcumulada}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {tooltipFaAcum}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
 
                     {/* Fr (2 decimales) */}
-                    <td className={`font-mono transition-colors ${
-                      isSelected && activeStep === 'acum' 
-                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 font-bold ring-1 ring-purple-400' 
-                        : 'text-slate-700 dark:text-slate-300'
-                    }`}>
-                      {row.frecuenciaRelativaAcumulada.toFixed(2)}
+                    <td 
+                      title={tooltipFrAcum}
+                      className={`font-mono transition-colors relative group/cell ${
+                        isSelected && activeStep === 'acum' 
+                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 font-bold ring-1 ring-purple-400' 
+                          : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{row.frecuenciaRelativaAcumulada.toFixed(2)}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {tooltipFrAcum}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
 
                     {/* P */}
-                    <td className={`font-mono transition-colors ${
-                      isSelected && activeStep === 'acum' 
-                        ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 font-bold ring-1 ring-purple-400' 
-                        : 'text-slate-700 dark:text-slate-300'
-                    }`}>
-                      {row.porcentajeAcumulado.toFixed(2)}%
+                    <td 
+                      title={tooltipPAcum}
+                      className={`font-mono transition-colors relative group/cell ${
+                        isSelected && activeStep === 'acum' 
+                          ? 'bg-purple-100 dark:bg-purple-950/60 text-purple-950 dark:text-purple-200 font-bold ring-1 ring-purple-400' 
+                          : 'text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <span>{formatPercentage(row.porcentajeAcumulado)}</span>
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                        <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                          {tooltipPAcum}
+                        </div>
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                      </div>
                     </td>
 
                     <td>
@@ -251,14 +335,32 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                 <td colSpan={2} className="text-right uppercase font-extrabold pr-4 text-[#0F2942] dark:text-slate-100">
                   {data.totals.label}
                 </td>
-                <td className="font-mono font-black text-[#1B8A5A] dark:text-emerald-400">
-                  {data.totals.totalFa}
+                <td className="font-mono font-black text-[#1B8A5A] dark:text-emerald-400 relative group/cell" title={`Total fa = ${data.totals.totalFa}`}>
+                  <span>{data.totals.totalFa}</span>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                    <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                      Total fa = n = {data.totals.totalFa}
+                    </div>
+                    <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                  </div>
                 </td>
-                <td className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                  {data.totals.totalFr.toFixed(2)}
+                <td className="font-mono font-bold text-slate-800 dark:text-slate-200 relative group/cell" title={`Total fr = ${data.totals.totalFr.toFixed(2)}`}>
+                  <span>{data.totals.totalFr.toFixed(2)}</span>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                    <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                      Total fr = {data.totals.totalFr.toFixed(2)}
+                    </div>
+                    <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                  </div>
                 </td>
-                <td className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                  {data.totals.totalP.toFixed(2)}%
+                <td className="font-mono font-bold text-slate-800 dark:text-slate-200 relative group/cell" title={`Total p = ${formatPercentage(data.totals.totalP)}`}>
+                  <span>{formatPercentage(data.totals.totalP)}</span>
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                    <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
+                      Total p = {formatPercentage(data.totals.totalP)}
+                    </div>
+                    <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                  </div>
                 </td>
                 <td colSpan={4} className="text-[11px] text-slate-400 dark:text-slate-500 italic text-center font-normal">
                   — No se totaliza —
@@ -267,6 +369,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
             </tbody>
           </table>
         </div>
+
 
         {/* Desglose Pedagógico Paso a Paso con Tarjetas Ampliadas */}
         {selectedRow && (
@@ -397,12 +500,16 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
         )}
       </div>
 
-      {/* Gráfico Estadístico Multi-Tipo */}
+      {/* Gráfico Estadístico Multi-Tipo con Iluminación Bidireccional */}
       <SimpleBarVisualizer
         title={`Gráfico Estadístico: ${data.variableName}`}
         variableName={data.variableName}
         unit={data.unit}
         variableType={data.variableType}
+        selectedIndex={selectedRowIndex}
+        onSelectIndex={setSelectedRowIndex}
+        hoveredIndex={hoveredRowIndex}
+        onHoverIndex={setHoveredRowIndex}
         data={chartData}
       />
     </div>

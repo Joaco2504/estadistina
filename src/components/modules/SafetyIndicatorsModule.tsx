@@ -22,7 +22,8 @@ import {
 } from '@/types/statistics';
 import { 
   calculateSafetyIndicators, 
-  SAFETY_INDICATOR_PRESETS 
+  SAFETY_INDICATOR_PRESETS,
+  formatPercentage
 } from '@/lib/statistics';
 import { exportSafetyIndicatorsToExcel } from '@/lib/excelExport';
 
@@ -373,10 +374,10 @@ export const SafetyIndicatorsModule: React.FC = () => {
                 Compara trabajadores accidentados sobre el total de la nómina:
               </p>
               <div className="font-mono text-xs text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#131C2E] p-2 rounded border border-slate-200 dark:border-slate-800">
-                Prop. = {result.accidentesConBaja} / {result.trabajadoresExpuestos} = {result.proporcionAccidentados} ({result.porcentajeAccidentados}%)
+                Prop. = {result.accidentesConBaja} / {result.trabajadoresExpuestos} = {result.proporcionAccidentados} ({formatPercentage(result.porcentajeAccidentados)})
               </div>
               <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                El {result.porcentajeAccidentados}% de los trabajadores sufrió alguna baja médica.
+                El {formatPercentage(result.porcentajeAccidentados)} de los trabajadores sufrió alguna baja médica.
               </p>
             </div>
 

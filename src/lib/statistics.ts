@@ -21,6 +21,20 @@ export function roundTo(val: number, decimals: number = 2): number {
 }
 
 /**
+ * Formatea un valor porcentual eliminando .00 innecesarios
+ * Ej: 30.00 -> '30%', 23.00 -> '23%', 14.29 -> '14.29%'
+ */
+export function formatPercentage(val: number): string {
+  const rounded = roundTo(val, 2);
+  const str = rounded.toFixed(2);
+  if (str.endsWith('.00')) {
+    return `${Math.round(rounded)}%`;
+  }
+  return `${str}%`;
+}
+
+
+/**
  * Parsea un string de datos numéricos para datos agrupados según su tipo (continua o discreta)
  * - Continua: solo acepta ';' y saltos de línea como separadores de datos. La coma ',' es separador decimal (ej: 78,4; 82,1).
  * - Discreta: acepta tanto comas ',' como punto y coma ';' y espacios como separadores (ej: 21, 24, 28 o 21; 24; 28).
