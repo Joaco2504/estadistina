@@ -361,7 +361,10 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                         className="cursor-pointer transition-all duration-150"
                         onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
                         onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                        onClick={(e: any) => {
+                          e?.stopPropagation?.();
+                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        }}
                       />
                     );
                   })}
@@ -454,7 +457,10 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                         className="cursor-pointer transition-all duration-150"
                         onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
                         onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                        onClick={(e: any) => {
+                          e?.stopPropagation?.();
+                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        }}
                       />
                     );
                   })}
@@ -698,7 +704,10 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                         className="cursor-pointer transition-all duration-150"
                         onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
                         onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                        onClick={(e: any) => {
+                          e?.stopPropagation?.();
+                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        }}
                       />
                     );
                   })}
@@ -739,7 +748,10 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                         className="cursor-pointer transition-all duration-150"
                         onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
                         onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={() => onSelectIndex && onSelectIndex(idx + 1)}
+                        onClick={(e: any) => {
+                          e?.stopPropagation?.();
+                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        }}
                       />
                     );
                   })}

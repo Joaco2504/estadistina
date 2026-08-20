@@ -1,7 +1,7 @@
 // src/components/modules/SimpleFrequenciesModule.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { SimpleFrequencyTableResult } from '@/types/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
@@ -35,10 +35,25 @@ interface SimpleFrequenciesModuleProps {
 export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = ({
   data,
 }) => {
-  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
   const [hoveredStep, setHoveredStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
   const [pinnedStep, setPinnedStep] = useState<'fa' | 'fr' | 'p' | 'acum' | null>(null);
+
+  // Escucha clics fuera del módulo para deseleccionar y mostrar el gráfico completo
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setSelectedRowIndex(null);
+        setPinnedStep(null);
+      }
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
 
   const activeStep = hoveredStep || pinnedStep;
 
@@ -54,10 +69,10 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
     p: row.porcentaje,
   }));
 
-  const selectedRow = data.rows.find((r) => r.index === selectedRowIndex) || data.rows[0];
+  const selectedRow = selectedRowIndex !== null ? (data.rows.find((r) => r.index === selectedRowIndex) || null) : null;
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       {/* Encabezado y Tabla */}
       <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden">
         <div className="bg-[#0F2942] dark:bg-[#080D1A] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3 border-b border-[#1C4874] dark:border-slate-800">
@@ -171,7 +186,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                 return (
                   <tr
                     key={row.index}
-                    onClick={() => setSelectedRowIndex(row.index)}
+                    onClick={() => setSelectedRowIndex((prev) => (prev === row.index ? null : row.index))}
                     onMouseEnter={() => setHoveredRowIndex(row.index)}
                     onMouseLeave={() => setHoveredRowIndex(null)}
                     className={`cursor-pointer transition-all ${
@@ -315,15 +330,15 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedRowIndex(row.index);
+                          setSelectedRowIndex((prev) => (prev === row.index ? null : row.index));
                         }}
-                        className={`text-[11px] px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                        className={`text-[11px] px-2.5 py-1 rounded font-semibold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white'
+                            ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
                             : 'bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
-                        {isSelected ? 'Viendo' : 'Explicar'}
+                        {isSelected ? 'Viendo ✕' : 'Explicar'}
                       </button>
                     </td>
                   </tr>
@@ -371,8 +386,8 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
         </div>
 
 
-        {/* Desglose Pedagógico Paso a Paso con Tarjetas Ampliadas */}
-        {selectedRow && (
+        {/* Desglose Pedagógico Paso a Paso con Tarjetas Ampliadas o Banner Informativo */}
+        {selectedRow ? (
           <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-[#131C2E] p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-[#0F2942] dark:text-slate-100 font-bold">
@@ -382,9 +397,21 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                   <span className="font-extrabold text-[#1B8A5A] dark:text-emerald-400">{selectedRow.variableValue}</span>
                 </span>
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                ✨ Pasa el mouse o <strong className="text-slate-700 dark:text-slate-200">haz clic para fijar la iluminación</strong>:
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  ✨ Pasa el mouse o <strong className="text-slate-700 dark:text-slate-200">haz clic para fijar la iluminación</strong>:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRowIndex(null);
+                    setPinnedStep(null);
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline font-medium cursor-pointer"
+                >
+                  Deseleccionar ✕
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
@@ -439,7 +466,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               >
                 <div>
                   <div className="flex items-center justify-between text-xs font-bold uppercase text-blue-800 dark:text-blue-300 mb-2">
-                    <span>2. Porcentaje (p = fr · 100)</span>
+                    <span>2. Porcentaje (p = fr × 100)</span>
                     <span className={`text-[10px] px-2 py-0.5 rounded-full font-mono font-bold ${
                       pinnedStep === 'p' ? 'bg-blue-600 text-white' : 'bg-blue-100 dark:bg-blue-900/60 text-blue-900 dark:text-blue-200'
                     }`}>
@@ -496,6 +523,13 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0C1424] p-3.5 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+              <span>Haz clic en cualquier fila de la tabla o barra del gráfico para ver la explicación paso a paso de sus fórmulas. Haz clic afuera para deseleccionar.</span>
+            </p>
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 // src/components/modules/GroupedFrequenciesModule.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 import { GroupedFrequencyTableResult } from '@/types/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
@@ -36,9 +36,24 @@ interface GroupedFrequenciesModuleProps {
 export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> = ({
   data,
 }) => {
-  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [selectedRowIndex, setSelectedRowIndex] = useState<number | null>(null);
   const [hoveredRowIndex, setHoveredRowIndex] = useState<number | null>(null);
   const [showDerivation, setShowDerivation] = useState<boolean>(true);
+
+  // Escucha clics fuera del módulo para deseleccionar y mostrar el gráfico completo
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setSelectedRowIndex(null);
+        setPinnedStep(null);
+      }
+    };
+    document.addEventListener('click', handleDocumentClick);
+    return () => {
+      document.removeEventListener('click', handleDocumentClick);
+    };
+  }, []);
   
   // Estado para la interactividad pedagógica en tiempo real (Hover transitorio y Fijación persistente con Clic)
   const [hoveredStep, setHoveredStep] = useState<'mc' | 'fr' | 'p' | 'acum' | null>(null);
@@ -60,10 +75,10 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
     Fa: row.frecuenciaAbsolutaAcumulada,
   }));
 
-  const selectedRow = data.rows.find((r) => r.index === selectedRowIndex) || data.rows[0];
+  const selectedRow = selectedRowIndex !== null ? (data.rows.find((r) => r.index === selectedRowIndex) || null) : null;
 
   return (
-    <div className="space-y-6">
+    <div ref={containerRef} className="space-y-6">
       {/* 1. SECCIÓN EXPLICATIVA PASO A PASO (R, k, A) MINIMALISTA Y PLEGABLE */}
       {data.stepByStepDerivation && (
         <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
@@ -163,7 +178,7 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
         </div>
 
         {/* Indicador Dinámico de Iluminación en Tiempo Real (Sin titileo) */}
-        {activeStep && (
+        {activeStep && selectedRow && (
           <div className="bg-slate-900 dark:bg-[#0B132B] text-white px-4 py-2.5 border-b border-slate-700 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
             <div className="flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-[#E67E22] dark:text-amber-400 flex-shrink-0" />
@@ -247,7 +262,7 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 return (
                   <tr
                     key={row.index}
-                    onClick={() => setSelectedRowIndex(row.index)}
+                    onClick={() => setSelectedRowIndex((prev) => (prev === row.index ? null : row.index))}
                     onMouseEnter={() => setHoveredRowIndex(row.index)}
                     onMouseLeave={() => setHoveredRowIndex(null)}
                     className={`cursor-pointer transition-all ${
@@ -412,15 +427,15 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedRowIndex(row.index);
+                          setSelectedRowIndex((prev) => (prev === row.index ? null : row.index));
                         }}
-                        className={`text-[11px] px-2 py-0.5 rounded font-semibold transition-all cursor-pointer ${
+                        className={`text-[11px] px-2.5 py-1 rounded font-semibold transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white'
+                            ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
                             : 'bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                         }`}
                       >
-                        {isSelected ? 'Viendo' : 'Explicar'}
+                        {isSelected ? 'Viendo ✕' : 'Explicar'}
                       </button>
                     </td>
                   </tr>
@@ -467,17 +482,29 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
           </table>
         </div>
 
-        {/* 3. DESGLOSE INTERACTIVO: TARJETAS AMPLIADAS CON SELECCIÓN FIJABLE */}
-        {selectedRow && (
+        {/* 3. DESGLOSE INTERACTIVO: TARJETAS AMPLIADAS CON SELECCIÓN FIJABLE O BANNER INFORMATIVO */}
+        {selectedRow ? (
           <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-[#131C2E] p-4 sm:p-6">
             <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5">
               <div className="flex items-center gap-2 text-xs sm:text-sm text-[#0F2942] dark:text-slate-100 font-bold">
                 <Info className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
                 <span>Cálculo paso a paso del Intervalo N° {selectedRow.index}: <span className="font-mono text-[#1B8A5A] dark:text-emerald-400 font-extrabold">{selectedRow.intervalLabel}</span></span>
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                ✨ Pasa el mouse o <strong className="text-slate-700 dark:text-slate-200">haz clic para fijar la iluminación</strong> en la tabla:
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                  ✨ Pasa el mouse o <strong className="text-slate-700 dark:text-slate-200">haz clic para fijar la iluminación</strong> en la tabla:
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedRowIndex(null);
+                    setPinnedStep(null);
+                  }}
+                  className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline font-medium cursor-pointer"
+                >
+                  Deseleccionar ✕
+                </button>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
@@ -625,6 +652,13 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 </div>
               </div>
             </div>
+          </div>
+        ) : (
+          <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0C1424] p-3.5 text-center">
+            <p className="text-xs text-slate-500 dark:text-slate-400 flex items-center justify-center gap-2 font-medium">
+              <Sparkles className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+              <span>Haz clic en cualquier fila de la tabla o barra del gráfico para ver la explicación paso a paso de sus fórmulas. Haz clic afuera para deseleccionar.</span>
+            </p>
           </div>
         )}
       </div>
