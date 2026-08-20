@@ -211,7 +211,7 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
         )}
 
         {/* Tabla Didáctica Minimalista con Iluminación en Tiempo Real y Tooltips */}
-        <div className="overflow-x-auto p-3 sm:p-4">
+        <div className="overflow-x-auto p-3 sm:p-4 pt-6 sm:pt-7">
           <table className="stat-table">
             <thead>
               <tr>
@@ -272,11 +272,11 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                     {/* N° */}
                     <td className="font-bold text-[#0F2942] dark:text-slate-300 relative group/cell" title={`Fila N° ${row.index}`}>
                       <span>{row.index}</span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                      <div className="absolute bottom-full left-0 mb-1.5 hidden group-hover/cell:flex flex-col items-start z-50 pointer-events-none whitespace-nowrap">
                         <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
                           Fila N° {row.index}
                         </div>
-                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1 ml-3" />
                       </div>
                     </td>
                     
@@ -288,11 +288,11 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                       }`}
                     >
                       <span>{row.intervalLabel}</span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                      <div className="absolute bottom-full left-0 mb-1.5 hidden group-hover/cell:flex flex-col items-start z-50 pointer-events-none whitespace-nowrap">
                         <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
                           {tooltipInterval}
                         </div>
-                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1 ml-6" />
                       </div>
                     </td>
 
@@ -414,11 +414,11 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                       }`}
                     >
                       <span>{formatPercentage(row.porcentajeAcumulado)}</span>
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                      <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover/cell:flex flex-col items-end z-50 pointer-events-none whitespace-nowrap">
                         <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
                           {tooltipPAcum}
                         </div>
-                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                        <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1 mr-4" />
                       </div>
                     </td>
 
@@ -467,11 +467,11 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
                 </td>
                 <td className="font-mono font-bold text-slate-800 dark:text-slate-200 relative group/cell" title={`Total p = ${formatPercentage(data.totals.totalP)}`}>
                   <span>{formatPercentage(data.totals.totalP)}</span>
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 hidden group-hover/cell:flex flex-col items-center z-50 pointer-events-none whitespace-nowrap">
+                  <div className="absolute bottom-full right-0 mb-1.5 hidden group-hover/cell:flex flex-col items-end z-50 pointer-events-none whitespace-nowrap">
                     <div className="bg-[#0F2942] dark:bg-[#080D1A] text-white text-[11px] font-mono px-2.5 py-1 rounded-lg shadow-xl border border-slate-700">
                       Total p = {formatPercentage(data.totals.totalP)}
                     </div>
-                    <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1" />
+                    <div className="w-1.5 h-1.5 bg-[#0F2942] dark:bg-[#080D1A] border-r border-b border-slate-700 rotate-45 -mt-1 mr-4" />
                   </div>
                 </td>
                 <td colSpan={4} className="text-[11px] text-slate-400 dark:text-slate-500 italic text-center font-normal">
