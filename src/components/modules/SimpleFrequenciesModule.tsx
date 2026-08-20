@@ -162,7 +162,7 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
                     key={row.index}
                     onClick={() => setSelectedRowIndex(row.index)}
                     className={`cursor-pointer transition-all ${
-                      isSelected ? 'bg-emerald-50/90 dark:bg-emerald-950/30 font-medium' : ''
+                      isSelected ? 'selected-row font-medium' : ''
                     }`}
                   >
                     <td className="font-bold text-[#0F2942] dark:text-slate-300">{row.index}</td>

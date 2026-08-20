@@ -96,12 +96,38 @@
   border-right: none;
 }
 
-.stat-table tr:hover td {
-  background-color: #F1F5F9;
+.stat-table tbody tr {
+  transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.dark .stat-table tr:hover td {
-  background-color: #1E293B/60;
+.stat-table tbody tr:hover td:not([class*="bg-emerald"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  background-color: #F1F5F9;
+  color: #0F172A;
+}
+
+.dark .stat-table tbody tr:hover td:not([class*="bg-emerald"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  background-color: #1E293B;
+  color: #F8FAFC;
+}
+
+.stat-table tbody tr.selected-row td:not([class*="bg-emerald"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  background-color: #ECFDF5;
+  color: #064E3B;
+}
+
+.dark .stat-table tbody tr.selected-row td:not([class*="bg-emerald"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  background-color: rgba(6, 78, 59, 0.35);
+  color: #F8FAFC;
+}
+
+.stat-table tbody tr.selected-row:hover td:not([class*="bg-emerald"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  background-color: #D1FAE5;
+  color: #064E3B;
+}
+
+.dark .stat-table tbody tr.selected-row:hover td:not([class*="bg-emerald"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not([class*="bg-purple"]) {
+  background-color: rgba(6, 78, 59, 0.55);
+  color: #FFFFFF;
 }
 
 .stat-table tr.total-row td {
