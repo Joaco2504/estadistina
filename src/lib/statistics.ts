@@ -1,4 +1,3 @@
-// src/lib/statistics.ts
 import { 
   GroupedFrequencyRow, 
   GroupedFrequencyTableResult, 
@@ -6,8 +5,12 @@ import {
   SimpleFrequencyTableResult, 
   ContingencyTableResult,
   SafetyPreset,
-  ThematicUnit
+  ThematicUnit,
+  SafetyIndicatorsInput,
+  SafetyIndicatorsResult,
+  SafetyIndicatorPreset
 } from '@/types/statistics';
+
 
 /**
  * Redondeo matemático seguro a N decimales
@@ -963,69 +966,97 @@ export const THEMATIC_UNITS: ThematicUnit[] = [
   {
     id: 'unidad-1',
     number: 1,
-    title: 'Estadística Descriptiva Aplicada a la Seguridad e Higiene',
-    subtitle: 'Variables, Tablas de Frecuencias y Representaciones Gráficas',
+    title: 'UNIDAD I: Recolección, Organización de Datos e Indicadores de Siniestralidad',
+    subtitle: 'Estadística Descriptiva, Tablas de Frecuencias e Indicadores Oficiales de Siniestralidad (SRT)',
     badge: 'Unidad 1',
-    description: 'Fundamentos de recolección y sistematización de datos de siniestralidad, mediciones higiénicas (ruido, iluminación, contaminantes) y ergonomía.',
+    description: 'Herramientas metodológicas para diagnosticar ambientes laborales, medir variabilidad, construir tablas de frecuencias simples y agrupadas, y calcular los indicadores oficiales de accidentabilidad laboral según normativa SRT / IRAM 3800 / OIT.',
     topics: [
       {
-        title: '1.1 Clasificación de Variables en SySO',
-        summary: 'Variables Cualitativas (Nominales y Ordinales) y Cuantitativas (Discretas y Continuas).',
+        title: 'Tema 1: Introducción y Fuentes de Información en SySO',
+        summary: 'Por qué estudiamos Estadística en Higiene y Seguridad, variabilidad en ambientes de trabajo, delimitación de Población, Muestra e Individuo (Unidad de análisis), Variables Cualitativas (Nominales y Ordinales) y Cuantitativas (Discretas y Continuas), Fuentes Primarias vs. Secundarias, Métodos de recolección (observación, encuestas, mediciones instrumentales, registros) y control de sesgos.',
       },
       {
-        title: '1.2 Construcción Didáctica de Intervalos',
-        summary: 'Determinación del Rango R = Xmax - Xmin, selección de clases k mediante la Regla de la Raíz Cuadrada k = √n, y cálculo de la Amplitud A = R / k.',
+        title: 'Tema 2: Organización de Datos en Tablas de Frecuencias Simples',
+        summary: 'Estructura profesional de la tabla simple: valor/categoría xi, frecuencia absoluta fa (n = Total fa), frecuencia relativa fr = fa / n (Total = 1,00), porcentaje p = fr × 100 (Total = 100%), frecuencias acumuladas Fa, Fr y P. Criterio pedagógico oficial: Prohibición del símbolo abstracto Σ y uso explícito de "Total", "Suma total" y "Gran Total".',
         keyFormulas: [
-          { name: 'Rango muestral', formula: 'R = X_{max} - X_{min}', note: 'Diferencia entre el valor máximo y mínimo.' },
-          { name: 'Regla de la Raíz Cuadrada', formula: 'k = \\sqrt{n}', note: 'Redondeado al entero más cercano o superior.' },
-          { name: 'Amplitud de intervalo', formula: 'A = \\frac{R}{k}', note: 'Ancho uniforme de cada intervalo.' },
+          { name: 'Frecuencia Relativa (fr)', formula: 'fr = \\frac{fa}{n}', note: 'Proporción de observaciones redondeada a 2 decimales (Total = 1,00).' },
+          { name: 'Porcentaje (p %)', formula: 'p = fr \\cdot 100', note: 'Expresión porcentual redondeada a 2 decimales (Total = 100,00%).' },
+          { name: 'Frecuencia Absoluta Acumulada (Fa)', formula: 'Fa_i = Fa_{i-1} + fa_i', note: 'Suma progresiva de observaciones acumuladas.' },
+          { name: 'Frecuencia Relativa Acumulada (Fr)', formula: 'Fr_i = \\frac{Fa_i}{n}', note: 'Proporción acumulada de observaciones.' },
+          { name: 'Porcentaje Acumulado (P %)', formula: 'P = Fr \\cdot 100', note: 'Porcentaje acumulado (última fila = 100,00%).' },
         ]
       },
       {
-        title: '1.3 Tablas de Frecuencias y Marcas de Clase',
-        summary: 'Cálculo de Frecuencia Absoluta (fa), Relativa (fr = fa / n), Porcentaje (p = fr · 100), y frecuencias acumuladas (Fa, Fr, P).',
+        title: 'Tema 3: Tablas de Distribución de Frecuencias Agrupadas por Intervalos',
+        summary: 'Agrupamiento en clases cuando la variable es continua o tiene gran dispersión. Determinación del Rango R = Xmax - Xmin, Regla de la Raíz Cuadrada k = √n, Amplitud A = R / k, Límites de clase [Li, Ls) y Marca de Clase Mc = (Li + Ls) / 2.',
         keyFormulas: [
-          { name: 'Marca de Clase', formula: 'Mc = \\frac{L_i + L_s}{2}', note: 'Punto medio del intervalo.' },
-          { name: 'Frecuencia Relativa', formula: 'fr = \\frac{fa}{n}', note: 'Proporción de observaciones redondeada a 2 decimales.' },
-          { name: 'Porcentaje', formula: 'p = fr \\cdot 100', note: 'Expresión porcentual.' },
+          { name: 'Rango muestral (R)', formula: 'R = X_{\\text{max}} - X_{\\text{min}}', note: 'Diferencia entre el valor extremo superior e inferior.' },
+          { name: 'Regla de la Raíz Cuadrada (k)', formula: 'k = \\sqrt{n}', note: 'Cantidad de intervalos; redondeo al entero superior o más próximo.' },
+          { name: 'Amplitud de intervalo (A)', formula: 'A = \\frac{R}{k}', note: 'Ancho uniforme de cada intervalo de clase.' },
+          { name: 'Marca de Clase (Mc)', formula: 'Mc = \\frac{L_i + L_s}{2}', note: 'Punto medio representativo del intervalo.' },
+        ]
+      },
+      {
+        title: 'Tema 4: Indicadores Oficiales de Siniestralidad Laboral (SRT / IRAM / OIT)',
+        summary: 'Medidas relativas fundamentales (Proporción Parte-Todo, Razón Parte-Parte y Tasa con constante K). Los 4 índices oficiales exigidos por la Superintendencia de Riesgos del Trabajo: Índice de Frecuencia (IF), Índice de Gravedad (IG), Índice de Incidencia (II) y Duración Media de las Bajas (DM), con su relación matemática IG = IF × DM y redacción del diagnóstico preventivo.',
+        keyFormulas: [
+          { name: 'Proporción (Parte - Todo)', formula: '\\text{Proporción} = \\frac{A}{N} \\quad (0 \\le \\text{Prop.} \\le 1)', note: 'El numerador está incluido en el denominador.' },
+          { name: 'Razón (Parte - Parte)', formula: '\\text{Razón} = \\frac{A}{B}', note: 'Compara dos grupos independientes (ej. operarios por técnico).' },
+          { name: 'Tasa General', formula: '\\text{Tasa} = \\left( \\frac{\\text{Eventos}}{\\text{Exposición}} \\right) \\cdot K', note: 'K es una constante estandarizada (1.000 o 1.000.000).' },
+          { name: 'Índice de Frecuencia (IF)', formula: 'IF = \\frac{\\text{N° Accidentes con Baja} \\cdot 1.000.000}{\\text{Horas-Hombre Trabajadas (HHT)}}', note: 'Accidentes con baja médica por cada millón de horas trabajadas.' },
+          { name: 'Índice de Gravedad (IG)', formula: 'IG = \\frac{\\text{Total Días Perdidos} \\cdot 1.000.000}{\\text{Horas-Hombre Trabajadas (HHT)}}', note: 'Jornadas perdidas por cada millón de horas trabajadas.' },
+          { name: 'Índice de Incidencia (II)', formula: 'II = \\frac{\\text{N° Accidentes con Baja} \\cdot 1.000}{\\text{N° Promedio Trabajadores Expuestos}}', note: 'Accidentes por cada mil trabajadores expuestos.' },
+          { name: 'Duración Media de las Bajas (DM)', formula: 'DM = \\frac{\\text{Total Días Perdidos}}{\\text{N° Accidentes con Baja}}', note: 'Promedio de días de baja médica por cada accidente.' },
+          { name: 'Relación entre Indicadores', formula: 'IG = IF \\cdot DM', note: 'Coherencia matemática entre gravedad, frecuencia y duración media.' },
         ]
       }
     ],
     theoreticalNote: {
-      title: 'Apunte Teórico Oficial - Unidad 1: Estadística Descriptiva',
+      title: 'Apunte Teórico Oficial - Unidad 1: Recolección, Organización de Datos e Indicadores de Siniestralidad',
       fileName: 'Apunte_Unidad_1_Estadistica_Descriptiva_IES_Belen.pdf',
       fileSize: '1.8 MB',
       pages: 14,
-      summary: 'Desarrollo conceptual completo de variables, población, muestra, reglas de partición de intervalos (Regla de la Raíz Cuadrada k=√n) y gráficos didácticos de distribución de frecuencias.',
+      summary: 'Desarrollo conceptual completo de variabilidad en ambientes laborales, población, muestra e individuo, clasificación de variables, construcción de tablas de frecuencias simples y agrupadas (Regla de la Raíz k=√n), medidas relativas (proporción, razón, tasa) y los 4 indicadores oficiales de siniestralidad de la SRT.',
       contentOutline: [
-        '1. Introducción a la Estadística en Higiene y Seguridad Laboral',
-        '2. Tipos de Variables: Cualitativas y Cuantitativas',
-        '3. Tablas de Frecuencias para Datos No Agrupados y Agrupados en Intervalos',
-        '4. Marcas de Clase y Frecuencias Acumuladas',
-        '5. Histogramas, Polígonos de Frecuencias, Diagramas Circulares y Ojivas',
+        '1. Introducción y Fuentes de Información: Variabilidad, Población, Muestra e Individuo, Variables Estadísticas, Fuentes y Métodos de Recolección.',
+        '2. Organización de Datos en Tablas de Frecuencias Simples: fa, fr, p, Fa, Fr, P y Criterio Pedagógico sin Σ.',
+        '3. Tablas de Distribución de Frecuencias Agrupadas por Intervalos: Rango, Regla de la Raíz k, Amplitud, Marca de Clase y Gráficos.',
+        '4. Medidas Relativas: Proporción (Parte-Todo), Razón (Parte-Parte) y Tasa (Evento vs. Exposición al Riesgo con constante K).',
+        '5. Indicadores Oficiales de Siniestralidad (SRT / IRAM 3800 / OIT): IF, IG, II, DM, Coherencia Matemática y Redacción de Informes Técnicos.',
       ]
     },
     practicalGuide: {
-      title: 'Guía de Trabajos Prácticos N° 1: Organización y Tabulación de Datos',
+      title: 'Guía de Trabajos Prácticos N° 1: Organización de Datos e Indicadores de Siniestralidad',
       tpNumber: 'T.P. N° 1',
       fileName: 'TP1_Estadistica_Descriptiva_Guia_Alumnos.pdf',
       fileSize: '950 KB',
-      exercisesCount: 6,
-      summary: 'Guía obligatoria de resolución de problemas con casos reales de mediciones sonométricas en talleres, registros de iluminación en oficinas y accidentología laboral.',
+      exercisesCount: 4,
+      summary: 'Guía obligatoria de resolución de problemas con casos reales de accidentabilidad, mediciones sonométricas en talleres y cálculo de indicadores oficiales de siniestralidad laboral (SRT).',
       sampleExercises: [
         {
           number: 1,
-          statement: 'En un taller metalmecánico se registraron los niveles sonoros continuos equivalentes (en dBA) durante una jornada de 8 horas. Construya la tabla de distribución de frecuencias agrupadas aplicando la regla de la raíz cuadrada y trace el histograma correspondiente.',
-          dataSample: '78.4; 82.1; 85.6; 88.0; 91.2; 84.3; 79.8; 87.5; 92.4; 86.1; 83.7; 89.9; 94.2; 81.0; 88.6; 90.5; 85.0; 77.9; 83.2; 87.1; 93.5; 86.8; 80.5; 89.1; 95.0'
+          statement: 'En un taller metalmecánico se registraron 20 accidentes durante el último año clasificados por su causa principal. Construya la tabla de distribución de frecuencias simples (fa, fr, p, Fa, Fr, P) e interprete qué porcentaje de los eventos correspondió a problemas de Orden y Limpieza.',
+          dataSample: 'Desorden; Falla de máquina; Desorden; Falta de EPP; Desorden; Desorden; Falla de máquina; Desorden; Falta de EPP; Desorden; Falla de máquina; Desorden; Falta de EPP; Desorden; Falla de máquina; Falta de EPP; Desorden; Desorden; Falla de máquina; Desorden'
         },
         {
           number: 2,
-          statement: 'Se auditó el personal de logística para relevar la edad de los trabajadores expuestos a tareas de estiba manual. Elabore la tabla de frecuencias simples y el polígono de frecuencias.',
-          dataSample: '21; 24; 28; 35; 42; 47; 53; 22; 31; 38; 45; 50; 58; 26; 34; 41; 49; 23; 29; 36; 44; 52; 25; 33; 40; 48; 55; 27; 37; 46'
+          statement: 'En una planta industrial se registraron los niveles sonoros continuos equivalentes (en dBA) durante una jornada de 8 horas en 25 puestos de trabajo. Determine el Rango (R), la cantidad de intervalos (k) mediante la regla de la raíz cuadrada, la Amplitud (A), construya la tabla de frecuencias agrupadas con marcas de clase (Mc) y evalúe la exposición al ruido.',
+          dataSample: '78.4; 82.1; 85.6; 88.0; 91.2; 84.3; 79.8; 87.5; 92.4; 86.1; 83.7; 89.9; 94.2; 81.0; 88.6; 90.5; 85.0; 77.9; 83.2; 87.1; 93.5; 86.8; 80.5; 89.1; 95.0'
+        },
+        {
+          number: 3,
+          statement: 'Una empresa metalúrgica cuenta con 100 operarios expuestos en su nómina, quienes trabajaron un total de 52.000 horas-hombre en el trimestre. En dicho período se registraron 15 accidentes con baja laboral que acumularon 180 jornadas de trabajo perdidas. Calcule los 4 Indicadores Oficiales de Siniestralidad (IF, IG, II, DM) y verifique la relación matemática IG = IF × DM.',
+          dataSample: 'Trabajadores = 100; HHT = 52.000 hs; Accidentes con Baja = 15; Días Perdidos = 180'
+        },
+        {
+          number: 4,
+          statement: 'A partir de los indicadores calculados en el Ejercicio 3, elabore el informe técnico preventivo con diagnóstico de severidad, evaluación del tiempo perdido y recomendaciones prioritarias para la gerencia de planta.',
+          dataSample: 'IF = 288,46 acc/10^6 HHT; IG = 3.461,54 días/10^6 HHT; II = 150 acc/10^3 trab; DM = 12 días/acc'
         }
       ]
     }
   },
+
   {
     id: 'unidad-2',
     number: 2,
@@ -1119,3 +1150,125 @@ export const THEMATIC_UNITS: ThematicUnit[] = [
     }
   }
 ];
+
+/**
+ * CÁLCULO OFICIAL DE INDICADORES DE SINIESTRALIDAD (TEMA 4 - UNIDAD 1)
+ * Normativa SRT / IRAM 3800 / OIT
+ */
+export function calculateSafetyIndicators(input: SafetyIndicatorsInput): SafetyIndicatorsResult {
+  const {
+    establecimiento = 'Planta Industrial General',
+    periodo = 'Trimestre Anual',
+    accidentesConBaja,
+    diasPerdidos,
+    horasHombreTrabajadas,
+    trabajadoresExpuestos
+  } = input;
+
+  const N = Math.max(0, Number(accidentesConBaja) || 0);
+  const J = Math.max(0, Number(diasPerdidos) || 0);
+  const HHT = Math.max(1, Number(horasHombreTrabajadas) || 1);
+  const Trab = Math.max(1, Number(trabajadoresExpuestos) || 1);
+
+  // 1. Índice de Frecuencia (IF) = (N * 1.000.000) / HHT
+  const indiceFrecuencia = roundTo((N * 1000000) / HHT, 2);
+
+  // 2. Índice de Gravedad (IG) = (J * 1.000.000) / HHT
+  const indiceGravedad = roundTo((J * 1000000) / HHT, 2);
+
+  // 3. Índice de Incidencia (II) = (N * 1.000) / Trab
+  const indiceIncidencia = roundTo((N * 1000) / Trab, 2);
+
+  // 4. Duración Media de las Bajas (DM) = J / N
+  const duracionMedia = N > 0 ? roundTo(J / N, 2) : 0;
+
+  // Medidas relativas previas
+  const proporcionAccidentados = roundTo(N / Trab, 4);
+  const porcentajeAccidentados = roundTo(proporcionAccidentados * 100, 2);
+  const tasaCrudaHoras = roundTo(N / HHT, 8);
+  const razonDiasPorAccidente = duracionMedia;
+
+  // Diagnóstico técnico institucional
+  const diagnostico = {
+    severidad: `Durante el período evaluado (${periodo}), en el establecimiento "${establecimiento}", se registró un Índice de Frecuencia de ${indiceFrecuencia.toFixed(2)} accidentes con baja laboral por cada millón de horas persona efectivamente trabajadas, junto a un Índice de Incidencia de ${indiceIncidencia.toFixed(2)} accidentes por cada 1.000 trabajadores. Esto indica que el ${porcentajeAccidentados.toFixed(2)}% de la nómina laboral sufrió algún evento incapacitante durante el período.`,
+    tiempoPerdido: `La Duración Media de las Bajas (DM) se ubicó en ${duracionMedia.toFixed(2)} días perdidos por accidente, generando un Índice de Gravedad (IG) acumulado de ${indiceGravedad.toFixed(2)} jornadas perdidas por cada millón de horas persona trabajadas. La relación matemática IG = IF × DM (${indiceFrecuencia.toFixed(2)} × ${duracionMedia.toFixed(2)} = ${(indiceFrecuencia * duracionMedia).toFixed(2)}) confirma la coherencia global de las métricas de severidad.`,
+    recomendacion: `El impacto de ${J} días de inactividad médica representa una pérdida sustancial de capacidad operativa y costos de la seguridad asociados. Se recomienda cruzar estos indicadores con las tablas de frecuencias por sector y causa para concentrar las inspecciones preventivas y auditorías de EPP en las áreas de mayor siniestralidad.`
+  };
+
+  return {
+    establecimiento,
+    periodo,
+    accidentesConBaja: N,
+    diasPerdidos: J,
+    horasHombreTrabajadas: HHT,
+    trabajadoresExpuestos: Trab,
+    indiceFrecuencia,
+    indiceGravedad,
+    indiceIncidencia,
+    duracionMedia,
+    proporcionAccidentados,
+    porcentajeAccidentados,
+    tasaCrudaHoras,
+    razonDiasPorAccidente,
+    diagnostico
+  };
+}
+
+/**
+ * Presets de Indicadores de Siniestralidad (Casos Prácticos de Cátedra)
+ */
+export const SAFETY_INDICATOR_PRESETS: SafetyIndicatorPreset[] = [
+  {
+    id: 'indicador-metalurgica-u1',
+    title: 'Taller Metalmecánico (Caso Cátedra Unidad 1)',
+    chipLabel: 'Metalmecánica (100 trab.)',
+    establecimiento: 'Metalúrgica Belén S.A.',
+    periodo: '1° Trimestre Anual',
+    sector: 'Mecanizado y Soldadura',
+    accidentesConBaja: 15,
+    diasPerdidos: 180,
+    horasHombreTrabajadas: 52000,
+    trabajadoresExpuestos: 100,
+    description: 'Caso oficial de la cátedra con 100 operarios expuestos en 13 semanas (40 hs/sem), con 15 bajas y 180 jornadas perdidas.'
+  },
+  {
+    id: 'indicador-construccion-obra',
+    title: 'Obra de Construcción Civil',
+    chipLabel: 'Construcción (150 trab.)',
+    establecimiento: 'Constructora del Valle S.R.L.',
+    periodo: 'Semestre Operativo',
+    sector: 'Estructuras y Encofrado',
+    accidentesConBaja: 8,
+    diasPerdidos: 120,
+    horasHombreTrabajadas: 300000,
+    trabajadoresExpuestos: 150,
+    description: 'Auditoría semestral en obra de construcción con 150 trabajadores y 300.000 horas hombre.'
+  },
+  {
+    id: 'indicador-mineria-planta',
+    title: 'Yacimiento Minero Subterráneo',
+    chipLabel: 'Minería (450 trab.)',
+    establecimiento: 'Complejo Minero San Carlos',
+    periodo: 'Ejercicio Anual',
+    sector: 'Extracción y Planta de Beneficio',
+    accidentesConBaja: 3,
+    diasPerdidos: 45,
+    horasHombreTrabajadas: 850000,
+    trabajadoresExpuestos: 450,
+    description: 'Yacimiento minero de alta dotación con estrictos estándares preventivos y bajo índice de frecuencia.'
+  },
+  {
+    id: 'indicador-frigorifico-alimenticia',
+    title: 'Frigorífico / Industria de Alimentos',
+    chipLabel: 'Frigorífico (220 trab.)',
+    establecimiento: 'Frigorífico Andino',
+    periodo: '2° Trimestre',
+    sector: 'Despostado y Faena',
+    accidentesConBaja: 12,
+    diasPerdidos: 96,
+    horasHombreTrabajadas: 114400,
+    trabajadoresExpuestos: 220,
+    description: 'Planta procesadora con cortes y trastornos musculoesqueléticos frecuentes en líneas de faena.'
+  }
+];
+

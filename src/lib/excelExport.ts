@@ -1,6 +1,12 @@
 // src/lib/excelExport.ts
 import * as XLSX from 'xlsx';
-import { GroupedFrequencyTableResult, SimpleFrequencyTableResult, ContingencyTableResult } from '@/types/statistics';
+import { 
+  GroupedFrequencyTableResult, 
+  SimpleFrequencyTableResult, 
+  ContingencyTableResult,
+  SafetyIndicatorsResult 
+} from '@/types/statistics';
+
 
 /**
  * Convierte un índice numérico de columna (0-indexado) en la letra correspondiente de Excel (0 -> 'A', 1 -> 'B', etc.)
@@ -279,3 +285,84 @@ export function exportContingencyTableToExcel(data: ContingencyTableResult) {
   XLSX.utils.book_append_sheet(wb, ws, 'Tabla_Contingencia');
   XLSX.writeFile(wb, `Tabla_Contingencia_${data.variableX.replace(/[^a-zA-Z0-9]/g, '_')}_vs_${data.variableY.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
 }
+
+/**
+ * Exporta el informe de Indicadores Oficiales de Siniestralidad (SRT / IRAM 3800) a Excel
+ */
+export function exportSafetyIndicatorsToExcel(data: SafetyIndicatorsResult) {
+  const wsData: any[][] = [];
+
+  // Encabezado institucional
+  wsData.push(['I.E.S. DE BELÉN - TECNICATURA SUPERIOR EN HIGIENE Y SEGURIDAD INDUSTRIAL']);
+  wsData.push(['CÁTEDRA: ESTADÍSTICA, CÁLCULO DE LA PROBABILIDAD Y COSTOS DE LA SEGURIDAD']);
+  wsData.push([`DOCENTE: Prof. Pacheco E. Joaquín | FECHA: ${new Date().toLocaleDateString('es-AR')}`]);
+  wsData.push([`INFORME TÉCNICO OFICIAL DE SINIESTRALIDAD LABORAL (NORMATIVA SRT / IRAM 3800 / OIT)`]);
+  wsData.push([`ESTABLECIMIENTO: ${data.establecimiento} | PERÍODO EVALUADO: ${data.periodo}`]);
+  wsData.push([]);
+
+  // Insumos de origen
+  wsData.push(['1. DATOS PRIMARIOS DE EXPOSICIÓN Y ACCIDENTABILIDAD']);
+  wsData.push(['Concepto / Insumo', 'Valor Numérico', 'Unidad de Medida']);
+  wsData.push(['Accidentes con Baja Laboral (N)', data.accidentesConBaja, 'Casos registrados']);
+  wsData.push(['Jornadas No Trabajadas / Días Perdidos (J)', data.diasPerdidos, 'Días de baja médica']);
+  wsData.push(['Horas-Hombre Efectivamente Trabajadas (HHT)', data.horasHombreTrabajadas, 'Horas persona de exposición']);
+  wsData.push(['Nómina Promedio de Trabajadores Expuestos (Trab)', data.trabajadoresExpuestos, 'Trabajadores en nómina']);
+  wsData.push([]);
+
+  // Indicadores Oficiales Calculados
+  wsData.push(['2. INDICADORES OFICIALES DE SINIESTRALIDAD (SRT / IRAM 3800 / OIT)']);
+  wsData.push(['Indicador', 'Fórmula Oficial', 'Valor Obtenido', 'Unidad de Medida / Interpretación']);
+  wsData.push([
+    'Índice de Frecuencia (IF)',
+    '(N * 1.000.000) / HHT',
+    { t: 'n', v: data.indiceFrecuencia, z: '0.00' },
+    'Accidentes con baja por millón de horas trabajadas'
+  ]);
+  wsData.push([
+    'Índice de Gravedad (IG)',
+    '(J * 1.000.000) / HHT',
+    { t: 'n', v: data.indiceGravedad, z: '0.00' },
+    'Jornadas perdidas por millón de horas trabajadas'
+  ]);
+  wsData.push([
+    'Índice de Incidencia (II)',
+    '(N * 1.000) / Trab',
+    { t: 'n', v: data.indiceIncidencia, z: '0.00' },
+    'Accidentes con baja por cada 1.000 trabajadores'
+  ]);
+  wsData.push([
+    'Duración Media de las Bajas (DM)',
+    'J / N',
+    { t: 'n', v: data.duracionMedia, z: '0.00' },
+    'Días promedio de baja por cada accidente laboral'
+  ]);
+  wsData.push([
+    'Relación de Coherencia Matemática',
+    'IG = IF * DM',
+    { t: 'n', v: Number((data.indiceFrecuencia * data.duracionMedia).toFixed(2)), z: '0.00' },
+    'Verificación de coherencia entre severidad y frecuencia'
+  ]);
+  wsData.push([]);
+
+  // Diagnóstico e Informe
+  wsData.push(['3. CONCLUSIÓN Y DIAGNÓSTICO PREVENTIVO']);
+  wsData.push(['Severidad e Impacto:', data.diagnostico.severidad]);
+  wsData.push(['Evaluación del Tiempo Perdido:', data.diagnostico.tiempoPerdido]);
+  wsData.push(['Recomendación Prioritaria:', data.diagnostico.recomendacion]);
+  wsData.push([]);
+  wsData.push(['Fuente: Cátedra de Estadística y Costos de la Seguridad - I.E.S. Belén']);
+
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+  ws['!cols'] = [
+    { wch: 35 },
+    { wch: 32 },
+    { wch: 18 },
+    { wch: 45 },
+  ];
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Indicadores_SRT');
+  XLSX.writeFile(wb, `Indicadores_Siniestralidad_${data.establecimiento.replace(/[^a-zA-Z0-9]/g, '_')}_${data.periodo.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+}
+

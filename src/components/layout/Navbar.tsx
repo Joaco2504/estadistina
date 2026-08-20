@@ -10,7 +10,8 @@ import {
   Layers, 
   FileText,
   Sun,
-  Moon
+  Moon,
+  ShieldCheck
 } from 'lucide-react';
 import { getInitialTheme, applyTheme, ThemeMode } from '@/lib/utils';
 
@@ -47,13 +48,16 @@ export const Navbar: React.FC<NavbarProps> = ({
     applyTheme(nextTheme);
   };
 
-  // Orden estricto solicitado: 1. Simples, 2. Agrupadas, 3. Contingencia, 4. Apuntes
+  // Orden temático de la Unidad 1:
+  // Tema 2: Simples, Tema 3: Agrupadas, Tema 4: Indicadores SRT, Contingencia y Apuntes
   const navItems = [
     { id: 'simple', label: 'Frecuencias Simples', icon: BarChart3 },
     { id: 'grouped', label: 'Frecuencias Agrupadas', icon: Table2, badge: 'k = √n' },
+    { id: 'indicators', label: 'Indicadores SRT', icon: ShieldCheck, badge: 'IF · IG · II' },
     { id: 'contingency', label: 'Tabla de Contingencia', icon: Layers, badge: 'Bivariada' },
     { id: 'notes', label: 'Apuntes de Cátedra', icon: BookOpen },
   ];
+
 
   return (
     <header className="sticky top-0 z-50 w-full bg-[#0F2942] dark:bg-[#080D1A] border-b border-[#1C4874] dark:border-[#1E293B] shadow-md transition-colors duration-200">

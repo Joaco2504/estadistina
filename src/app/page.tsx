@@ -7,9 +7,11 @@ import { Footer } from '@/components/layout/Footer';
 import { DataInputSection } from '@/components/modules/DataInputSection';
 import { SimpleFrequenciesModule } from '@/components/modules/SimpleFrequenciesModule';
 import { GroupedFrequenciesModule } from '@/components/modules/GroupedFrequenciesModule';
+import { SafetyIndicatorsModule } from '@/components/modules/SafetyIndicatorsModule';
 import { ContingencyTableModule } from '@/components/modules/ContingencyTableModule';
 import { CourseNotesModule } from '@/components/modules/CourseNotesModule';
 import { FormulaGlossaryModal } from '@/components/modules/FormulaGlossaryModal';
+
 import { 
   parseGroupedDataString, 
   parseAnyDataString,
@@ -190,13 +192,17 @@ export default function HomePage() {
             </div>
           )}
 
-          {/* 3. MÓDULO DE TABLA DE CONTINGENCIA (TERCERO) */}
+          {/* 3. MÓDULO DE INDICADORES OFICIALES DE SINIESTRALIDAD (TEMA 4 - UNIDAD 1) */}
+          {activeTab === 'indicators' && <SafetyIndicatorsModule />}
+
+          {/* 4. MÓDULO DE TABLA DE CONTINGENCIA */}
           {activeTab === 'contingency' && <ContingencyTableModule />}
 
-          {/* 4. MÓDULO DE APUNTES DE CÁTEDRA (CUARTO) */}
+          {/* 5. MÓDULO DE APUNTES DE CÁTEDRA */}
           {activeTab === 'notes' && <CourseNotesModule />}
         </div>
       </main>
+
 
       {/* Modal de Glosario de Fórmulas Oficial */}
       <FormulaGlossaryModal

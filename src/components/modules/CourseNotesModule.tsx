@@ -92,7 +92,7 @@ export const CourseNotesModule: React.FC = () => {
                   Ejes Temáticos Clave:
                 </span>
                 <ul className="text-xs space-y-1 text-slate-700 dark:text-slate-300">
-                  {unit.topics.slice(0, 3).map((topic, i) => (
+                  {unit.topics.map((topic, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <ChevronRight className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 flex-shrink-0 mt-0.5" />
                       <span className="line-clamp-1">{topic.title}</span>
@@ -101,6 +101,7 @@ export const CourseNotesModule: React.FC = () => {
                 </ul>
               </div>
             </div>
+
 
             {/* Botones de Acción: Apunte Teórico y Guía de TPs */}
             <div className="p-4 bg-slate-50 dark:bg-[#131C2E] border-t border-slate-200 dark:border-slate-800 space-y-2.5">

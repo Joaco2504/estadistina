@@ -225,3 +225,58 @@ export interface ThematicUnit {
   theoreticalNote: TheoreticalNote;
   practicalGuide: PracticalGuide;
 }
+
+/**
+ * Tema 4 - Indicadores Oficiales de Siniestralidad Laboral (SRT)
+ */
+export interface SafetyIndicatorsInput {
+  establecimiento?: string;
+  periodo?: string;
+  accidentesConBaja: number;
+  diasPerdidos: number;
+  horasHombreTrabajadas: number;
+  trabajadoresExpuestos: number;
+}
+
+export interface SafetyIndicatorsResult {
+  establecimiento: string;
+  periodo: string;
+  accidentesConBaja: number;
+  diasPerdidos: number;
+  horasHombreTrabajadas: number;
+  trabajadoresExpuestos: number;
+  
+  // 4 Indicadores Oficiales SRT
+  indiceFrecuencia: number; // IF = (Accidentes * 1.000.000) / HHT
+  indiceGravedad: number; // IG = (Días Perdidos * 1.000.000) / HHT
+  indiceIncidencia: number; // II = (Accidentes * 1.000) / Trabajadores
+  duracionMedia: number; // DM = Días Perdidos / Accidentes
+
+  // Medidas Relativas Previas
+  proporcionAccidentados: number; // Accidentes / Trabajadores (0 a 1)
+  porcentajeAccidentados: number; // proporcion * 100
+  tasaCrudaHoras: number; // Accidentes / HHT
+  razonDiasPorAccidente: number; // Días / Accidentes = DM
+
+  // Diagnóstico e Informe Técnico Automático
+  diagnostico: {
+    severidad: string;
+    tiempoPerdido: string;
+    recomendacion: string;
+  };
+}
+
+export interface SafetyIndicatorPreset {
+  id: string;
+  title: string;
+  chipLabel: string;
+  establecimiento: string;
+  periodo: string;
+  sector: string;
+  accidentesConBaja: number;
+  diasPerdidos: number;
+  horasHombreTrabajadas: number;
+  trabajadoresExpuestos: number;
+  description: string;
+}
+
