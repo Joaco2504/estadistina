@@ -332,91 +332,139 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           <button
             type="button"
             onClick={() => handleGenerateCustomN()}
-            className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all cursor-pointer shadow-xs"
+            className="group flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 cursor-pointer shadow-xs hover:shadow-md"
             title="Generar nueva muestra aleatoria del tamaño seleccionado"
           >
-            <Dices className="w-3.5 h-3.5" />
+            <Dices className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-45 group-hover:scale-110" />
             <span>Generar Muestra</span>
           </button>
         </div>
       </div>
 
       <div className="p-4 sm:p-5 space-y-4">
-        {/* Selector de Naturaleza de Variable en Frecuencias Simples */}
+        {/* Selector de Naturaleza de Variable en Frecuencias Simples (Animación Radio Buttons: hoshikawamaki/terrible-eagle-23) */}
         {mode === 'simple' && (
-          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400" />
               Tipo de Variable en Estudio:
             </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleSimpleTypeChange('quantitative')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  variableType === 'quantitative'
-                    ? 'bg-[#0F2942] text-white shadow-xs dark:bg-emerald-600'
-                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <Hash className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-300" />
-                <span>Cuantitativa Discreta (Números)</span>
-              </button>
+            
+            <div className="flex flex-wrap items-center gap-3 select-none">
+              {/* Radio 1: Cuantitativa Discreta (Números) */}
+              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
+                <input
+                  type="radio"
+                  name="simpleVariableType"
+                  value="quantitative"
+                  checked={variableType === 'quantitative'}
+                  onChange={() => handleSimpleTypeChange('quantitative')}
+                  className="hidden peer"
+                />
+                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-emerald-300
+                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
+                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
+                  peer-checked:after:bg-[#1B8A5A] dark:peer-checked:after:bg-emerald-400 peer-checked:after:rounded-full
+                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
+                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
+                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-emerald-500
+                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
+                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
+                  <Hash className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Cuantitativa Discreta (Números)</span>
+                </span>
+              </label>
 
-              <button
-                type="button"
-                onClick={() => handleSimpleTypeChange('qualitative')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  variableType === 'qualitative'
-                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <Tag className="w-3.5 h-3.5 text-amber-500 dark:text-amber-300" />
-                <span>Cualitativa (Categorías / Texto)</span>
-              </button>
+              {/* Radio 2: Cualitativa (Categorías / Texto) */}
+              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
+                <input
+                  type="radio"
+                  name="simpleVariableType"
+                  value="qualitative"
+                  checked={variableType === 'qualitative'}
+                  onChange={() => handleSimpleTypeChange('qualitative')}
+                  className="hidden peer"
+                />
+                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-amber-300
+                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
+                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
+                  peer-checked:after:bg-[#E67E22] dark:peer-checked:after:bg-amber-400 peer-checked:after:rounded-full
+                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
+                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
+                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-amber-500
+                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
+                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
+                  <Tag className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Cualitativa (Categorías / Texto)</span>
+                </span>
+              </label>
             </div>
           </div>
         )}
 
-        {/* Selector de Tipo de Variable Cuantitativa en Frecuencias Agrupadas (Discreta o Continua) */}
+        {/* Selector de Tipo de Variable Cuantitativa en Frecuencias Agrupadas (Animación Radio Buttons: hoshikawamaki/terrible-eagle-23) */}
         {mode === 'grouped' && (
-          <div className="flex flex-wrap items-center justify-between gap-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200 dark:border-slate-800">
-            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400" />
               Tipo de Variable a Agrupar en Intervalos:
             </span>
-            <div className="flex flex-wrap items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleGroupedTypeChange('continuous')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  groupedVariableType === 'continuous'
-                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <Activity className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-300" />
-                <span>Cuantitativa Continua (Mediciones / Decimales)</span>
-              </button>
+            
+            <div className="flex flex-wrap items-center gap-3 select-none">
+              {/* Radio 1: Cuantitativa Continua (Mediciones / Decimales) */}
+              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
+                <input
+                  type="radio"
+                  name="groupedVariableType"
+                  value="continuous"
+                  checked={groupedVariableType === 'continuous'}
+                  onChange={() => handleGroupedTypeChange('continuous')}
+                  className="hidden peer"
+                />
+                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-emerald-300
+                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
+                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
+                  peer-checked:after:bg-[#1B8A5A] dark:peer-checked:after:bg-emerald-400 peer-checked:after:rounded-full
+                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
+                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
+                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-emerald-500
+                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
+                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
+                  <Activity className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Cuantitativa Continua (Mediciones / Decimales)</span>
+                </span>
+              </label>
 
-              <button
-                type="button"
-                onClick={() => handleGroupedTypeChange('discrete')}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                  groupedVariableType === 'discrete'
-                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
-                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <Binary className="w-3.5 h-3.5 text-white" />
-                <span>Cuantitativa Discreta (Números Enteros)</span>
-              </button>
+              {/* Radio 2: Cuantitativa Discreta (Números Enteros) */}
+              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
+                <input
+                  type="radio"
+                  name="groupedVariableType"
+                  value="discrete"
+                  checked={groupedVariableType === 'discrete'}
+                  onChange={() => handleGroupedTypeChange('discrete')}
+                  className="hidden peer"
+                />
+                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-emerald-300
+                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
+                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
+                  peer-checked:after:bg-[#1B8A5A] dark:peer-checked:after:bg-emerald-400 peer-checked:after:rounded-full
+                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
+                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
+                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-emerald-500
+                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
+                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
+                  <Binary className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 transition-transform duration-200 group-hover:scale-110" />
+                  <span>Cuantitativa Discreta (Números Enteros)</span>
+                </span>
+              </label>
             </div>
           </div>
         )}
 
         {/* Casos Prácticos Rápidos de SySO & Chips de Tamaño Muestral */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
-          {/* Casos Prácticos con chipLabel limpio */}
+          {/* Casos Prácticos con microinteracciones y efectos hover */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Casos:</span>
             {SAFETY_PRESETS.filter((p) => {
@@ -430,17 +478,17 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 key={preset.id}
                 type="button"
                 onClick={() => handleLoadPreset(preset.id)}
-                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`group flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
                   selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-2xs'
-                    : 'bg-slate-100 dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/60 dark:border-slate-700/60'
+                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-400/40'
+                    : 'bg-slate-100 dark:bg-[#1E293B] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 hover:shadow-2xs border border-slate-200/60 dark:border-slate-700/60'
                 }`}
               >
-                {preset.id.includes('ruido') && <Volume2 className="w-3 h-3 text-[#E67E22] dark:text-amber-400" />}
-                {preset.id.includes('edad') && <Activity className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />}
-                {preset.id.includes('dias') && <Calendar className="w-3 h-3 text-blue-500 dark:text-blue-400" />}
-                {preset.id.includes('lux') && <Sun className="w-3 h-3 text-amber-500 dark:text-amber-400" />}
-                {preset.id.includes('cualitativa') && <ShieldCheck className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />}
+                {preset.id.includes('ruido') && <Volume2 className="w-3 h-3 text-[#E67E22] dark:text-amber-400 transition-transform group-hover:scale-110" />}
+                {preset.id.includes('edad') && <Activity className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400 transition-transform group-hover:scale-110" />}
+                {preset.id.includes('dias') && <Calendar className="w-3 h-3 text-blue-500 dark:text-blue-400 transition-transform group-hover:scale-110" />}
+                {preset.id.includes('lux') && <Sun className="w-3 h-3 text-amber-500 dark:text-amber-400 transition-transform group-hover:scale-110" />}
+                {preset.id.includes('cualitativa') && <ShieldCheck className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400 transition-transform group-hover:scale-110" />}
                 <span>{preset.chipLabel || preset.title}</span>
               </button>
             ))}

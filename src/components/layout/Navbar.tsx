@@ -83,17 +83,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
                     isActive
                       ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400/30'
-                      : 'text-slate-300 hover:text-white hover:bg-white/5'
+                      : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className={`w-3.5 h-3.5 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
                   <span>{item.label}</span>
                   {item.badge && (
                     <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold transition-colors ${
                         isActive
                           ? 'bg-[#0F2942] dark:bg-[#080D1A] text-white'
                           : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300 border border-slate-600 dark:border-slate-700'
@@ -113,14 +113,14 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 sm:p-2.5 rounded-xl bg-[#0A1D30] dark:bg-[#0F172A] hover:bg-[#15385B] dark:hover:bg-[#1E293B] text-amber-400 dark:text-amber-300 border border-[#1C4874] dark:border-[#1E293B] transition-all cursor-pointer shadow-xs active:scale-95 flex items-center justify-center"
+              className="p-2 sm:p-2.5 rounded-xl bg-[#0A1D30] dark:bg-[#0F172A] hover:bg-[#15385B] dark:hover:bg-[#1E293B] text-amber-400 dark:text-amber-300 border border-[#1C4874] dark:border-[#1E293B] transition-all duration-200 cursor-pointer shadow-xs active:scale-90 flex items-center justify-center hover:shadow-sm"
               title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Noche'}
               aria-label="Alternar tema oscuro o claro"
             >
               {mounted && theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-300 animate-in spin-in-180 duration-200" />
+                <Sun className="w-4 h-4 text-amber-300 animate-in spin-in-180 duration-300" />
               ) : (
-                <Moon className="w-4 h-4 text-slate-200 animate-in spin-in-180 duration-200" />
+                <Moon className="w-4 h-4 text-slate-200 animate-in spin-in-180 duration-300" />
               )}
             </button>
 
@@ -128,10 +128,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             <button
               type="button"
               onClick={onOpenGlossary}
-              className="flex items-center gap-1.5 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-gradient-to-r from-[#E67E22] to-[#D35400] hover:brightness-110 active:scale-95 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+              className="group flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-[#E67E22] to-[#D35400] hover:brightness-110 hover:shadow-md active:scale-95 text-white text-xs font-bold transition-all duration-200 shadow-xs cursor-pointer"
               title="Consultar fórmulas oficiales de la cátedra"
             >
-              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 group-hover:rotate-6 group-hover:scale-110" />
               <span className="hidden xxs:inline">Formulario</span>
             </button>
           </div>

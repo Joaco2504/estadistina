@@ -15,14 +15,15 @@ import {
   Tag,
   Hash
 } from 'lucide-react';
+import { StatisticalLoader } from '@/components/ui/StatisticalLoader';
 
 const SimpleBarVisualizer = dynamic(
   () => import('./ChartVisualizer').then((mod) => mod.SimpleBarVisualizer),
   {
     ssr: false,
     loading: () => (
-      <div className="h-72 w-full flex items-center justify-center bg-slate-50 rounded-2xl border border-slate-200 mt-6">
-        <span className="text-xs text-slate-400 font-medium">Cargando gráfico estadístico...</span>
+      <div className="h-80 w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-2xl border border-slate-200/80 dark:border-slate-800 mt-6 shadow-2xs">
+        <StatisticalLoader size="sm" title="Generando visualización gráfica..." subtitle="Diagrama de Barras y Frecuencias" />
       </div>
     ),
   }
@@ -100,10 +101,10 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
             <button
               type="button"
               onClick={() => exportSimpleTableToExcel(data)}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="group flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
               <span className="hidden xs:inline">Exportar a Excel</span>
             </button>
           </div>

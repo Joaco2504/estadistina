@@ -246,7 +246,7 @@ export const FormulaGlossaryModal: React.FC<FormulaGlossaryModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="bg-[#0F2942] dark:bg-emerald-600 hover:bg-[#15385B] dark:hover:bg-emerald-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+            className="bg-[#0F2942] dark:bg-emerald-600 hover:bg-[#15385B] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md cursor-pointer"
           >
             Cerrar Formulario
           </button>

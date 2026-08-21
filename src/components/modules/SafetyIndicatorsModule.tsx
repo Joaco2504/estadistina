@@ -95,20 +95,20 @@ export const SafetyIndicatorsModule: React.FC = () => {
             <button
               type="button"
               onClick={() => exportSafetyIndicatorsToExcel(result)}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="group flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
               title="Descargar informe oficial en Excel (.xlsx)"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
               <span className="hidden xs:inline">Exportar a Excel</span>
             </button>
 
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1 text-xs bg-[#15385B] dark:bg-[#1E293B] hover:bg-[#1C4874] dark:hover:bg-[#334155] text-slate-200 px-3 py-1.5 rounded-lg border border-[#1C4874] dark:border-slate-700 cursor-pointer"
+              className="group flex items-center gap-1.5 text-xs bg-[#15385B] dark:bg-[#1E293B] hover:bg-[#1C4874] dark:hover:bg-[#334155] text-slate-200 px-3.5 py-1.5 rounded-xl border border-[#1C4874] dark:border-slate-700 active:scale-95 transition-all duration-200 cursor-pointer"
               title="Imprimir o Guardar en PDF"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110" />
               <span className="hidden sm:inline">Imprimir</span>
             </button>
           </div>
@@ -123,9 +123,9 @@ export const SafetyIndicatorsModule: React.FC = () => {
                 key={preset.id}
                 type="button"
                 onClick={() => handleLoadPreset(preset)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                className={`px-3 py-1 rounded-xl text-xs font-medium transition-all duration-200 cursor-pointer active:scale-95 ${
                   selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-2xs'
+                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs ring-1 ring-emerald-400/40'
                     : 'bg-white dark:bg-[#0A1322] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
                 }`}
               >

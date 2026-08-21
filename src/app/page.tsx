@@ -23,6 +23,7 @@ import {
   GroupedFrequencyTableResult, 
   SimpleFrequencyTableResult 
 } from '@/types/statistics';
+import { FrequencyTableSwitcher } from '@/components/ui/FrequencyTableSwitcher';
 
 export default function HomePage() {
   // Orden prioritario: 1. Simples, 2. Agrupadas, 3. Contingencia, 4. Apuntes
@@ -138,6 +139,21 @@ export default function HomePage() {
 
         {/* CONTENIDO DEL MÓDULO ACTIVO EN ORDEN ESTRICTO */}
         <div id="active-module-container" className="transition-all">
+          {/* Switcher Rápido de Tablas de Frecuencias (Animación alexmaracinaru/brown-bobcat-65) */}
+          {(activeTab === 'simple' || activeTab === 'grouped') && (
+            <div className="flex items-center justify-between flex-wrap gap-3 mb-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
+                  Seleccionar Tipo de Distribución:
+                </span>
+              </div>
+              <FrequencyTableSwitcher
+                activeMode={activeTab as 'simple' | 'grouped'}
+                onSwitch={(newMode) => handleTabChange(newMode)}
+              />
+            </div>
+          )}
+
           {/* 1. MÓDULO DE FRECUENCIAS SIMPLES (PRIMERO) */}
           {activeTab === 'simple' && (
             <div className="space-y-6">

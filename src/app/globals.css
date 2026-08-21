@@ -192,3 +192,375 @@
 .dark ::-webkit-scrollbar-thumb:hover {
   background: #475569;
 }
+
+/* ==========================================================================
+   ANIMACIÓN 1: Botón CTA con Burbuja Expansiva y Flecha (alexmaracinaru/brown-bobcat-65)
+   ========================================================================== */
+.stat-cta-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.55rem 1.15rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 9999px;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+  user-select: none;
+  text-decoration: none;
+}
+
+.stat-cta-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  display: block;
+  border-radius: 9999px;
+  background: rgba(27, 138, 90, 0.14);
+  width: 36px;
+  height: 100%;
+  transition: all 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 0;
+}
+
+.dark .stat-cta-btn::before {
+  background: rgba(16, 185, 129, 0.2);
+}
+
+.stat-cta-btn:hover::before {
+  width: 100%;
+  background: rgba(27, 138, 90, 0.22);
+}
+
+.dark .stat-cta-btn:hover::before {
+  background: rgba(16, 185, 129, 0.32);
+}
+
+.stat-cta-btn.is-active::before {
+  width: 100%;
+  background: #1B8A5A;
+  box-shadow: 0 2px 8px rgba(27, 138, 90, 0.35);
+}
+
+.dark .stat-cta-btn.is-active::before {
+  background: #10B981;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
+}
+
+.stat-cta-btn.is-active:hover::before {
+  background: #15734A;
+}
+
+.dark .stat-cta-btn.is-active:hover::before {
+  background: #059669;
+}
+
+.stat-cta-btn .cta-text {
+  position: relative;
+  z-index: 1;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  color: #0F2942;
+  transition: color 0.2s ease;
+}
+
+.dark .stat-cta-btn .cta-text {
+  color: #E2E8F0;
+}
+
+.stat-cta-btn.is-active .cta-text {
+  color: #FFFFFF;
+}
+
+.dark .stat-cta-btn.is-active .cta-text {
+  color: #FFFFFF;
+}
+
+.stat-cta-btn .cta-icon {
+  position: relative;
+  z-index: 1;
+  transform: translateX(-3px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), color 0.2s ease;
+  color: #1B8A5A;
+}
+
+.dark .stat-cta-btn .cta-icon {
+  color: #34D399;
+}
+
+.stat-cta-btn.is-active .cta-icon {
+  color: #FFFFFF;
+  transform: translateX(0);
+}
+
+.stat-cta-btn:hover .cta-icon {
+  transform: translateX(2px);
+}
+
+.stat-cta-btn:active {
+  transform: scale(0.95);
+}
+
+/* ==========================================================================
+   ANIMACIÓN 2: Loader Orbital Estadístico (Esca-Byte/hard-penguin-57)
+   ========================================================================== */
+.stat-loader-container {
+  box-sizing: border-box;
+}
+
+.stat-loader-container * {
+  box-sizing: border-box;
+}
+
+.stat-loader {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(15, 41, 66, 0.85) 0%, rgba(8, 13, 26, 0.95) 100%);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.2),
+    0 0 25px rgba(15, 41, 66, 0.6);
+}
+
+.stat-ring {
+  position: absolute;
+  border-radius: 50%;
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.6);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  backdrop-filter: blur(2px);
+  transform-style: preserve-3d;
+}
+
+.stat-ring::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 1;
+}
+
+.stat-outer {
+  width: 130px;
+  height: 130px;
+  z-index: 10;
+  animation: stat-spin 12s linear infinite;
+}
+
+.stat-outer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: rgba(56, 189, 248, 0.85); /* Cyan / Celeste */
+  border-right-color: rgba(56, 189, 248, 0.25);
+  box-shadow: 0 0 14px rgba(56, 189, 248, 0.4);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.stat-middle {
+  width: 92px;
+  height: 92px;
+  z-index: 20;
+  animation: stat-spin 8s linear infinite reverse;
+}
+
+.stat-middle::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-left-color: rgba(27, 138, 90, 0.9); /* Verde Seguridad */
+  border-bottom-color: rgba(27, 138, 90, 0.25);
+  box-shadow: 0 0 14px rgba(27, 138, 90, 0.45);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.stat-inner {
+  width: 56px;
+  height: 56px;
+  z-index: 30;
+  animation: stat-spin 4s linear infinite;
+  background: radial-gradient(
+    circle,
+    rgba(230, 126, 34, 0.12) 0%,
+    transparent 65%
+  );
+}
+
+.stat-inner::before {
+  border: 1px dashed rgba(245, 158, 11, 0.4); /* Ámbar */
+}
+
+.stat-item {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform-origin: 0 0;
+  z-index: 5;
+}
+
+.stat-symbol {
+  display: block;
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+  user-select: none;
+}
+
+/* Posiciones y Desplazamientos Radiales */
+.stat-outer .stat-item-1 { transform: rotate(0deg) translate(0, -65px); }
+.stat-outer .stat-item-2 { transform: rotate(120deg) translate(0, -65px); }
+.stat-outer .stat-item-3 { transform: rotate(240deg) translate(0, -65px); }
+
+.stat-middle .stat-item-1 { transform: rotate(0deg) translate(0, -46px); }
+.stat-middle .stat-item-2 { transform: rotate(180deg) translate(0, -46px); }
+
+.stat-inner .stat-item-1 { transform: rotate(90deg) translate(0, -28px); }
+.stat-inner .stat-item-2 { transform: rotate(270deg) translate(0, -28px); }
+
+/* Keyframes de Rotación Inversa para mantener orientación de texto */
+@keyframes spin-reverse-0 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes spin-reverse-120 {
+  from { transform: rotate(-120deg); }
+  to { transform: rotate(-480deg); }
+}
+
+@keyframes spin-reverse-240 {
+  from { transform: rotate(-240deg); }
+  to { transform: rotate(-600deg); }
+}
+
+.stat-outer .stat-item-1 .stat-symbol { animation: spin-reverse-0 12s linear infinite; }
+.stat-outer .stat-item-2 .stat-symbol { animation: spin-reverse-120 12s linear infinite; }
+.stat-outer .stat-item-3 .stat-symbol { animation: spin-reverse-240 12s linear infinite; }
+
+@keyframes spin-forward-0 {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes spin-forward-180 {
+  from { transform: rotate(-180deg); }
+  to { transform: rotate(180deg); }
+}
+
+.stat-middle .stat-item-1 .stat-symbol { animation: spin-forward-0 8s linear infinite; }
+.stat-middle .stat-item-2 .stat-symbol { animation: spin-forward-180 8s linear infinite; }
+
+@keyframes spin-reverse-90 {
+  from { transform: rotate(-90deg); }
+  to { transform: rotate(-450deg); }
+}
+
+@keyframes spin-reverse-270 {
+  from { transform: rotate(-270deg); }
+  to { transform: rotate(-630deg); }
+}
+
+.stat-inner .stat-item-1 .stat-symbol { animation: spin-reverse-90 4s linear infinite; }
+.stat-inner .stat-item-2 .stat-symbol { animation: spin-reverse-270 4s linear infinite; }
+
+.stat-core {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #FFFFFF;
+  border-radius: 50%;
+  box-shadow:
+    0 0 6px #FFFFFF,
+    0 0 16px #38BDF8,
+    0 0 32px #10B981;
+  z-index: 10;
+  animation: heartbeat-core 3.5s ease-in-out infinite;
+}
+
+@keyframes stat-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes heartbeat-core {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  5% {
+    transform: scale(1.15);
+    opacity: 0.95;
+  }
+  10% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  15% {
+    transform: scale(1.45);
+    opacity: 1;
+    box-shadow:
+      0 0 10px #FFFFFF,
+      0 0 25px #38BDF8,
+      0 0 45px #10B981;
+  }
+  20% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  30% {
+    transform: scale(1.15);
+    opacity: 0.9;
+  }
+  40% {
+    transform: scale(1.45);
+    opacity: 1;
+    box-shadow:
+      0 0 10px #FFFFFF,
+      0 0 25px #38BDF8,
+      0 0 45px #10B981;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  65% {
+    transform: scale(1.5);
+    opacity: 1;
+    box-shadow:
+      0 0 12px #FFFFFF,
+      0 0 30px #E67E22;
+  }
+  75% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  86% {
+    transform: scale(1.75);
+    opacity: 1;
+    box-shadow:
+      0 0 16px #FFFFFF,
+      0 0 40px #10B981;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
