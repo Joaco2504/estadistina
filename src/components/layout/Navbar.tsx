@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   onClick={() => onSelectTab(item.id)}
                   className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
                     isActive
-                      ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-sm ring-1 ring-emerald-400/30'
+                      ? 'bg-[#10b981] text-white shadow-md ring-2 ring-emerald-400/40'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
@@ -95,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                     <span
                       className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold transition-colors ${
                         isActive
-                          ? 'bg-[#0F2942] dark:bg-[#080D1A] text-white'
+                          ? 'bg-[#064E3B] text-emerald-100'
                           : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300 border border-slate-600 dark:border-slate-700'
                       }`}
                     >
@@ -149,7 +149,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => onSelectTab(item.id)}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer active:scale-95 ${
                   isActive
-                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-xs'
+                    ? 'bg-[#10b981] text-white shadow-xs ring-1 ring-emerald-400/40'
                     : 'bg-[#0A1D30] dark:bg-[#0F172A] text-slate-300 dark:text-slate-300 border border-[#1C4874] dark:border-[#1E293B] hover:text-white'
                 }`}
               >
@@ -157,7 +157,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span>{item.label}</span>
                 {item.badge && (
                   <span className={`text-[8px] px-1 rounded font-mono ${
-                    isActive ? 'bg-[#0F2942] dark:bg-[#080D1A] text-white' : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300'
+                    isActive ? 'bg-[#064E3B] text-emerald-100' : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300'
                   }`}>
                     {item.badge}
                   </span>

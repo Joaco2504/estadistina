@@ -7,8 +7,8 @@
   :root {
     --primary: #0F2942; /* Azul Marino Institucional */
     --primary-light: #183C5F;
-    --secondary: #1B8A5A; /* Verde Seguridad Industrial */
-    --secondary-light: #22A36B;
+    --secondary: #10B981; /* Verde Seguridad Industrial */
+    --secondary-light: #34D399;
     --accent: #E67E22; /* Acento Ámbar / Precaución */
     --accent-light: #F39C12;
     --bg-technical: #F8FAFC; /* Gris Técnico */
@@ -25,20 +25,61 @@
     --secondary-light: #34D399;
     --accent: #F59E0B;
     --accent-light: #FBBF24;
-    --bg-technical: #080D1A;
-    --card-bg: #0F172A;
+    --bg-technical: #071524;
+    --card-bg: #0C1929;
     --text-main: #F8FAFC;
     --text-muted: #94A3B8;
     --border-color: #1E293B;
   }
 
   body {
-    background-color: var(--bg-technical);
+    background-color: #F8FAFC;
+    background-image: radial-gradient(rgba(15, 41, 66, 0.07) 1px, transparent 1px);
+    background-size: 24px 24px;
     color: var(--text-main);
     font-feature-settings: "rlig" 1, "calt" 1;
     transition: background-color 0.2s ease, color 0.2s ease;
   }
+
+  .dark body,
+  :where(.dark, .dark *) body {
+    background-color: #071524 !important;
+    background-image: radial-gradient(rgba(16, 185, 129, 0.12) 1px, transparent 1px) !important;
+    background-size: 24px 24px !important;
+  }
 }
+
+/* ==========================================================================
+   ESTILOS DE FOOTER Y ACORDEÓN MOBILE
+   ========================================================================== */
+.footer-gradient-border {
+  border-top: 1px solid rgba(16, 185, 129, 0.4);
+  box-shadow: 0 -4px 24px rgba(16, 185, 129, 0.05);
+}
+
+.footer-link {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.footer-link:hover {
+  transform: translateY(-2px);
+  color: #10B981;
+}
+
+.dark .footer-link:hover {
+  color: #34D399;
+  text-shadow: 0 0 10px rgba(52, 211, 153, 0.3);
+}
+
+/* Transición suave para acordeones en móviles (< 768px) */
+.mobile-accordion-body {
+  display: grid;
+  transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.25s ease;
+}
+
 
 /* Estilos de tablas didácticas universitarias */
 .stat-table {
