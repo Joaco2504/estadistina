@@ -342,122 +342,66 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       </div>
 
       <div className="p-4 sm:p-5 space-y-4">
-        {/* Selector de Naturaleza de Variable en Frecuencias Simples (Animación Radio Buttons: hoshikawamaki/terrible-eagle-23) */}
+        {/* Selector de Naturaleza de Variable en Frecuencias Simples */}
         {mode === 'simple' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400" />
-              Tipo de Variable en Estudio:
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/90 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#10B981]" />
+              <span>Tipo de Variable en Estudio:</span>
             </span>
             
-            <div className="flex flex-wrap items-center gap-3 select-none">
-              {/* Radio 1: Cuantitativa Discreta (Números) */}
-              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
-                <input
-                  type="radio"
-                  name="simpleVariableType"
-                  value="quantitative"
-                  checked={variableType === 'quantitative'}
-                  onChange={() => handleSimpleTypeChange('quantitative')}
-                  className="hidden peer"
-                />
-                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-emerald-300
-                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
-                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
-                  peer-checked:after:bg-[#1B8A5A] dark:peer-checked:after:bg-emerald-400 peer-checked:after:rounded-full
-                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
-                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
-                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-emerald-500
-                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
-                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
-                  <Hash className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Cuantitativa Discreta (Números)</span>
-                </span>
-              </label>
+            <div className="flex flex-wrap items-center gap-2.5 select-none">
+              {/* Opción 1: Cuantitativa Discreta (Números) */}
+              <button
+                type="button"
+                onClick={() => handleSimpleTypeChange('quantitative')}
+                className={`stat-var-card group ${variableType === 'quantitative' ? 'is-active' : ''}`}
+              >
+                <Hash className="w-4 h-4 text-emerald-500 var-icon" />
+                <span>Cuantitativa Discreta (Números)</span>
+              </button>
 
-              {/* Radio 2: Cualitativa (Categorías / Texto) */}
-              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
-                <input
-                  type="radio"
-                  name="simpleVariableType"
-                  value="qualitative"
-                  checked={variableType === 'qualitative'}
-                  onChange={() => handleSimpleTypeChange('qualitative')}
-                  className="hidden peer"
-                />
-                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-amber-300
-                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
-                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
-                  peer-checked:after:bg-[#E67E22] dark:peer-checked:after:bg-amber-400 peer-checked:after:rounded-full
-                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
-                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
-                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-amber-500
-                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
-                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
-                  <Tag className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Cualitativa (Categorías / Texto)</span>
-                </span>
-              </label>
+              {/* Opción 2: Cualitativa (Categorías / Texto) */}
+              <button
+                type="button"
+                onClick={() => handleSimpleTypeChange('qualitative')}
+                className={`stat-var-card group ${variableType === 'qualitative' ? 'is-active' : ''}`}
+              >
+                <Tag className="w-4 h-4 text-amber-500 var-icon" />
+                <span>Cualitativa (Categorías / Texto)</span>
+              </button>
             </div>
           </div>
         )}
 
-        {/* Selector de Tipo de Variable Cuantitativa en Frecuencias Agrupadas (Animación Radio Buttons: hoshikawamaki/terrible-eagle-23) */}
+        {/* Selector de Tipo de Variable Cuantitativa en Frecuencias Agrupadas */}
         {mode === 'grouped' && (
-          <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 shadow-2xs">
-            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide flex items-center gap-1.5">
-              <Sliders className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400" />
-              Tipo de Variable a Agrupar en Intervalos:
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-xl bg-slate-50/90 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 shadow-2xs">
+            <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide flex items-center gap-2">
+              <Sliders className="w-4 h-4 text-[#10B981]" />
+              <span>Tipo de Variable a Agrupar en Intervalos:</span>
             </span>
             
-            <div className="flex flex-wrap items-center gap-3 select-none">
-              {/* Radio 1: Cuantitativa Continua (Mediciones / Decimales) */}
-              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
-                <input
-                  type="radio"
-                  name="groupedVariableType"
-                  value="continuous"
-                  checked={groupedVariableType === 'continuous'}
-                  onChange={() => handleGroupedTypeChange('continuous')}
-                  className="hidden peer"
-                />
-                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-emerald-300
-                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
-                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
-                  peer-checked:after:bg-[#1B8A5A] dark:peer-checked:after:bg-emerald-400 peer-checked:after:rounded-full
-                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
-                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
-                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-emerald-500
-                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
-                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
-                  <Activity className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Cuantitativa Continua (Mediciones / Decimales)</span>
-                </span>
-              </label>
+            <div className="flex flex-wrap items-center gap-2.5 select-none">
+              {/* Opción 1: Cuantitativa Continua (Mediciones / Decimales) */}
+              <button
+                type="button"
+                onClick={() => handleGroupedTypeChange('continuous')}
+                className={`stat-var-card group ${groupedVariableType === 'continuous' ? 'is-active' : ''}`}
+              >
+                <Activity className="w-4 h-4 text-emerald-500 var-icon" />
+                <span>Cuantitativa Continua (Mediciones / Decimales)</span>
+              </button>
 
-              {/* Radio 2: Cuantitativa Discreta (Números Enteros) */}
-              <label className="flex items-center justify-center cursor-pointer radio group px-2 py-1 rounded-lg transition-colors hover:bg-slate-200/50 dark:hover:bg-slate-800/60">
-                <input
-                  type="radio"
-                  name="groupedVariableType"
-                  value="discrete"
-                  checked={groupedVariableType === 'discrete'}
-                  onChange={() => handleGroupedTypeChange('discrete')}
-                  className="hidden peer"
-                />
-                <span className="relative flex items-center gap-1.5 text-xs font-bold transition-all duration-300 text-slate-500 dark:text-slate-400 peer-checked:text-[#0F2942] dark:peer-checked:text-emerald-300
-                  after:opacity-0 peer-checked:after:opacity-100 peer-checked:after:transition-all peer-checked:after:duration-300
-                  peer-checked:after:content-[''] peer-checked:after:block peer-checked:after:w-1/2 peer-checked:after:h-[2.5px]
-                  peer-checked:after:bg-[#1B8A5A] dark:peer-checked:after:bg-emerald-400 peer-checked:after:rounded-full
-                  peer-checked:after:absolute peer-checked:after:right-0 peer-checked:after:-bottom-1.5
-                  peer-checked:before:content-[''] peer-checked:before:block peer-checked:before:w-full peer-checked:before:h-[2.5px]
-                  peer-checked:before:bg-[#0F2942] dark:peer-checked:before:bg-emerald-500
-                  before:opacity-0 peer-checked:before:opacity-100 peer-checked:before:transition-all peer-checked:before:duration-300
-                  before:rounded-full before:absolute before:right-0 before:-bottom-0.5">
-                  <Binary className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 transition-transform duration-200 group-hover:scale-110" />
-                  <span>Cuantitativa Discreta (Números Enteros)</span>
-                </span>
-              </label>
+              {/* Opción 2: Cuantitativa Discreta (Números Enteros) */}
+              <button
+                type="button"
+                onClick={() => handleGroupedTypeChange('discrete')}
+                className={`stat-var-card group ${groupedVariableType === 'discrete' ? 'is-active' : ''}`}
+              >
+                <Binary className="w-4 h-4 text-cyan-500 var-icon" />
+                <span>Cuantitativa Discreta (Números Enteros)</span>
+              </button>
             </div>
           </div>
         )}
@@ -650,15 +594,16 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           </div>
         )}
 
-        {/* Botón Principal de Actualización */}
+        {/* Botón Principal de Actualización con Animación UIverse Shimmer */}
         <div className="flex justify-end pt-1">
           <button
             type="button"
             onClick={() => onCalculateWithValues()}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#0F2942] dark:bg-emerald-600 hover:bg-[#15385B] dark:hover:bg-emerald-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-xs cursor-pointer active:scale-98"
+            className="w-full sm:w-auto stat-update-btn group"
+            title="Recalcular y actualizar la tabla de frecuencias y sus gráficos correspondientes"
           >
-            <Sparkles className="w-4 h-4 text-[#E67E22] dark:text-amber-300" />
-            <span>Actualizar Tabla y Gráfico</span>
+            <Sparkles className="w-4 h-4 text-amber-300 update-sparkle-icon" />
+            <span className="tracking-wide">Actualizar Tabla y Gráfico</span>
           </button>
         </div>
       </div>

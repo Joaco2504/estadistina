@@ -4,6 +4,13 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Cátedra de Estadística y SySO | I.E.S. de Belén",
   description: "Plataforma Didáctica de Estadística, Cálculo de la Probabilidad y Costos de la Seguridad. Tecnicatura Superior en Higiene, Seguridad y Control Ambiental - Industrial. Docente: Prof. Pacheco E. Joaquín.",
+  icons: {
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: '/favicon.svg',
+  },
   keywords: [
     "Estadística",
     "Higiene y Seguridad",

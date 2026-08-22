@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 115" width="100" height="115">
+  <defs>
+    <linearGradient id="appFavShieldLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#15385B" />
+      <stop offset="100%" stop-color="#0F2942" />
+    </linearGradient>
+    <linearGradient id="appFavShieldRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+    <linearGradient id="appFavGoldCoin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FBBF24" />
+      <stop offset="100%" stop-color="#D97706" />
+    </linearGradient>
+    <clipPath id="appFavShieldClip">
+      <path d="M50 4 C72 16 94 10 94 48 C94 82 66 100 50 108 C34 100 6 82 6 48 C6 10 28 16 50 4 Z" />
+    </clipPath>
+  </defs>
+
+  <path
+    d="M50 2 C74 15 97 9 97 49 C97 85 68 103 50 112 C32 103 3 85 3 49 C3 9 26 15 50 2 Z"
+    fill="#071322"
+    stroke="#FFFFFF"
+    stroke-width="3"
+  />
+
+  <g clip-path="url(#appFavShieldClip)">
+    <rect x="0" y="0" width="50" height="115" fill="url(#appFavShieldLeft)" />
+    <rect x="50" y="0" width="50" height="115" fill="url(#appFavShieldRight)" />
+    <line x1="50" y1="4" x2="50" y2="108" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" />
+    <line x1="50" y1="18" x2="50" y2="78" stroke="#FFFFFF" stroke-width="2.5" stroke-dasharray="3.5,3" stroke-linecap="round" />
+    <path
+      d="M14 74 C26 74 34 72 41 52 C46 36 47 24 50 24 C53 24 54 36 59 52 C66 72 74 74 86 74"
+      fill="none"
+      stroke="#FFFFFF"
+      stroke-width="4.5"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    />
+  </g>
+
+  <path
+    d="M50 4 C72 16 94 10 94 48 C94 82 66 100 50 108 C34 100 6 82 6 48 C6 10 28 16 50 4 Z"
+    fill="none"
+    stroke="#FFFFFF"
+    stroke-width="2.5"
+  />
+
+  <g transform="translate(62, 70)">
+    <circle cx="16" cy="16" r="15" fill="#071322" stroke="#FFFFFF" stroke-width="2.5" />
+    <circle cx="16" cy="16" r="13" fill="url(#appFavGoldCoin)" />
+    <text x="16" y="22.5" font-family="Arial, sans-serif" font-size="17" font-weight="900" fill="#0F2942" text-anchor="middle">$</text>
+  </g>
+</svg>
