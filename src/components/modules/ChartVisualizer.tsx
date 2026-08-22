@@ -249,60 +249,44 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos con Scroll Horizontal */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#131C2E] p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartType('histogram')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'histogram'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'histogram' ? 'is-active' : ''}`}
             title="Histograma de Barras Continuas"
           >
-            <BarChart2 className="w-3.5 h-3.5" />
+            <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Histograma</span>
           </button>
 
           <button
             type="button"
             onClick={() => setChartType('polygon')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'polygon'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'polygon' ? 'is-active' : ''}`}
             title="Polígono de Frecuencias"
           >
-            <TrendingUp className="w-3.5 h-3.5" />
+            <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Polígono</span>
           </button>
 
           <button
             type="button"
             onClick={() => setChartType('pie')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'pie'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'pie' ? 'is-active' : ''}`}
             title="Gráfico Circular de Porcentajes"
           >
-            <PieIcon className="w-3.5 h-3.5" />
+            <PieIcon className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Circular</span>
           </button>
 
           <button
             type="button"
             onClick={() => setChartType('ogive')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'ogive'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'ogive' ? 'is-active' : ''}`}
             title="Ojiva de Frecuencias Acumuladas"
           >
-            <Activity className="w-3.5 h-3.5" />
+            <Activity className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Ojiva (Fa)</span>
           </button>
         </div>
@@ -606,43 +590,34 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#131C2E] p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartType('bar')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'bar'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'bar' ? 'is-active' : ''}`}
+            title="Diagrama de Barras"
           >
-            <BarChart2 className="w-3.5 h-3.5" />
+            <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Barras</span>
           </button>
 
           <button
             type="button"
             onClick={() => setChartType('pie')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'pie'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'pie' ? 'is-active' : ''}`}
+            title="Gráfico Circular de Porcentajes"
           >
-            <PieIcon className="w-3.5 h-3.5" />
+            <PieIcon className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Circular</span>
           </button>
 
           <button
             type="button"
             onClick={() => setChartType('line')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartType === 'line'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartType === 'line' ? 'is-active' : ''}`}
+            title="Gráfico de Líneas de Frecuencias"
           >
-            <TrendingUp className="w-3.5 h-3.5" />
+            <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Líneas</span>
           </button>
         </div>
@@ -870,30 +845,24 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#131C2E] p-1 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
           <button
             type="button"
             onClick={() => setChartMode('grouped')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartMode === 'grouped'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartMode === 'grouped' ? 'is-active' : ''}`}
+            title="Distribución Conjunta en Barras Agrupadas"
           >
-            <BarChart2 className="w-3.5 h-3.5" />
+            <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Barras Agrupadas</span>
           </button>
 
           <button
             type="button"
             onClick={() => setChartMode('stacked')}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              chartMode === 'stacked'
-                ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-300 hover:text-[#0F2942] dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
-            }`}
+            className={`stat-chart-btn group ${chartMode === 'stacked' ? 'is-active' : ''}`}
+            title="Distribución en Barras Apiladas"
           >
-            <StackIcon className="w-3.5 h-3.5" />
+            <StackIcon className="w-3.5 h-3.5 chart-btn-icon" />
             <span>Barras Apiladas</span>
           </button>
         </div>

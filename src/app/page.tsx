@@ -24,11 +24,22 @@ import {
   SimpleFrequencyTableResult 
 } from '@/types/statistics';
 import { FrequencyTableSwitcher } from '@/components/ui/FrequencyTableSwitcher';
+import { StatisticalLoader } from '@/components/ui/StatisticalLoader';
 
 export default function HomePage() {
+  // Estado de Carga Inicial con Loader Orbital
+  const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
+
   // Orden prioritario: 1. Simples, 2. Agrupadas, 3. Contingencia, 4. Apuntes
   const [activeTab, setActiveTab] = useState<string>('simple');
   const [isGlossaryOpen, setIsGlossaryOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsInitialLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Tipo de variable en estudio para frecuencias simples
   const [variableType, setVariableType] = useState<'quantitative' | 'qualitative'>('quantitative');
@@ -128,25 +139,35 @@ export default function HomePage() {
         onOpenGlossary={() => setIsGlossaryOpen(true)}
       />
 
-      {/* Contenedor Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
-        {/* Mensaje de Error si aplica */}
-        {errorMessage && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
-            {errorMessage}
-          </div>
-        )}
+      {/* Loader Inicial de Página con Animación Orbital (Esca-Byte/hard-penguin-57) */}
+      {isInitialLoading ? (
+        <main className="flex-1 flex items-center justify-center min-h-[75vh]">
+          <StatisticalLoader
+            size="lg"
+            title="Inicializando Entorno Estadístico Didáctico..."
+            subtitle="Cátedra de Estadística · IES Belén"
+          />
+        </main>
+      ) : (
+        /* Contenedor Principal */
+        <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 animate-in fade-in duration-300">
+          {/* Mensaje de Error si aplica */}
+          {errorMessage && (
+            <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+              {errorMessage}
+            </div>
+          )}
 
-        {/* CONTENIDO DEL MÓDULO ACTIVO EN ORDEN ESTRICTO */}
-        <div id="active-module-container" className="transition-all">
-          {/* Switcher Rápido de Tablas de Frecuencias (Animación alexmaracinaru/brown-bobcat-65) */}
-          {(activeTab === 'simple' || activeTab === 'grouped') && (
-            <div className="flex items-center justify-between flex-wrap gap-3 mb-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
-                  Seleccionar Tipo de Distribución:
-                </span>
-              </div>
+          {/* CONTENIDO DEL MÓDULO ACTIVO EN ORDEN ESTRICTO */}
+          <div id="active-module-container" className="transition-all">
+            {/* Switcher Rápido de Tablas de Frecuencias (Animación alexmaracinaru/brown-bobcat-65) */}
+            {(activeTab === 'simple' || activeTab === 'grouped') && (
+              <div className="flex items-center justify-between flex-wrap gap-3 mb-4 pb-3 border-b border-slate-200/80 dark:border-slate-800/80">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold text-[#0F2942] dark:text-slate-200 uppercase tracking-wide">
+                    Seleccionar Tipo de Distribución:
+                  </span>
+                </div>
               <FrequencyTableSwitcher
                 activeMode={activeTab as 'simple' | 'grouped'}
                 onSwitch={(newMode) => handleTabChange(newMode)}
@@ -218,6 +239,7 @@ export default function HomePage() {
           {activeTab === 'notes' && <CourseNotesModule />}
         </div>
       </main>
+      )}
 
 
       {/* Modal de Glosario de Fórmulas Oficial */}

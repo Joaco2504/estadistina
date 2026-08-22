@@ -107,32 +107,32 @@ export const Navbar: React.FC<NavbarProps> = ({
             })}
           </nav>
 
-          {/* Acciones del Header: Toggle Modo Oscuro + Botón Formulario */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {/* Botón Switch Modo Oscuro / Claro */}
+          {/* Acciones del Header: Toggle Modo Oscuro + Botón Formulario con Animaciones UIverse */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            {/* Botón Switch Modo Oscuro / Claro con Halo Animado */}
             <button
               type="button"
               onClick={toggleTheme}
-              className="p-2 sm:p-2.5 rounded-xl bg-[#0A1D30] dark:bg-[#0F172A] hover:bg-[#15385B] dark:hover:bg-[#1E293B] text-amber-400 dark:text-amber-300 border border-[#1C4874] dark:border-[#1E293B] transition-all duration-200 cursor-pointer shadow-xs active:scale-90 flex items-center justify-center hover:shadow-sm"
+              className="theme-toggle-btn group"
               title={theme === 'dark' ? 'Cambiar a Modo Claro' : 'Cambiar a Modo Noche'}
               aria-label="Alternar tema oscuro o claro"
             >
               {mounted && theme === 'dark' ? (
-                <Sun className="w-4 h-4 text-amber-300 animate-in spin-in-180 duration-300" />
+                <Sun className="w-4 h-4 text-amber-300 theme-icon-sun drop-shadow-[0_0_8px_rgba(251,191,36,0.8)]" />
               ) : (
-                <Moon className="w-4 h-4 text-slate-200 animate-in spin-in-180 duration-300" />
+                <Moon className="w-4 h-4 text-cyan-200 theme-icon-moon drop-shadow-[0_0_8px_rgba(103,232,249,0.8)]" />
               )}
             </button>
 
-            {/* Botón Glosario / Formulario */}
+            {/* Botón Glosario / Formulario con Shimmer Luminoso */}
             <button
               type="button"
               onClick={onOpenGlossary}
-              className="group flex items-center gap-1.5 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-xl bg-gradient-to-r from-[#E67E22] to-[#D35400] hover:brightness-110 hover:shadow-md active:scale-95 text-white text-xs font-bold transition-all duration-200 shadow-xs cursor-pointer"
+              className="stat-formula-btn"
               title="Consultar fórmulas oficiales de la cátedra"
             >
-              <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 transition-transform duration-200 group-hover:rotate-6 group-hover:scale-110" />
-              <span className="hidden xxs:inline">Formulario</span>
+              <FileText className="w-4 h-4 formula-icon text-amber-200" />
+              <span className="hidden xxs:inline tracking-wide font-bold">Fórmulas Cátedra</span>
             </button>
           </div>
         </div>

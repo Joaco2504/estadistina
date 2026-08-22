@@ -564,3 +564,218 @@
     opacity: 0.8;
   }
 }
+
+/* ==========================================================================
+   ANIMACIÓN 3: Botón de Modo Oscuro con Halo Luminoso y Rotación (UIverse inspired)
+   ========================================================================== */
+.theme-toggle-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: #0A1D30;
+  border: 1px solid #1C4874;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dark .theme-toggle-btn {
+  background: #0F172A;
+  border-color: #1E293B;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.15);
+}
+
+.theme-toggle-btn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: radial-gradient(circle at center, rgba(245, 158, 11, 0.25) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  transform: scale(0.5);
+}
+
+.theme-toggle-btn:hover::before {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.theme-toggle-btn:hover {
+  transform: translateY(-1px);
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.25);
+}
+
+.theme-toggle-btn:active {
+  transform: scale(0.9);
+}
+
+.theme-icon-sun {
+  animation: sun-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.theme-icon-moon {
+  animation: moon-enter 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes sun-enter {
+  from {
+    transform: rotate(-90deg) scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes moon-enter {
+  from {
+    transform: rotate(90deg) scale(0.4);
+    opacity: 0;
+  }
+  to {
+    transform: rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* ==========================================================================
+   ANIMACIÓN 4: Botón "Consultar Fórmulas" con Reflejo de Brillo Shimmer (UIverse inspired)
+   ========================================================================== */
+.stat-formula-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #E67E22 0%, #D35400 60%, #B9380B 100%);
+  color: #FFFFFF;
+  font-weight: 700;
+  font-size: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 10px rgba(230, 126, 34, 0.35);
+  user-select: none;
+}
+
+.stat-formula-btn::before {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -80%;
+  width: 250%;
+  height: 220%;
+  background: linear-gradient(
+    65deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 80%
+  );
+  transform: rotate(20deg) translateY(-100%);
+  transition: transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.stat-formula-btn:hover::before {
+  transform: rotate(20deg) translateY(100%);
+}
+
+.stat-formula-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(230, 126, 34, 0.5);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.stat-formula-btn:active {
+  transform: translateY(0) scale(0.95);
+  box-shadow: 0 2px 6px rgba(230, 126, 34, 0.3);
+}
+
+.stat-formula-btn .formula-icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stat-formula-btn:hover .formula-icon {
+  transform: rotate(12deg) scale(1.15);
+}
+
+/* ==========================================================================
+   ANIMACIÓN 5: Botones de Tipo de Gráficos (Barras, Circular, Ojiva, etc.)
+   ========================================================================== */
+.stat-chart-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 10px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.stat-chart-btn.is-active {
+  background: #0F2942;
+  color: #FFFFFF;
+  border-color: #1C4874;
+  box-shadow: 0 2px 8px rgba(15, 41, 66, 0.3);
+}
+
+.dark .stat-chart-btn.is-active {
+  background: #10B981;
+  color: #FFFFFF;
+  border-color: #059669;
+  box-shadow: 0 2px 10px rgba(16, 185, 129, 0.35);
+}
+
+.stat-chart-btn:not(.is-active) {
+  color: #64748B;
+  background: transparent;
+}
+
+.dark .stat-chart-btn:not(.is-active) {
+  color: #94A3B8;
+}
+
+.stat-chart-btn:not(.is-active):hover {
+  background: rgba(255, 255, 255, 0.85);
+  color: #0F2942;
+  border-color: #CBD5E1;
+  transform: translateY(-1px);
+}
+
+.dark .stat-chart-btn:not(.is-active):hover {
+  background: #1E293B;
+  color: #F8FAFC;
+  border-color: #334155;
+}
+
+.stat-chart-btn:active {
+  transform: scale(0.95);
+}
+
+.stat-chart-btn .chart-btn-icon {
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.stat-chart-btn:hover .chart-btn-icon {
+  transform: scale(1.15);
+}
+
+.stat-chart-btn.is-active .chart-btn-icon {
+  transform: scale(1.05);
+}
