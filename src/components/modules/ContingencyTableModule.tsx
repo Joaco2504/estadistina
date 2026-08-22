@@ -17,8 +17,10 @@ import {
   FileSpreadsheet,
   Plus,
   Trash2,
-  Edit3
+  Edit3,
+  Maximize2
 } from 'lucide-react';
+import { FloatingTableModal } from '@/components/ui/FloatingTableModal';
 
 const ContingencyBarVisualizer = dynamic(
   () => import('./ChartVisualizer').then((mod) => mod.ContingencyBarVisualizer),
@@ -38,6 +40,7 @@ export const ContingencyTableModule: React.FC = () => {
   const [variableX, setVariableX] = useState<string>(defaultPreset.defaultXName || 'Sector de Planta');
   const [variableY, setVariableY] = useState<string>(defaultPreset.defaultYName || 'Grado de Uso de EPP');
   const [selectedPresetId, setSelectedPresetId] = useState<string>('contingencia-epp');
+  const [isFloatingTableOpen, setIsFloatingTableOpen] = useState(false);
   const [customN, setCustomN] = useState<number>(45);
   const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(false);
   
@@ -243,6 +246,103 @@ export const ContingencyTableModule: React.FC = () => {
     });
   }, [rowCategories, colCategories, matrix]);
 
+  // Renderizador unificado para tabla bivariada
+  const renderTableContent = () => (
+    <table className="stat-table">
+      <thead>
+        <tr>
+          <th className="bg-[#0A1D30] dark:bg-[#080D1A] text-left text-xs font-bold text-white">
+            {variableX} \ {variableY}
+          </th>
+          {colCategories.map((colCat, cIdx) => (
+            <th key={`col-header-${cIdx}`} className="bg-[#0F2942] dark:bg-[#0B132B]">
+              <div className="flex items-center justify-between gap-1">
+                <input
+                  type="text"
+                  value={colCat}
+                  onChange={(e) => handleColCategoryChange(cIdx, e.target.value)}
+                  className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full"
+                />
+                {colCategories.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteCol(cIdx)}
+                    className="text-slate-400 hover:text-red-400 p-0.5 transition-colors cursor-pointer"
+                    title="Eliminar columna"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </th>
+          ))}
+          <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs">
+            Total por fila
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rowCategories.map((rowCat, rIdx) => (
+          <tr key={`row-body-${rIdx}`}>
+            <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322]">
+              <div className="flex items-center justify-between gap-1">
+                <input
+                  type="text"
+                  value={rowCat}
+                  onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
+                  className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600"
+                />
+                {rowCategories.length > 2 && (
+                  <button
+                    type="button"
+                    onClick={() => handleDeleteRow(rIdx)}
+                    className="text-slate-400 hover:text-red-500 p-0.5 transition-colors cursor-pointer"
+                    title="Eliminar fila"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+            </td>
+
+            {/* Celdas centrales editables */}
+            {colCategories.map((_, cIdx) => (
+              <td key={`cell-${rIdx}-${cIdx}`} className="p-1">
+                <input
+                  type="number"
+                  min={0}
+                  value={matrix[rIdx]?.[cIdx] ?? 0}
+                  onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
+                  className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-1 focus:ring-[#10B981] rounded px-1 py-1 border border-slate-200 dark:border-slate-700 text-xs"
+                />
+              </td>
+            ))}
+
+            {/* Total por fila */}
+            <td className="font-mono font-extrabold text-[#10B981] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs">
+              {rowMarginalTotals[rIdx]}
+            </td>
+          </tr>
+        ))}
+
+        {/* Totales Marginales por Columna y Gran Total */}
+        <tr className="total-row">
+          <td className="text-left uppercase font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
+            Total por columna
+          </td>
+          {colCategories.map((_, cIdx) => (
+            <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
+              {colMarginalTotals[cIdx]}
+            </td>
+          ))}
+          <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs">
+            {grandTotal}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  );
+
   return (
     <div className="space-y-6">
       {/* Panel de Control y Presets Bivariados */}
@@ -415,14 +515,26 @@ export const ContingencyTableModule: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* BOTÓN VENTANA FLOTANTE */}
+            <button
+              type="button"
+              onClick={() => setIsFloatingTableOpen(true)}
+              className="flex items-center gap-1.5 bg-[#15385B] dark:bg-[#1E293B] hover:bg-[#1E4D7B] dark:hover:bg-slate-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer border border-[#1C4874] dark:border-slate-700"
+              title="Abrir tabla en Ventana Flotante / Pantalla Completa"
+            >
+              <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />
+              <span className="hidden xs:inline">Flotante</span>
+            </button>
+
+            {/* BOTÓN EXPORTAR A EXCEL */}
             <button
               type="button"
               onClick={() => exportContingencyTableToExcel(result)}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Exportar a Excel</span>
+              <span className="hidden xs:inline">Excel</span>
             </button>
 
             <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-white border border-[#1C4874] dark:border-slate-700 hidden sm:inline">
@@ -458,101 +570,23 @@ export const ContingencyTableModule: React.FC = () => {
         </div>
 
         <div className="overflow-x-auto p-3 sm:p-4">
-          <table className="stat-table">
-            <thead>
-              <tr>
-                <th className="bg-[#0A1D30] dark:bg-[#080D1A] text-left text-xs font-bold text-white">
-                  {variableX} \ {variableY}
-                </th>
-                {colCategories.map((colCat, cIdx) => (
-                  <th key={`col-header-${cIdx}`} className="bg-[#0F2942] dark:bg-[#0B132B]">
-                    <div className="flex items-center justify-between gap-1">
-                      <input
-                        type="text"
-                        value={colCat}
-                        onChange={(e) => handleColCategoryChange(cIdx, e.target.value)}
-                        className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full"
-                      />
-                      {colCategories.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteCol(cIdx)}
-                          className="text-slate-400 hover:text-red-400 p-0.5 transition-colors"
-                          title="Eliminar columna"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  </th>
-                ))}
-                <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs">
-                  Total por fila
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {rowCategories.map((rowCat, rIdx) => (
-                <tr key={`row-body-${rIdx}`}>
-                  <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322]">
-                    <div className="flex items-center justify-between gap-1">
-                      <input
-                        type="text"
-                        value={rowCat}
-                        onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
-                        className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600"
-                      />
-                      {rowCategories.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteRow(rIdx)}
-                          className="text-slate-400 hover:text-red-500 p-0.5 transition-colors"
-                          title="Eliminar fila"
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-
-                  {/* Celdas centrales editables */}
-                  {colCategories.map((_, cIdx) => (
-                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1">
-                      <input
-                        type="number"
-                        min={0}
-                        value={matrix[rIdx]?.[cIdx] ?? 0}
-                        onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
-                        className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-1 focus:ring-[#1B8A5A] rounded px-1 py-1 border border-slate-200 dark:border-slate-700 text-xs"
-                      />
-                    </td>
-                  ))}
-
-                  {/* Total por fila */}
-                  <td className="font-mono font-extrabold text-[#1B8A5A] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs">
-                    {rowMarginalTotals[rIdx]}
-                  </td>
-                </tr>
-              ))}
-
-              {/* Totales Marginales por Columna y Gran Total */}
-              <tr className="total-row">
-                <td className="text-left uppercase font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
-                  Total por columna
-                </td>
-                {colCategories.map((_, cIdx) => (
-                  <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
-                    {colMarginalTotals[cIdx]}
-                  </td>
-                ))}
-                <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs">
-                  {grandTotal}
-                </td>
-              </tr>
-            </tbody>
-          </table>
+          {renderTableContent()}
         </div>
       </div>
+
+      {/* Ventana Flotante / Modal a Pantalla Completa para Tabla Bivariada */}
+      <FloatingTableModal
+        isOpen={isFloatingTableOpen}
+        onClose={() => setIsFloatingTableOpen(false)}
+        title={`Tabla de Contingencia: ${variableX} × ${variableY}`}
+        subtitle={`Gran Total = ${grandTotal} observaciones registradas`}
+        badge="Bivariada"
+        onExportExcel={() => exportContingencyTableToExcel(result)}
+      >
+        <div className="p-3">
+          {renderTableContent()}
+        </div>
+      </FloatingTableModal>
 
       {/* 3. GRÁFICO AUTOMÁTICO BIVARIADO */}
       <ContingencyBarVisualizer
