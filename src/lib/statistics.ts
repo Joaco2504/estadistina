@@ -457,12 +457,159 @@ export function generateSimpleFrequencyTable(
 }
 
 /**
- * MÓDULO 3: Generación de Tabla de Contingencia (Bivariada)
+ * MÓDULO 3: Generación de Tabla de Contingencia (Bivariada) y Parser de Pares
  */
+export interface ContingencyDataEntry {
+  x: string;
+  y: string;
+  count?: number;
+}
+
+/**
+ * Parsea un string de datos bivariados para Tabla de Contingencia
+ * Admite:
+ * 1. Observaciones individuales separadas por saltos de línea o ';':
+ *    "Mecanizado, Cumple Siempre"
+ *    "Soldadura - Uso Parcial"
+ * 2. Pares con frecuencias o multiplicadores:
+ *    "Mecanizado, Cumple Siempre: 12" o "12x Soldadura, Uso Parcial"
+ * 3. Copiado y pegado directo desde Excel (delimitado por tabulaciones '\t')
+ */
+export function parseContingencyDataString(input: string): ContingencyDataEntry[] {
+  if (!input || !input.trim()) return [];
+
+  let rawLines: string[] = [];
+  if (input.includes('\n')) {
+    rawLines = input.split('\n');
+  } else if (input.includes(';')) {
+    rawLines = input.split(';');
+  } else {
+    rawLines = [input];
+  }
+
+  const entries: ContingencyDataEntry[] = [];
+
+  for (const rawLine of rawLines) {
+    let line = rawLine.trim();
+    if (!line) continue;
+
+    let count = 1;
+
+    // Multiplicador inicial: ej. "12x Mecanizado, Cumple" o "12 * Mecanizado, Cumple"
+    const leadingMultiplierMatch = line.match(/^(\d+)\s*[xX*]\s*(.+)$/);
+    if (leadingMultiplierMatch) {
+      count = parseInt(leadingMultiplierMatch[1], 10) || 1;
+      line = leadingMultiplierMatch[2].trim();
+    } else {
+      // Conteo final con delimitador explícito: ej. ": 12", "= 12", "(12)"
+      const trailingCountMatch = line.match(/^(.+?)(?:[:=]|\s*\()\s*(\d+)\s*\)?$/);
+      if (trailingCountMatch) {
+        count = parseInt(trailingCountMatch[2], 10) || 1;
+        line = trailingCountMatch[1].trim();
+      }
+    }
+
+    let x = '';
+    let y = '';
+
+    if (line.includes('\t')) {
+      // Pegado directo desde columnas de Excel
+      const parts = line.split('\t').map((p) => p.trim()).filter((p) => p.length > 0);
+      if (parts.length >= 2) {
+        x = parts[0];
+        y = parts[1];
+        if (parts.length >= 3 && !isNaN(Number(parts[2]))) {
+          count = parseInt(parts[2], 10) || count;
+        }
+      }
+    } else if (line.includes(' | ') || line.includes('|')) {
+      const parts = line.split('|').map((p) => p.trim()).filter((p) => p.length > 0);
+      if (parts.length >= 2) {
+        x = parts[0];
+        y = parts[1];
+        if (parts.length >= 3 && !isNaN(Number(parts[2]))) {
+          count = parseInt(parts[2], 10) || count;
+        }
+      }
+    } else if (line.includes(' - ')) {
+      const parts = line.split(' - ').map((p) => p.trim());
+      x = parts[0];
+      y = parts.slice(1).join(' - ');
+    } else if (line.includes(' / ')) {
+      const parts = line.split(' / ').map((p) => p.trim());
+      x = parts[0];
+      y = parts.slice(1).join(' / ');
+    } else if (line.includes(',')) {
+      const parts = line.split(',').map((p) => p.trim());
+      if (parts.length === 2) {
+        x = parts[0];
+        y = parts[1];
+      } else if (parts.length >= 3) {
+        const lastPart = parts[parts.length - 1];
+        if (!isNaN(Number(lastPart)) && count === 1) {
+          count = parseInt(lastPart, 10) || 1;
+          x = parts[0];
+          y = parts.slice(1, -1).join(', ');
+        } else {
+          x = parts[0];
+          y = parts.slice(1).join(', ');
+        }
+      }
+    } else if (line.includes(';')) {
+      const parts = line.split(';').map((p) => p.trim());
+      if (parts.length >= 2) {
+        x = parts[0];
+        y = parts[1];
+      }
+    }
+
+    if (x && y) {
+      entries.push({
+        x: x.trim(),
+        y: y.trim(),
+        count: Math.max(1, count),
+      });
+    }
+  }
+
+  return entries;
+}
+
+/**
+ * Convierte un conjunto de pares bivariados a string formateado por líneas
+ */
+export function formatContingencyPairsToString(pairs: { x: string; y: string; count?: number }[]): string {
+  if (!pairs || pairs.length === 0) return '';
+  return pairs
+    .map((p) => (p.count && p.count > 1 ? `${p.x}, ${p.y}: ${p.count}` : `${p.x}, ${p.y}`))
+    .join('\n');
+}
+
+/**
+ * Genera pares aleatorios basados en categorías dadas y tamaño de muestra n
+ */
+export function generateRandomContingencyPairs(
+  rowCategories: string[],
+  colCategories: string[],
+  targetN: number
+): { x: string; y: string }[] {
+  if (rowCategories.length === 0 || colCategories.length === 0) return [];
+  const safeN = Math.max(3, Math.min(500, targetN || 25));
+  const pairs: { x: string; y: string }[] = [];
+
+  for (let i = 0; i < safeN; i++) {
+    const randomRow = rowCategories[Math.floor(Math.random() * rowCategories.length)];
+    const randomCol = colCategories[Math.floor(Math.random() * colCategories.length)];
+    pairs.push({ x: randomRow, y: randomCol });
+  }
+
+  return pairs;
+}
+
 export function generateContingencyTable(
   variableX: string,
   variableY: string,
-  dataPairs: { x: string; y: string }[]
+  dataPairs: ContingencyDataEntry[]
 ): ContingencyTableResult {
   const n = dataPairs.length;
   if (n === 0) {
@@ -473,12 +620,16 @@ export function generateContingencyTable(
   const colCategoriesSet = new Set<string>();
 
   for (const pair of dataPairs) {
-    rowCategoriesSet.add(pair.x.trim());
-    colCategoriesSet.add(pair.y.trim());
+    if (pair.x && pair.x.trim()) rowCategoriesSet.add(pair.x.trim());
+    if (pair.y && pair.y.trim()) colCategoriesSet.add(pair.y.trim());
   }
 
   const rowCategories = Array.from(rowCategoriesSet);
   const colCategories = Array.from(colCategoriesSet);
+
+  if (rowCategories.length === 0 || colCategories.length === 0) {
+    throw new Error('Debe haber al menos una categoría en las filas y una en las columnas.');
+  }
 
   const matrix: number[][] = rowCategories.map(() => 
     colCategories.map(() => 0)
@@ -491,12 +642,13 @@ export function generateContingencyTable(
   for (const c of colCategories) varYCountsMap.set(c, 0);
 
   for (const pair of dataPairs) {
+    const weight = Math.max(1, pair.count ?? 1);
     const rIdx = rowCategories.indexOf(pair.x.trim());
     const cIdx = colCategories.indexOf(pair.y.trim());
     if (rIdx >= 0 && cIdx >= 0) {
-      matrix[rIdx][cIdx]++;
-      varXCountsMap.set(pair.x.trim(), (varXCountsMap.get(pair.x.trim()) || 0) + 1);
-      varYCountsMap.set(pair.y.trim(), (varYCountsMap.get(pair.y.trim()) || 0) + 1);
+      matrix[rIdx][cIdx] += weight;
+      varXCountsMap.set(pair.x.trim(), (varXCountsMap.get(pair.x.trim()) || 0) + weight);
+      varYCountsMap.set(pair.y.trim(), (varYCountsMap.get(pair.y.trim()) || 0) + weight);
     }
   }
 
@@ -512,8 +664,8 @@ export function generateContingencyTable(
 
   const didacticSteps = {
     step1SimpleFrequencies: {
-      varXCounts: rowCategories.map(cat => ({ category: cat, count: varXCountsMap.get(cat) || 0 })),
-      varYCounts: colCategories.map(cat => ({ category: cat, count: varYCountsMap.get(cat) || 0 })),
+      varXCounts: rowCategories.map((cat) => ({ category: cat, count: varXCountsMap.get(cat) || 0 })),
+      varYCounts: colCategories.map((cat) => ({ category: cat, count: varYCountsMap.get(cat) || 0 })),
     },
     step2JointFrequencies: 'Cada celda central fa_{ij} representa la cantidad simultánea de elementos que cumplen la condición de la fila i y de la columna j al mismo tiempo.',
     step3RowMarginals: rowCategories.map((cat, rIdx) => ({
@@ -523,7 +675,7 @@ export function generateContingencyTable(
     })),
     step4ColMarginals: colCategories.map((cat, cIdx) => ({
       category: cat,
-      calculation: matrix.map(r => r[cIdx]).join(' + '),
+      calculation: matrix.map((r) => r[cIdx]).join(' + '),
       total: colMarginalTotals[cIdx],
     })),
     step5GrandTotal: {

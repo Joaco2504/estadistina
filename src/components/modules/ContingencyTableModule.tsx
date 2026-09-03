@@ -1,24 +1,29 @@
 // src/components/modules/ContingencyTableModule.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { ContingencyTableResult } from '@/types/statistics';
-import { generateContingencyTable, SAFETY_PRESETS } from '@/lib/statistics';
+import { 
+  generateContingencyTable, 
+  parseContingencyDataString, 
+  formatContingencyPairsToString, 
+  generateRandomContingencyPairs, 
+  SAFETY_PRESETS 
+} from '@/lib/statistics';
+import { ContingencyDataInputSection } from './ContingencyDataInputSection';
 import { MathFormula } from '@/components/ui/math-formula';
 import { exportContingencyTableToExcel } from '@/lib/excelExport';
 import { 
   Table, 
-  Dices, 
-  Info,
-  Split,
-  ChevronDown,
-  ChevronUp,
-  FileSpreadsheet,
-  Plus,
-  Trash2,
-  Edit3,
-  Maximize2
+  Info, 
+  ChevronDown, 
+  ChevronUp, 
+  FileSpreadsheet, 
+  Plus, 
+  Trash2, 
+  Edit3, 
+  Maximize2 
 } from 'lucide-react';
 import { FloatingTableModal } from '@/components/ui/FloatingTableModal';
 
@@ -43,6 +48,11 @@ export const ContingencyTableModule: React.FC = () => {
   const [isFloatingTableOpen, setIsFloatingTableOpen] = useState(false);
   const [customN, setCustomN] = useState<number>(45);
   const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Inicializar rawInput con los pares del caso predefinido
+  const initialPairs = defaultPreset.bivariateDataGenerator ? defaultPreset.bivariateDataGenerator() : [];
+  const [rawInput, setRawInput] = useState<string>(formatContingencyPairsToString(initialPairs));
   
   // Categorías y Matriz Directamente Editables
   const [rowCategories, setRowCategories] = useState<string[]>(['Mecanizado', 'Soldadura', 'Pintura', 'Depósito']);
@@ -54,6 +64,31 @@ export const ContingencyTableModule: React.FC = () => {
     [3, 1, 1]
   ]);
 
+  // Detección en vivo de categorías y observaciones para el campo de entrada
+  const parsedCurrentEntries = useMemo(() => {
+    return parseContingencyDataString(rawInput);
+  }, [rawInput]);
+
+  const detectedRows = useMemo(() => {
+    const set = new Set<string>();
+    parsedCurrentEntries.forEach((e) => {
+      if (e.x) set.add(e.x);
+    });
+    return Array.from(set);
+  }, [parsedCurrentEntries]);
+
+  const detectedCols = useMemo(() => {
+    const set = new Set<string>();
+    parsedCurrentEntries.forEach((e) => {
+      if (e.y) set.add(e.y);
+    });
+    return Array.from(set);
+  }, [parsedCurrentEntries]);
+
+  const totalParsedN = useMemo(() => {
+    return parsedCurrentEntries.reduce((acc, curr) => acc + (curr.count || 1), 0);
+  }, [parsedCurrentEntries]);
+
   // Totales calculados en tiempo real
   const rowMarginalTotals = matrix.map(row => row.reduce((acc, curr) => acc + (Number(curr) || 0), 0));
   const colMarginalTotals = colCategories.map((_, cIdx) => 
@@ -61,92 +96,84 @@ export const ContingencyTableModule: React.FC = () => {
   );
   const grandTotal = rowMarginalTotals.reduce((acc, val) => acc + val, 0);
 
-  // Generador de pares a partir de un preset
+  // Cargar preset predefinido de Higiene y Seguridad
   const handleLoadPreset = (presetId: string) => {
     const preset = SAFETY_PRESETS.find((p) => p.id === presetId);
     if (!preset) return;
 
     setSelectedPresetId(presetId);
-    setVariableX(preset.defaultXName || 'Variable X');
-    setVariableY(preset.defaultYName || 'Variable Y');
+    const varX = preset.defaultXName || 'Variable X';
+    const varY = preset.defaultYName || 'Variable Y';
+    setVariableX(varX);
+    setVariableY(varY);
 
-    if (preset.id === 'contingencia-turnos') {
-      setRowCategories(['Turno Mañana', 'Turno Tarde', 'Turno Noche']);
-      setColCategories(['Leve (Sin Baja)', 'Moderado (1 a 10 días)', 'Grave (>10 días)']);
-      setMatrix([
-        [11, 4, 1],
-        [8, 5, 2],
-        [3, 4, 2]
-      ]);
-    } else if (preset.id === 'contingencia-permisos') {
-      setRowCategories(['Trabajo en Altura', 'Espacios Confinados', 'Corte y Soldadura', 'Alta Tensión']);
-      setColCategories(['ATS Aprobado y Firmado', 'ATS En Revisión', 'Sin ATS (No Conforme)']);
-      setMatrix([
-        [10, 2, 0],
-        [6, 1, 1],
-        [8, 3, 0],
-        [4, 0, 0]
-      ]);
-    } else if (preset.id === 'contingencia-lesion-cuerpo') {
-      setRowCategories(['Corte / Laceración', 'Contusión / Golpe', 'Quemadura', 'Esguince']);
-      setColCategories(['Manos y Dedos', 'Ojos y Rostro', 'Espalda / Columna', 'Miembros Inferiores']);
-      setMatrix([
-        [14, 2, 0, 3],
-        [6, 1, 4, 5],
-        [4, 3, 0, 1],
-        [1, 0, 3, 1]
-      ]);
-    } else if (preset.id === 'contingencia-antiguedad-desvios') {
-      setRowCategories(['< 1 Año (Ingresante)', '1 a 5 Años (Intermedio)', '> 5 Años (Experimentado)']);
-      setColCategories(['Omisión de EPP', 'Uso Indebido de Herramienta', 'Exceso de Confianza', 'Operación a Velocidad Insegura']);
-      setMatrix([
-        [8, 6, 1, 2],
-        [4, 3, 4, 3],
-        [2, 1, 6, 2]
-      ]);
-    } else if (preset.id === 'contingencia-ruido-proteccion') {
-      setRowCategories(['Alto Riesgo (>85 dBA)', 'Riesgo Moderado (80-85 dBA)', 'Área Confort (<80 dBA)']);
-      setColCategories(['Uso Continuo y Correcto', 'Uso Intermitente', 'No Utiliza']);
-      setMatrix([
-        [12, 3, 1],
-        [6, 7, 2],
-        [1, 2, 6]
-      ]);
-    } else {
-      setRowCategories(['Mecanizado', 'Soldadura', 'Pintura', 'Depósito']);
-      setColCategories(['Cumple Siempre', 'Uso Parcial', 'No Cumple']);
-      setMatrix([
-        [12, 3, 1],
-        [9, 4, 2],
-        [7, 2, 0],
-        [3, 1, 1]
-      ]);
+    if (preset.bivariateDataGenerator) {
+      const pairs = preset.bivariateDataGenerator();
+      const rawStr = formatContingencyPairsToString(pairs);
+      setRawInput(rawStr);
+      setCustomN(pairs.length);
+
+      const entries = parseContingencyDataString(rawStr);
+      try {
+        const tableResult = generateContingencyTable(varX, varY, entries);
+        setRowCategories(tableResult.rowCategories);
+        setColCategories(tableResult.colCategories);
+        setMatrix(tableResult.matrix);
+        setErrorMessage(null);
+      } catch (err: any) {
+        setErrorMessage(err.message || 'Error al cargar el caso bivariado.');
+      }
     }
   };
 
-  // Simulación aleatoria respetando la estructura activa
+  // Generar muestra aleatoria de pares con tamaño exacto N
   const handleRandomize = (overrideN?: number) => {
     const targetN = overrideN !== undefined ? overrideN : customN;
     if (overrideN !== undefined) {
       setCustomN(overrideN);
     }
 
-    const totalCells = rowCategories.length * colCategories.length;
-    const basePerCell = Math.floor(targetN / totalCells);
-    let remainder = targetN % totalCells;
+    const currentRows = rowCategories.length > 0 ? rowCategories : ['Mecanizado', 'Soldadura', 'Pintura', 'Depósito'];
+    const currentCols = colCategories.length > 0 ? colCategories : ['Cumple Siempre', 'Uso Parcial', 'No Cumple'];
 
-    const newMatrix = rowCategories.map(() => 
-      colCategories.map(() => {
-        let val = Math.max(0, basePerCell + Math.floor((Math.random() - 0.5) * 4));
-        if (remainder > 0) {
-          val++;
-          remainder--;
-        }
-        return val;
-      })
-    );
+    const randomPairs = generateRandomContingencyPairs(currentRows, currentCols, targetN);
+    const rawStr = formatContingencyPairsToString(randomPairs);
+    setRawInput(rawStr);
 
-    setMatrix(newMatrix);
+    const entries = parseContingencyDataString(rawStr);
+    try {
+      const tableResult = generateContingencyTable(variableX, variableY, entries);
+      setRowCategories(tableResult.rowCategories);
+      setColCategories(tableResult.colCategories);
+      setMatrix(tableResult.matrix);
+      setErrorMessage(null);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error al generar la muestra aleatoria.');
+    }
+  };
+
+  // Actualizar tabla a partir del campo de texto de datos en bruto
+  const handleUpdateFromRaw = (customInput?: string, customX?: string, customY?: string) => {
+    const textToParse = customInput !== undefined ? customInput : rawInput;
+    const activeX = customX !== undefined ? customX : variableX;
+    const activeY = customY !== undefined ? customY : variableY;
+
+    const entries = parseContingencyDataString(textToParse);
+    if (entries.length === 0) {
+      setErrorMessage('Por favor ingrese al menos un par de observaciones bivariadas válidas (ej: Mecanizado, Cumple Siempre).');
+      return;
+    }
+
+    try {
+      const tableResult = generateContingencyTable(activeX, activeY, entries);
+      setRowCategories(tableResult.rowCategories);
+      setColCategories(tableResult.colCategories);
+      setMatrix(tableResult.matrix);
+      setCustomN(tableResult.grandTotal);
+      setErrorMessage(null);
+    } catch (err: any) {
+      setErrorMessage(err.message || 'Error al procesar los datos bivariados en bruto.');
+    }
   };
 
   // Manejo de edición de celdas
@@ -345,115 +372,25 @@ export const ContingencyTableModule: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Panel de Control y Presets Bivariados */}
-      <div className="bg-white dark:bg-[#0F172A] rounded-2xl shadow-xs border border-slate-200 dark:border-slate-800 overflow-hidden">
-        <div className="bg-[#0F2942] dark:bg-[#080D1A] px-4 sm:px-5 py-3.5 text-white flex flex-wrap items-center justify-between gap-3 border-b border-[#1C4874] dark:border-slate-800">
-          <div className="flex items-center gap-2">
-            <Split className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
-            <h2 className="text-sm sm:text-base font-bold tracking-wide">
-              Módulo 3: Tabla de Contingencia Bivariada
-            </h2>
-            <span className="text-xs font-mono text-slate-300 dark:text-slate-400">
-              (n = {grandTotal} casos)
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5 bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded-lg border border-[#1C4874] dark:border-slate-700">
-              <label className="text-xs text-slate-200 dark:text-slate-300 font-medium">Muestra (n):</label>
-              <input
-                type="number"
-                min={5}
-                max={500}
-                value={customN}
-                onChange={(e) => setCustomN(Number(e.target.value))}
-                className="w-12 sm:w-14 bg-[#0A1D30] dark:bg-[#0F172A] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
-              />
-            </div>
-
-            <button
-              type="button"
-              onClick={() => handleRandomize()}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
-            >
-              <Dices className="w-3.5 h-3.5" />
-              <span>Simulación</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Casos Rápidos de SySO */}
-        <div className="p-4 bg-slate-50 dark:bg-[#131C2E] border-b border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Casos Bivariados:</span>
-            {SAFETY_PRESETS.filter(p => p.recommendedType === 'contingency').map((preset) => (
-              <button
-                key={preset.id}
-                type="button"
-                onClick={() => handleLoadPreset(preset.id)}
-                className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                  selectedPresetId === preset.id
-                    ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-2xs'
-                    : 'bg-white dark:bg-[#0A1322] text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                <span>{preset.chipLabel || preset.title}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-1 text-xs">
-            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Fijar n:</span>
-            {[20, 35, 50, 80, 150].map((size) => (
-              <button
-                key={size}
-                type="button"
-                onClick={() => handleRandomize(size)}
-                className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer ${
-                  customN === size
-                    ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-2xs'
-                    : 'bg-white dark:bg-[#0A1322] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700'
-                }`}
-              >
-                {size}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Definición de Variables y Títulos */}
-        <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white dark:bg-[#0F172A]">
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
-              Variable 1 (Filas - Factor X)
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={variableX}
-                onChange={(e) => setVariableX(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] font-bold text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none"
-              />
-              <Edit3 className="w-3.5 h-3.5 absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
-              Variable 2 (Columnas - Factor Y)
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={variableY}
-                onChange={(e) => setVariableY(e.target.value)}
-                className="w-full text-xs px-3 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] font-bold text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none"
-              />
-              <Edit3 className="w-3.5 h-3.5 absolute right-2.5 top-2.5 text-slate-400 pointer-events-none" />
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* Sección de Entrada de Datos Bivariados en Bruto */}
+      <ContingencyDataInputSection
+        variableX={variableX}
+        setVariableX={setVariableX}
+        variableY={variableY}
+        setVariableY={setVariableY}
+        rawInput={rawInput}
+        setRawInput={setRawInput}
+        sampleSize={customN}
+        setSampleSize={setCustomN}
+        selectedPresetId={selectedPresetId}
+        onLoadPreset={handleLoadPreset}
+        onGenerateRandomSample={handleRandomize}
+        onUpdateTable={handleUpdateFromRaw}
+        detectedRows={detectedRows}
+        detectedCols={detectedCols}
+        totalParsedN={totalParsedN}
+        errorMessage={errorMessage}
+      />
 
       {/* 1. DESGLOSE DIDÁCTICO PASO A PASO */}
       <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
