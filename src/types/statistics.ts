@@ -138,6 +138,15 @@ export interface ContingencyCell {
 }
 
 /**
+ * Modos de visualización para la Tabla de Contingencia:
+ * - normal: Frecuencias absolutas conjuntas (fa)
+ * - percent_total: % respecto al Total General (n)
+ * - percent_row: % respecto al Total de la Fila (Distribución Condicional Fila)
+ * - percent_col: % respecto al Total de la Columna (Distribución Condicional Columna)
+ */
+export type ContingencyViewMode = 'normal' | 'percent_total' | 'percent_row' | 'percent_col';
+
+/**
  * Estructura completa de Tabla de Contingencia (Bivariada)
  */
 export interface ContingencyTableResult {

@@ -4,6 +4,7 @@ import {
   GroupedFrequencyTableResult, 
   SimpleFrequencyTableResult, 
   ContingencyTableResult,
+  ContingencyViewMode,
   SafetyIndicatorsResult 
 } from '@/types/statistics';
 
@@ -166,31 +167,90 @@ export function exportSimpleTableToExcel(data: SimpleFrequencyTableResult) {
 
 /**
  * Exporta la tabla de contingencia bivariada a formato Excel (.xlsx)
- * Exporta los conteos cruzados y totales marginales sin fórmulas.
+ * Exporta los conteos cruzados y totales marginales según la vista activa (normal o porcentajes).
  */
-export function exportContingencyTableToExcel(data: ContingencyTableResult) {
+export function exportContingencyTableToExcel(
+  data: ContingencyTableResult,
+  viewMode: ContingencyViewMode = 'normal'
+) {
   const wsData: any[][] = [];
+
+  let viewModeLabel = 'Frecuencias Absolutas Normales (fa)';
+  if (viewMode === 'percent_total') viewModeLabel = '% del Total General';
+  if (viewMode === 'percent_row') viewModeLabel = '% del Total de la Fila (Distribución Condicional)';
+  if (viewMode === 'percent_col') viewModeLabel = '% del Total de la Columna (Distribución Condicional)';
 
   // Encabezado institucional
   wsData.push(['I.E.S. DE BELÉN - TECNICATURA SUPERIOR EN HIGIENE Y SEGURIDAD INDUSTRIAL']);
   wsData.push(['CÁTEDRA: ESTADÍSTICA, CÁLCULO DE LA PROBABILIDAD Y COSTOS DE LA SEGURIDAD']);
   wsData.push([`DOCENTE: Prof. Pacheco E. Joaquín | FECHA: ${new Date().toLocaleDateString('es-AR')}`]);
-  wsData.push([`TABLA BIVARIADA: ${data.variableX} × ${data.variableY} | GRAN TOTAL (n): ${data.grandTotal}`]);
+  wsData.push([`TABLA BIVARIADA: ${data.variableX} × ${data.variableY} | VISTA: ${viewModeLabel} | GRAN TOTAL (n): ${data.grandTotal}`]);
   wsData.push([]); // Fila vacía
 
+  let rowTotalHeader = 'Total por fila';
+  if (viewMode === 'percent_total') rowTotalHeader = '% Total por fila';
+  if (viewMode === 'percent_row') rowTotalHeader = 'Total fila (100%)';
+  if (viewMode === 'percent_col') rowTotalHeader = '% Marginal fila';
+
   // Fila de encabezados de columnas
-  const headerRow = [`${data.variableX} \\ ${data.variableY}`, ...data.colCategories, 'Total por fila'];
+  const headerRow = [`${data.variableX} \\ ${data.variableY}`, ...data.colCategories, rowTotalHeader];
   wsData.push(headerRow);
 
-  // Filas con valores cruzados y total por fila directo (sin fórmulas)
+  // Filas con valores cruzados según la vista activa
   data.rowCategories.forEach((rowCat, rIdx) => {
     const rowValues = data.matrix[rIdx];
-    const rowArray: any[] = [rowCat, ...rowValues, data.rowMarginalTotals[rIdx]];
+    const rowTot = data.rowMarginalTotals[rIdx];
+
+    const formattedCells = rowValues.map((val, cIdx) => {
+      if (viewMode === 'normal') return val;
+      if (viewMode === 'percent_total') {
+        return data.grandTotal > 0 ? `${((val / data.grandTotal) * 100).toFixed(2)}%` : '0%';
+      }
+      if (viewMode === 'percent_row') {
+        return rowTot > 0 ? `${((val / rowTot) * 100).toFixed(2)}%` : '0%';
+      }
+      if (viewMode === 'percent_col') {
+        const colTot = data.colMarginalTotals[cIdx];
+        return colTot > 0 ? `${((val / colTot) * 100).toFixed(2)}%` : '0%';
+      }
+      return val;
+    });
+
+    let formattedRowTotal: any = rowTot;
+    if (viewMode === 'percent_total') {
+      formattedRowTotal = data.grandTotal > 0 ? `${((rowTot / data.grandTotal) * 100).toFixed(2)}%` : '0%';
+    } else if (viewMode === 'percent_row') {
+      formattedRowTotal = '100%';
+    } else if (viewMode === 'percent_col') {
+      formattedRowTotal = data.grandTotal > 0 ? `${((rowTot / data.grandTotal) * 100).toFixed(2)}%` : '0%';
+    }
+
+    const rowArray: any[] = [rowCat, ...formattedCells, formattedRowTotal];
     wsData.push(rowArray);
   });
 
-  // Fila de totales marginales por columna y Gran Total directo (sin fórmulas)
-  const colTotalsRow: any[] = ['Total por columna', ...data.colMarginalTotals, data.grandTotal];
+  let colTotalLabel = 'Total por columna';
+  if (viewMode === 'percent_total') colTotalLabel = '% Total por columna';
+  if (viewMode === 'percent_col') colTotalLabel = 'Total columna (100%)';
+  if (viewMode === 'percent_row') colTotalLabel = '% Marginal columna';
+
+  const formattedColTotals = data.colCategories.map((_, cIdx) => {
+    const colTot = data.colMarginalTotals[cIdx];
+    if (viewMode === 'normal') return colTot;
+    if (viewMode === 'percent_total') {
+      return data.grandTotal > 0 ? `${((colTot / data.grandTotal) * 100).toFixed(2)}%` : '0%';
+    }
+    if (viewMode === 'percent_col') {
+      return '100%';
+    }
+    if (viewMode === 'percent_row') {
+      return data.grandTotal > 0 ? `${((colTot / data.grandTotal) * 100).toFixed(2)}%` : '0%';
+    }
+    return colTot;
+  });
+
+  const formattedGrandTotal = viewMode === 'normal' ? data.grandTotal : '100%';
+  const colTotalsRow: any[] = [colTotalLabel, ...formattedColTotals, formattedGrandTotal];
   wsData.push(colTotalsRow);
 
   wsData.push([]);
@@ -202,12 +262,12 @@ export function exportContingencyTableToExcel(data: ContingencyTableResult) {
   ws['!cols'] = [
     { wch: 28 },
     ...data.colCategories.map(() => ({ wch: 20 })),
-    { wch: 22 },
+    { wch: 24 },
   ];
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'Tabla_Contingencia');
-  XLSX.writeFile(wb, `Tabla_Contingencia_${data.variableX.replace(/[^a-zA-Z0-9]/g, '_')}_vs_${data.variableY.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`);
+  XLSX.writeFile(wb, `Tabla_Contingencia_${data.variableX.replace(/[^a-zA-Z0-9]/g, '_')}_vs_${data.variableY.replace(/[^a-zA-Z0-9]/g, '_')}_${viewMode}.xlsx`);
 }
 
 /**

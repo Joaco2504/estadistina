@@ -3,12 +3,13 @@
 
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { ContingencyTableResult } from '@/types/statistics';
+import { ContingencyTableResult, ContingencyViewMode } from '@/types/statistics';
 import { 
   generateContingencyTable, 
   parseContingencyDataString, 
   formatContingencyPairsToString, 
   generateRandomContingencyPairs, 
+  formatPercentage,
   SAFETY_PRESETS 
 } from '@/lib/statistics';
 import { ContingencyDataInputSection } from './ContingencyDataInputSection';
@@ -23,7 +24,11 @@ import {
   Plus, 
   Trash2, 
   Edit3, 
-  Maximize2 
+  Maximize2,
+  Percent,
+  Hash,
+  ArrowRight,
+  ArrowDown
 } from 'lucide-react';
 import { FloatingTableModal } from '@/components/ui/FloatingTableModal';
 
@@ -49,6 +54,7 @@ export const ContingencyTableModule: React.FC = () => {
   const [customN, setCustomN] = useState<number>(45);
   const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ContingencyViewMode>('normal');
 
   // Inicializar rawInput con los pares del caso predefinido
   const initialPairs = defaultPreset.bivariateDataGenerator ? defaultPreset.bivariateDataGenerator() : [];
@@ -273,7 +279,68 @@ export const ContingencyTableModule: React.FC = () => {
     });
   }, [rowCategories, colCategories, matrix]);
 
-  // Renderizador unificado para tabla bivariada
+  // Barra de botones para alternar modos de visualización
+  const renderViewModeButtons = () => (
+    <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-[#131C2E] rounded-xl border border-slate-300/70 dark:border-slate-700/70 select-none">
+      <button
+        type="button"
+        onClick={() => setViewMode('normal')}
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          viewMode === 'normal'
+            ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
+        }`}
+        title="Visualización normal (Frecuencias absolutas fa como están cargadas)"
+      >
+        <Hash className="w-3.5 h-3.5" />
+        <span>Normal</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setViewMode('percent_total')}
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          viewMode === 'percent_total'
+            ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
+        }`}
+        title="Visualizar en % del Total General (respecto al tamaño de muestra n)"
+      >
+        <Percent className="w-3.5 h-3.5" />
+        <span>% del Total General</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setViewMode('percent_row')}
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          viewMode === 'percent_row'
+            ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
+        }`}
+        title="Visualizar en % del Total de la Fila (Distribución condicional por filas, cada fila totaliza 100%)"
+      >
+        <ArrowRight className="w-3.5 h-3.5" />
+        <span>% del Total de la Fila</span>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => setViewMode('percent_col')}
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+          viewMode === 'percent_col'
+            ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
+            : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
+        }`}
+        title="Visualizar en % del Total de la Columna (Distribución condicional por columnas, cada columna totaliza 100%)"
+      >
+        <ArrowDown className="w-3.5 h-3.5" />
+        <span>% del Total de la Columna</span>
+      </button>
+    </div>
+  );
+
+  // Renderizador unificado para tabla bivariada con soporte para frecuencias normales y porcentajes
   const renderTableContent = () => (
     <table className="stat-table">
       <thead>
@@ -284,86 +351,212 @@ export const ContingencyTableModule: React.FC = () => {
           {colCategories.map((colCat, cIdx) => (
             <th key={`col-header-${cIdx}`} className="bg-[#0F2942] dark:bg-[#0B132B]">
               <div className="flex items-center justify-between gap-1">
-                <input
-                  type="text"
-                  value={colCat}
-                  onChange={(e) => handleColCategoryChange(cIdx, e.target.value)}
-                  className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full"
-                />
-                {colCategories.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteCol(cIdx)}
-                    className="text-slate-400 hover:text-red-400 p-0.5 transition-colors cursor-pointer"
-                    title="Eliminar columna"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
+                {viewMode === 'normal' ? (
+                  <>
+                    <input
+                      type="text"
+                      value={colCat}
+                      onChange={(e) => handleColCategoryChange(cIdx, e.target.value)}
+                      className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full"
+                    />
+                    {colCategories.length > 2 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteCol(cIdx)}
+                        className="text-slate-400 hover:text-red-400 p-0.5 transition-colors cursor-pointer"
+                        title="Eliminar columna"
+                      >
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <span className="text-white font-bold text-xs text-center px-1 py-0.5 w-full block">
+                    {colCat}
+                  </span>
                 )}
               </div>
             </th>
           ))}
-          <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs">
-            Total por fila
+          <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs text-center">
+            {viewMode === 'normal' && 'Total por fila'}
+            {viewMode === 'percent_total' && '% Total General'}
+            {viewMode === 'percent_row' && 'Total Fila (100%)'}
+            {viewMode === 'percent_col' && '% Marginal Fila'}
           </th>
         </tr>
       </thead>
       <tbody>
-        {rowCategories.map((rowCat, rIdx) => (
-          <tr key={`row-body-${rIdx}`}>
-            <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322]">
-              <div className="flex items-center justify-between gap-1">
-                <input
-                  type="text"
-                  value={rowCat}
-                  onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
-                  className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600"
-                />
-                {rowCategories.length > 2 && (
-                  <button
-                    type="button"
-                    onClick={() => handleDeleteRow(rIdx)}
-                    className="text-slate-400 hover:text-red-500 p-0.5 transition-colors cursor-pointer"
-                    title="Eliminar fila"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                )}
-              </div>
-            </td>
+        {rowCategories.map((rowCat, rIdx) => {
+          const rowTot = rowMarginalTotals[rIdx];
 
-            {/* Celdas centrales editables */}
-            {colCategories.map((_, cIdx) => (
-              <td key={`cell-${rIdx}-${cIdx}`} className="p-1">
-                <input
-                  type="number"
-                  min={0}
-                  value={matrix[rIdx]?.[cIdx] ?? 0}
-                  onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
-                  className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-1 focus:ring-[#10B981] rounded px-1 py-1 border border-slate-200 dark:border-slate-700 text-xs"
-                />
+          return (
+            <tr key={`row-body-${rIdx}`}>
+              <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322]">
+                <div className="flex items-center justify-between gap-1">
+                  {viewMode === 'normal' ? (
+                    <>
+                      <input
+                        type="text"
+                        value={rowCat}
+                        onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
+                        className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600"
+                      />
+                      {rowCategories.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteRow(rIdx)}
+                          className="text-slate-400 hover:text-red-500 p-0.5 transition-colors cursor-pointer"
+                          title="Eliminar fila"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
+                      )}
+                    </>
+                  ) : (
+                    <span className="font-bold text-xs text-[#0F2942] dark:text-slate-100 px-1 py-0.5 block">
+                      {rowCat}
+                    </span>
+                  )}
+                </div>
               </td>
-            ))}
 
-            {/* Total por fila */}
-            <td className="font-mono font-extrabold text-[#10B981] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs">
-              {rowMarginalTotals[rIdx]}
-            </td>
-          </tr>
-        ))}
+              {/* Celdas centrales según el modo de visualización */}
+              {colCategories.map((_, cIdx) => {
+                const cellVal = Number(matrix[rIdx]?.[cIdx] ?? 0);
+                const colTot = colMarginalTotals[cIdx];
+
+                if (viewMode === 'normal') {
+                  return (
+                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1">
+                      <input
+                        type="number"
+                        min={0}
+                        value={cellVal}
+                        onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
+                        className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-1 focus:ring-[#10B981] rounded px-1 py-1 border border-slate-200 dark:border-slate-700 text-xs"
+                      />
+                    </td>
+                  );
+                }
+
+                if (viewMode === 'percent_total') {
+                  const pct = grandTotal > 0 ? (cellVal / grandTotal) * 100 : 0;
+                  return (
+                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-slate-50/60 dark:bg-[#0A1322]/60">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300">
+                          {formatPercentage(pct)}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                          fa = {cellVal}
+                        </span>
+                      </div>
+                    </td>
+                  );
+                }
+
+                if (viewMode === 'percent_row') {
+                  const pct = rowTot > 0 ? (cellVal / rowTot) * 100 : 0;
+                  return (
+                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-blue-50/40 dark:bg-blue-950/30">
+                      <div className="flex flex-col items-center justify-center">
+                        <span className="font-mono font-bold text-xs text-blue-700 dark:text-blue-300">
+                          {formatPercentage(pct)}
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                          {cellVal} / {rowTot}
+                        </span>
+                      </div>
+                    </td>
+                  );
+                }
+
+                // percent_col
+                const pct = colTot > 0 ? (cellVal / colTot) * 100 : 0;
+                return (
+                  <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-amber-50/40 dark:bg-amber-950/30">
+                    <div className="flex flex-col items-center justify-center">
+                      <span className="font-mono font-bold text-xs text-amber-700 dark:text-amber-300">
+                        {formatPercentage(pct)}
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                        {cellVal} / {colTot}
+                      </span>
+                    </div>
+                  </td>
+                );
+              })}
+
+              {/* Total por fila */}
+              <td className="font-mono font-extrabold text-[#10B981] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs py-1.5 text-center">
+                {viewMode === 'normal' && rowTot}
+                {viewMode === 'percent_total' && (
+                  <div className="flex flex-col items-center justify-center">
+                    <span>{formatPercentage(grandTotal > 0 ? (rowTot / grandTotal) * 100 : 0)}</span>
+                    <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
+                  </div>
+                )}
+                {viewMode === 'percent_row' && (
+                  <div className="flex flex-col items-center justify-center">
+                    <span>100%</span>
+                    <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
+                  </div>
+                )}
+                {viewMode === 'percent_col' && (
+                  <div className="flex flex-col items-center justify-center">
+                    <span>{formatPercentage(grandTotal > 0 ? (rowTot / grandTotal) * 100 : 0)}</span>
+                    <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
+                  </div>
+                )}
+              </td>
+            </tr>
+          );
+        })}
 
         {/* Totales Marginales por Columna y Gran Total */}
         <tr className="total-row">
           <td className="text-left uppercase font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
-            Total por columna
+            {viewMode === 'normal' && 'Total por columna'}
+            {viewMode === 'percent_total' && '% Total General'}
+            {viewMode === 'percent_col' && 'Total Columna (100%)'}
+            {viewMode === 'percent_row' && '% Marginal Columna'}
           </td>
-          {colCategories.map((_, cIdx) => (
-            <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
-              {colMarginalTotals[cIdx]}
-            </td>
-          ))}
-          <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs">
-            {grandTotal}
+          {colCategories.map((_, cIdx) => {
+            const colTot = colMarginalTotals[cIdx];
+            return (
+              <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs py-1.5 text-center">
+                {viewMode === 'normal' && colTot}
+                {viewMode === 'percent_total' && (
+                  <div className="flex flex-col items-center justify-center">
+                    <span>{formatPercentage(grandTotal > 0 ? (colTot / grandTotal) * 100 : 0)}</span>
+                    <span className="text-[10px] text-slate-400">fa = {colTot}</span>
+                  </div>
+                )}
+                {viewMode === 'percent_col' && (
+                  <div className="flex flex-col items-center justify-center">
+                    <span>100%</span>
+                    <span className="text-[10px] text-slate-400">fa = {colTot}</span>
+                  </div>
+                )}
+                {viewMode === 'percent_row' && (
+                  <div className="flex flex-col items-center justify-center">
+                    <span>{formatPercentage(grandTotal > 0 ? (colTot / grandTotal) * 100 : 0)}</span>
+                    <span className="text-[10px] text-slate-400">fa = {colTot}</span>
+                  </div>
+                )}
+              </td>
+            );
+          })}
+          <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs py-1.5 text-center">
+            {viewMode === 'normal' ? (
+              grandTotal
+            ) : (
+              <div className="flex flex-col items-center justify-center">
+                <span>100%</span>
+                <span className="text-[10px] text-emerald-200">n = {grandTotal}</span>
+              </div>
+            )}
           </td>
         </tr>
       </tbody>
@@ -466,7 +659,7 @@ export const ContingencyTableModule: React.FC = () => {
             {/* BOTÓN EXPORTAR A EXCEL */}
             <button
               type="button"
-              onClick={() => exportContingencyTableToExcel(result)}
+              onClick={() => exportContingencyTableToExcel(result, viewMode)}
               className="flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
@@ -480,29 +673,46 @@ export const ContingencyTableModule: React.FC = () => {
           </div>
         </div>
 
-        {/* Barra de Herramientas de Edición de Filas y Columnas */}
-        <div className="px-4 py-2 bg-slate-50 dark:bg-[#0A1322] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-medium">
-            <Edit3 className="w-3.5 h-3.5 text-[#E67E22] dark:text-amber-400" />
-            <span>Haz clic en cualquier celda o encabezado para editar su texto o valor numérico:</span>
+        {/* Barra de Modos de Visualización de la Tabla */}
+        <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0A1322] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+              <Percent className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Vista de la Tabla:</span>
+            </span>
+            {renderViewModeButtons()}
           </div>
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={handleAddRow}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
-            >
-              <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
-              <span>+ Fila</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleAddCol}
-              className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer"
-            >
-              <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
-              <span>+ Columna</span>
-            </button>
+
+          <div className="flex items-center gap-2">
+            {viewMode === 'normal' ? (
+              <div className="flex items-center gap-1.5 text-xs">
+                <span className="text-slate-500 dark:text-slate-400 hidden xl:inline mr-1 text-[11px]">
+                  Haz clic en celdas para editar:
+                </span>
+                <button
+                  type="button"
+                  onClick={handleAddRow}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer text-xs"
+                >
+                  <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
+                  <span>+ Fila</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddCol}
+                  className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer text-xs"
+                >
+                  <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
+                  <span>+ Columna</span>
+                </button>
+              </div>
+            ) : (
+              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 italic">
+                {viewMode === 'percent_total' && 'Porcentajes relativos respecto al Gran Total (n).'}
+                {viewMode === 'percent_row' && 'Distribución condicional por filas: cada fila totaliza 100%.'}
+                {viewMode === 'percent_col' && 'Distribución condicional por columnas: cada columna totaliza 100%.'}
+              </span>
+            )}
           </div>
         </div>
 
@@ -518,9 +728,13 @@ export const ContingencyTableModule: React.FC = () => {
         title={`Tabla de Contingencia: ${variableX} × ${variableY}`}
         subtitle={`Gran Total = ${grandTotal} observaciones registradas`}
         badge="Bivariada"
-        onExportExcel={() => exportContingencyTableToExcel(result)}
+        onExportExcel={() => exportContingencyTableToExcel(result, viewMode)}
       >
-        <div className="p-3">
+        <div className="p-3 space-y-3">
+          <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-50 dark:bg-[#0A1322] border border-slate-200 dark:border-slate-800">
+            <span className="text-xs font-bold text-slate-600 dark:text-slate-300">Cambiar vista:</span>
+            {renderViewModeButtons()}
+          </div>
           {renderTableContent()}
         </div>
       </FloatingTableModal>
