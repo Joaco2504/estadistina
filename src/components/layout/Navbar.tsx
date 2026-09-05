@@ -69,8 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onSelectTab('simple')}
             className="flex items-center text-left hover:opacity-95 transition-opacity cursor-pointer flex-shrink-0"
           >
-            <HeaderLogo size="sm" showSubtitle={false} className="sm:hidden" />
-            <HeaderLogo size="md" showSubtitle={true} className="hidden sm:flex" />
+            <HeaderLogo size="md" showSubtitle={true} />
           </button>
 
           {/* Navegación Desktop: Segmented Control Centrado (Sincronizado a md: 768px) */}

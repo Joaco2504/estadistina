@@ -361,18 +361,18 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               title="Abrir tabla en Ventana Flotante / Pantalla Completa"
             >
               <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />
-              <span className="hidden xs:inline">Flotante</span>
+              <span className="hidden sm:inline">Flotante</span>
             </button>
 
             {/* BOTÓN EXPORTAR A EXCEL */}
             <button
               type="button"
               onClick={() => exportSimpleTableToExcel(data)}
-              className="group flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
+              className="group flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
-              <span className="hidden xs:inline">Excel</span>
+              <span className="hidden sm:inline">Excel</span>
             </button>
           </div>
         </div>

@@ -52,13 +52,13 @@ export const HeaderLogo: React.FC<HeaderLogoProps> = ({
           <span className={`${config.titleClass} text-white tracking-wide font-sans drop-shadow-sm`}>
             I.E.S. de Belén
           </span>
-          <span className={`bg-[#10b981] text-white font-black rounded-full uppercase tracking-wider shadow-xs ${config.badgeClass}`}>
+          <span className={`bg-[#1B8A5A] text-white font-black rounded-full uppercase tracking-wider shadow-xs ${config.badgeClass}`}>
             SySO
           </span>
         </div>
 
         {showSubtitle && (
-          <span className={`${config.subClass} text-emerald-300/90 dark:text-emerald-400/90 font-medium line-clamp-1 mt-0.5 tracking-normal`}>
+          <span className={`${config.subClass} text-emerald-300/90 dark:text-emerald-400/90 font-medium line-clamp-1 mt-0.5 tracking-normal hidden sm:block`}>
             Cátedra de Estadística Aplicada
           </span>
         )}

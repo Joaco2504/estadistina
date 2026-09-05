@@ -655,18 +655,18 @@ export const ContingencyTableModule: React.FC = () => {
               title="Abrir tabla en Ventana Flotante / Pantalla Completa"
             >
               <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />
-              <span className="hidden xs:inline">Flotante</span>
+              <span className="hidden sm:inline">Flotante</span>
             </button>
 
             {/* BOTÓN EXPORTAR A EXCEL */}
             <button
               type="button"
               onClick={() => exportContingencyTableToExcel(result, viewMode)}
-              className="flex items-center gap-1.5 bg-[#10B981] hover:bg-[#059669] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
               title="Descargar tabla en formato Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span className="hidden xs:inline">Excel</span>
+              <span className="hidden sm:inline">Excel</span>
             </button>
 
             <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-white border border-[#1C4874] dark:border-slate-700 hidden sm:inline">

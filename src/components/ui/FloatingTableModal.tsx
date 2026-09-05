@@ -58,7 +58,7 @@ export const FloatingTableModal: React.FC<FloatingTableModalProps> = ({
         {/* Cabecera de la Ventana Flotante */}
         <div className="bg-[#0F2942] dark:bg-[#071322] px-3.5 sm:px-6 py-3 text-white flex items-center justify-between gap-2 border-b border-[#1C4874] dark:border-slate-800">
           <div className="flex items-center gap-2.5 min-w-0 flex-1">
-            <div className="w-8 h-8 rounded-lg bg-[#10B981] text-white flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-[#1B8A5A] text-white flex items-center justify-center flex-shrink-0">
               <Maximize2 className="w-4 h-4" />
             </div>
             <div className="min-w-0">
@@ -67,7 +67,7 @@ export const FloatingTableModal: React.FC<FloatingTableModalProps> = ({
                   {title}
                 </h2>
                 {badge && (
-                  <span className="bg-[#10B981] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline">
+                  <span className="bg-[#1B8A5A] text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider hidden sm:inline">
                     {badge}
                   </span>
                 )}
@@ -85,11 +85,11 @@ export const FloatingTableModal: React.FC<FloatingTableModalProps> = ({
               <button
                 type="button"
                 onClick={onExportExcel}
-                className="flex items-center gap-1.5 bg-[#10B981] hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
+                className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-emerald-600 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-lg transition-all shadow-xs cursor-pointer"
                 title="Descargar tabla en Excel"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5" />
-                <span className="hidden xs:inline">Excel</span>
+                <span className="hidden sm:inline">Excel</span>
               </button>
             )}
 

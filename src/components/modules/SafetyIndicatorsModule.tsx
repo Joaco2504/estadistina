@@ -99,7 +99,7 @@ export const SafetyIndicatorsModule: React.FC = () => {
               title="Descargar informe oficial en Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
-              <span className="hidden xs:inline">Exportar a Excel</span>
+              <span className="hidden sm:inline">Exportar a Excel</span>
             </button>
 
             <button
