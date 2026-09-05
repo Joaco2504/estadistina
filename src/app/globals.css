@@ -1,6 +1,11 @@
 @import "tailwindcss";
 @import "katex/dist/katex.min.css";
 
+@theme {
+  --breakpoint-xxs: 380px;
+  --breakpoint-xs: 480px;
+}
+
 @custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {

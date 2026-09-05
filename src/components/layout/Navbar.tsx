@@ -73,8 +73,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             <HeaderLogo size="md" showSubtitle={true} className="hidden xs:flex" />
           </button>
 
-          {/* Navegación Desktop: Segmented Control Centrado */}
-          <nav className="hidden lg:flex items-center gap-1 bg-[#0A1D30] dark:bg-[#0F172A] p-1.5 rounded-2xl border border-[#1C4874] dark:border-[#1E293B]">
+          {/* Navegación Desktop: Segmented Control Centrado (Sincronizado a md: 768px) */}
+          <nav className="hidden md:flex items-center gap-1 bg-[#0A1D30] dark:bg-[#0F172A] p-1.5 rounded-2xl border border-[#1C4874] dark:border-[#1E293B]">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = activeTab === item.id;
@@ -83,17 +83,17 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`group flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
+                  className={`group flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3.5 py-1.5 rounded-xl text-[11px] lg:text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
                     isActive
                       ? 'bg-[#10b981] text-white shadow-md ring-2 ring-emerald-400/40'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
                   }`}
                 >
                   <Icon className={`w-3.5 h-3.5 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                  <span>{item.label}</span>
+                  <span className="whitespace-nowrap">{item.label}</span>
                   {item.badge && (
                     <span
-                      className={`text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold transition-colors ${
+                      className={`hidden xl:inline text-[9px] px-1.5 py-0.2 rounded-full font-mono font-bold transition-colors ${
                         isActive
                           ? 'bg-[#064E3B] text-emerald-100'
                           : 'bg-[#15385B] dark:bg-[#1E293B] text-slate-300 border border-slate-600 dark:border-slate-700'
@@ -132,13 +132,14 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Consultar fórmulas oficiales de la cátedra"
             >
               <FileText className="w-4 h-4 formula-icon text-amber-200" />
-              <span className="hidden xxs:inline tracking-wide font-bold">Fórmulas Cátedra</span>
+              <span className="hidden xxs:inline sm:hidden font-bold">Fórmulas</span>
+              <span className="hidden sm:inline tracking-wide font-bold">Fórmulas Cátedra</span>
             </button>
           </div>
         </div>
 
-        {/* Barra de Pestañas Móvil (Scroll Horizontal Táctil y Suave) */}
-        <div className="lg:hidden pb-2.5 pt-1 overflow-x-auto no-scrollbar flex items-center gap-1.5">
+        {/* Barra de Pestañas Móvil (Scroll Horizontal Táctil y Suave para < md) */}
+        <div className="md:hidden pb-2.5 pt-1 overflow-x-auto no-scrollbar flex items-center gap-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;

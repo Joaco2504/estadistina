@@ -329,7 +329,7 @@ export default function HomePage() {
                             </span>
                           )}
                         </div>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-400 truncate mt-0.5">
+                        <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate mt-0.5 font-medium">
                           {item.description}
                         </p>
                       </div>

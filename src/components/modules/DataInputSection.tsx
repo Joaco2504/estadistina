@@ -439,14 +439,14 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           </div>
 
           {/* Chips de Tamaño Rápido de Muestra */}
-          <div className="flex items-center gap-1 text-xs self-start sm:self-auto">
-            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1">Fijar n:</span>
+          <div className="flex items-center gap-1 text-xs self-start sm:self-auto flex-wrap overflow-x-auto no-scrollbar py-0.5">
+            <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase mr-1 flex-shrink-0">Fijar n:</span>
             {[10, 20, 27, 30, 50, 100].map((size) => (
               <button
                 key={size}
                 type="button"
                 onClick={() => handleGenerateCustomN(size)}
-                className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer ${
+                className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer flex-shrink-0 ${
                   customSampleSize === size
                     ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-2xs'
                     : 'bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'

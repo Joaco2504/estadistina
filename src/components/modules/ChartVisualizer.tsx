@@ -293,7 +293,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
       </div>
 
       {/* Área del Gráfico Renderizado */}
-      <div className="h-72 sm:h-88 w-full min-h-[260px]">
+      <div className="h-72 sm:h-[22rem] w-full min-h-[260px]">
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
             {/* 1. HISTOGRAMA */}
@@ -624,7 +624,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
       </div>
 
       {/* Contenedor del Gráfico */}
-      <div className="h-72 sm:h-88 w-full min-h-[260px]">
+      <div className="h-72 sm:h-[22rem] w-full min-h-[260px]">
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
             {/* 1. BARRAS MULTICOLOR */}
@@ -869,7 +869,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
       </div>
 
       {/* Contenedor del Gráfico */}
-      <div className="h-72 sm:h-88 w-full min-h-[260px]">
+      <div className="h-72 sm:h-[22rem] w-full min-h-[260px]">
         {isMounted ? (
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={{ top: 15, right: 25, left: 60, bottom: 25 }}>
