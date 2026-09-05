@@ -99,7 +99,7 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
 
   // Renderizador de tabla unificado
   const renderTableContent = () => (
-    <table className="stat-table">
+    <table className="stat-table w-full min-w-[740px]">
       <thead>
         <tr>
           <th>N°</th>
@@ -514,6 +514,15 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
             </div>
           </div>
         )}
+
+        {/* Indicador de Desplazamiento Horizontal en Móviles */}
+        <div className="sm:hidden flex items-center justify-between px-3.5 py-1.5 bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 select-none">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+            Desliza horizontalmente la tabla para ver todas las columnas
+          </span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0 text-xs">↔</span>
+        </div>
 
         {/* Tabla Didáctica Minimalista con Iluminación en Tiempo Real y Tooltips */}
         <div className="overflow-x-auto p-3 sm:p-4 pt-6 sm:pt-7">

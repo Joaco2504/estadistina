@@ -344,43 +344,52 @@ export const ContingencyTableModule: React.FC = () => {
 
   // Renderizador unificado para tabla bivariada con soporte para frecuencias normales y porcentajes
   const renderTableContent = () => (
-    <table className="stat-table">
+    <table className="stat-table w-full min-w-[580px]">
       <thead>
         <tr>
-          <th className="bg-[#0A1D30] dark:bg-[#080D1A] text-left text-xs font-bold text-white">
-            {variableX} \ {variableY}
+          <th className="bg-[#0A1D30] dark:bg-[#080D1A] text-left text-xs font-bold text-white min-w-[150px] sm:min-w-[180px] p-2.5 sm:p-3">
+            <div className="flex flex-col gap-0.5">
+              <span className="text-emerald-400 font-extrabold text-[11px] uppercase tracking-wider truncate" title={variableX}>
+                {variableX}
+              </span>
+              <span className="text-slate-400 text-[10px] font-medium truncate" title={variableY}>
+                ▼ por {variableY}
+              </span>
+            </div>
           </th>
           {colCategories.map((colCat, cIdx) => (
-            <th key={`col-header-${cIdx}`} className="bg-[#0F2942] dark:bg-[#0B132B]">
-              <div className="flex items-center justify-between gap-1">
+            <th key={`col-header-${cIdx}`} className="bg-[#0F2942] dark:bg-[#0B132B] min-w-[120px] sm:min-w-[140px] px-2 py-2 sm:px-3 sm:py-2.5">
+              <div className="flex items-center justify-between gap-1.5 w-full">
                 {viewMode === 'normal' ? (
                   <>
                     <input
                       type="text"
                       value={colCat}
                       onChange={(e) => handleColCategoryChange(cIdx, e.target.value)}
-                      className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full"
+                      className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 hover:bg-white/5 px-1 py-1 rounded w-full min-w-0 border border-transparent focus:border-emerald-400/50 transition-colors"
+                      title={`Editar columna: ${colCat}`}
+                      placeholder={`Col ${cIdx + 1}`}
                     />
                     {colCategories.length > 2 && (
                       <button
                         type="button"
                         onClick={() => handleDeleteCol(cIdx)}
-                        className="text-slate-400 hover:text-red-400 p-0.5 transition-colors cursor-pointer"
+                        className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
                         title="Eliminar columna"
                       >
-                        <Trash2 className="w-3 h-3" />
+                        <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}
                   </>
                 ) : (
-                  <span className="text-white font-bold text-xs text-center px-1 py-0.5 w-full block">
+                  <span className="text-white font-bold text-xs text-center px-1 py-1 w-full block truncate" title={colCat}>
                     {colCat}
                   </span>
                 )}
               </div>
             </th>
           ))}
-          <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs text-center">
+          <th className="bg-[#183C5F] dark:bg-[#1E293B] text-amber-300 font-bold text-xs text-center min-w-[105px] sm:min-w-[120px] px-2 py-2 sm:px-3 sm:py-2.5">
             {viewMode === 'normal' && 'Total por fila'}
             {viewMode === 'percent_total' && '% Total General'}
             {viewMode === 'percent_row' && 'Total Fila (100%)'}
@@ -394,29 +403,31 @@ export const ContingencyTableModule: React.FC = () => {
 
           return (
             <tr key={`row-body-${rIdx}`}>
-              <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322]">
-                <div className="flex items-center justify-between gap-1">
+              <td className="text-left font-bold text-[#0F2942] dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] min-w-[150px] sm:min-w-[180px] px-2.5 py-1.5 sm:px-3 sm:py-2">
+                <div className="flex items-center justify-between gap-1.5 w-full">
                   {viewMode === 'normal' ? (
                     <>
                       <input
                         type="text"
                         value={rowCat}
                         onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
-                        className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/10 px-1 py-0.5 rounded w-full border-b border-transparent focus:border-slate-300 dark:focus:border-slate-600"
+                        className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/60 dark:focus:bg-[#131C2E] hover:bg-black/5 dark:hover:bg-white/5 px-1 py-1 rounded w-full min-w-0 border-b border-transparent focus:border-emerald-500/50 transition-colors"
+                        title={`Editar fila: ${rowCat}`}
+                        placeholder={`Fila ${rIdx + 1}`}
                       />
                       {rowCategories.length > 2 && (
                         <button
                           type="button"
                           onClick={() => handleDeleteRow(rIdx)}
-                          className="text-slate-400 hover:text-red-500 p-0.5 transition-colors cursor-pointer"
+                          className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
                           title="Eliminar fila"
                         >
-                          <Trash2 className="w-3 h-3" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       )}
                     </>
                   ) : (
-                    <span className="font-bold text-xs text-[#0F2942] dark:text-slate-100 px-1 py-0.5 block">
+                    <span className="font-bold text-xs text-[#0F2942] dark:text-slate-100 px-1 py-1 block truncate" title={rowCat}>
                       {rowCat}
                     </span>
                   )}
@@ -430,13 +441,13 @@ export const ContingencyTableModule: React.FC = () => {
 
                 if (viewMode === 'normal') {
                   return (
-                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1">
+                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1 min-w-[70px]">
                       <input
                         type="number"
                         min={0}
                         value={cellVal}
                         onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
-                        className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-1 focus:ring-[#10B981] rounded px-1 py-1 border border-slate-200 dark:border-slate-700 text-xs"
+                        className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-2 focus:ring-[#10B981] rounded-lg px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-xs transition-all"
                       />
                     </td>
                   );
@@ -445,7 +456,7 @@ export const ContingencyTableModule: React.FC = () => {
                 if (viewMode === 'percent_total') {
                   const pct = grandTotal > 0 ? (cellVal / grandTotal) * 100 : 0;
                   return (
-                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-slate-50/60 dark:bg-[#0A1322]/60">
+                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-slate-50/60 dark:bg-[#0A1322]/60 min-w-[80px]">
                       <div className="flex flex-col items-center justify-center">
                         <span className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300">
                           {formatPercentage(pct)}
@@ -461,7 +472,7 @@ export const ContingencyTableModule: React.FC = () => {
                 if (viewMode === 'percent_row') {
                   const pct = rowTot > 0 ? (cellVal / rowTot) * 100 : 0;
                   return (
-                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-blue-50/40 dark:bg-blue-950/30">
+                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-blue-50/40 dark:bg-blue-950/30 min-w-[80px]">
                       <div className="flex flex-col items-center justify-center">
                         <span className="font-mono font-bold text-xs text-blue-700 dark:text-blue-300">
                           {formatPercentage(pct)}
@@ -477,7 +488,7 @@ export const ContingencyTableModule: React.FC = () => {
                 // percent_col
                 const pct = colTot > 0 ? (cellVal / colTot) * 100 : 0;
                 return (
-                  <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-amber-50/40 dark:bg-amber-950/30">
+                  <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-amber-50/40 dark:bg-amber-950/30 min-w-[80px]">
                     <div className="flex flex-col items-center justify-center">
                       <span className="font-mono font-bold text-xs text-amber-700 dark:text-amber-300">
                         {formatPercentage(pct)}
@@ -491,7 +502,7 @@ export const ContingencyTableModule: React.FC = () => {
               })}
 
               {/* Total por fila */}
-              <td className="font-mono font-extrabold text-[#10B981] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs py-1.5 text-center">
+              <td className="font-mono font-extrabold text-[#10B981] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/30 text-xs py-1.5 text-center min-w-[95px] sm:min-w-[110px]">
                 {viewMode === 'normal' && rowTot}
                 {viewMode === 'percent_total' && (
                   <div className="flex flex-col items-center justify-center">
@@ -518,7 +529,7 @@ export const ContingencyTableModule: React.FC = () => {
 
         {/* Totales Marginales por Columna y Gran Total */}
         <tr className="total-row">
-          <td className="text-left uppercase font-extrabold text-[#0F2942] dark:text-slate-100 text-xs">
+          <td className="text-left uppercase font-extrabold text-[#0F2942] dark:text-slate-100 text-xs min-w-[150px] sm:min-w-[180px] px-2.5 py-2">
             {viewMode === 'normal' && 'Total por columna'}
             {viewMode === 'percent_total' && '% Total General'}
             {viewMode === 'percent_col' && 'Total Columna (100%)'}
@@ -527,7 +538,7 @@ export const ContingencyTableModule: React.FC = () => {
           {colCategories.map((_, cIdx) => {
             const colTot = colMarginalTotals[cIdx];
             return (
-              <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs py-1.5 text-center">
+              <td key={`col-total-${cIdx}`} className="font-mono font-extrabold text-[#0F2942] dark:text-slate-100 text-xs py-2 text-center min-w-[70px]">
                 {viewMode === 'normal' && colTot}
                 {viewMode === 'percent_total' && (
                   <div className="flex flex-col items-center justify-center">
@@ -550,7 +561,7 @@ export const ContingencyTableModule: React.FC = () => {
               </td>
             );
           })}
-          <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs py-1.5 text-center">
+          <td className="font-mono font-black text-white bg-[#0F2942] dark:bg-emerald-700 text-xs py-2 text-center min-w-[95px] sm:min-w-[110px]">
             {viewMode === 'normal' ? (
               grandTotal
             ) : (
@@ -716,6 +727,15 @@ export const ContingencyTableModule: React.FC = () => {
               </span>
             )}
           </div>
+        </div>
+
+        {/* Indicador de Desplazamiento Horizontal en Móviles */}
+        <div className="sm:hidden flex items-center justify-between px-3.5 py-1.5 bg-slate-100/80 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 dark:text-slate-400 select-none">
+          <span className="flex items-center gap-1.5 font-medium">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+            Desliza horizontalmente la tabla para ver todas las columnas
+          </span>
+          <span className="font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0 text-xs">↔</span>
         </div>
 
         <div className="overflow-x-auto p-3 sm:p-4">
