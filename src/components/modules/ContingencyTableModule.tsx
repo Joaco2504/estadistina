@@ -279,66 +279,65 @@ export const ContingencyTableModule: React.FC = () => {
     });
   }, [rowCategories, colCategories, matrix]);
 
-  // Barra de botones para alternar modos de visualización con scroll horizontal y etiquetas responsivas
   const renderViewModeButtons = () => (
-    <div className="flex items-center gap-1 p-1 bg-slate-200/80 dark:bg-[#131C2E] rounded-xl border border-slate-300/70 dark:border-slate-700/70 select-none overflow-x-auto no-scrollbar max-w-full flex-nowrap">
+    <div className="flex flex-nowrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-[#131C2E] rounded-xl border border-slate-300/70 dark:border-slate-700/70 select-none overflow-x-auto no-scrollbar">
       <button
         type="button"
         onClick={() => setViewMode('normal')}
-        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'normal'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
             : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
         }`}
         title="Visualización normal (Frecuencias absolutas fa como están cargadas)"
       >
-        <Hash className="w-3.5 h-3.5 flex-shrink-0" />
+        <Hash className="w-3.5 h-3.5" />
         <span>Normal</span>
       </button>
 
       <button
         type="button"
         onClick={() => setViewMode('percent_total')}
-        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'percent_total'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
             : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
         }`}
         title="Visualizar en % del Total General (respecto al tamaño de muestra n)"
       >
-        <Percent className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="sm:hidden">% Total</span>
+        <Percent className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">% del Total General</span>
+        <span className="sm:hidden">% Total</span>
       </button>
 
       <button
         type="button"
         onClick={() => setViewMode('percent_row')}
-        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'percent_row'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
             : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
         }`}
         title="Visualizar en % del Total de la Fila (Distribución condicional por filas, cada fila totaliza 100%)"
       >
-        <ArrowRight className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="sm:hidden">% Fila</span>
+        <ArrowRight className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">% del Total de la Fila</span>
+        <span className="sm:hidden">% Fila</span>
       </button>
 
       <button
         type="button"
         onClick={() => setViewMode('percent_col')}
-        className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+        className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'percent_col'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
             : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-white/60 dark:hover:bg-slate-800'
         }`}
         title="Visualizar en % del Total de la Columna (Distribución condicional por columnas, cada columna totaliza 100%)"
       >
-        <ArrowDown className="w-3.5 h-3.5 flex-shrink-0" />
-        <span className="sm:hidden">% Col</span>
+        <ArrowDown className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">% del Total de la Columna</span>
+        <span className="sm:hidden">% Columna</span>
       </button>
     </div>
   );

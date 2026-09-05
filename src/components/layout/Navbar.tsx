@@ -69,8 +69,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={() => onSelectTab('simple')}
             className="flex items-center text-left hover:opacity-95 transition-opacity cursor-pointer flex-shrink-0"
           >
-            <HeaderLogo size="sm" showSubtitle={false} className="xs:hidden" />
-            <HeaderLogo size="md" showSubtitle={true} className="hidden xs:flex" />
+            <HeaderLogo size="sm" showSubtitle={false} className="sm:hidden" />
+            <HeaderLogo size="md" showSubtitle={true} className="hidden sm:flex" />
           </button>
 
           {/* Navegación Desktop: Segmented Control Centrado (Sincronizado a md: 768px) */}
@@ -132,7 +132,6 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Consultar fórmulas oficiales de la cátedra"
             >
               <FileText className="w-4 h-4 formula-icon text-amber-200" />
-              <span className="hidden xxs:inline sm:hidden font-bold">Fórmulas</span>
               <span className="hidden sm:inline tracking-wide font-bold">Fórmulas Cátedra</span>
             </button>
           </div>
