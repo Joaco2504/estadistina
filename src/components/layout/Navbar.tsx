@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-50 w-full bg-[#0F2942] dark:bg-[#080D1A] border-b border-[#1C4874] dark:border-[#1E293B] shadow-md transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
+        <div className="flex items-center justify-between h-16 sm:h-[4.25rem] gap-2 sm:gap-4">
           {/* Logo e Identidad Institucional */}
           <button 
             type="button"

@@ -236,35 +236,78 @@ export interface ThematicUnit {
 }
 
 /**
- * Tema 4 - Indicadores Oficiales de Siniestralidad Laboral (SRT)
+ * Tema 4 - Indicadores Oficiales de Siniestralidad Laboral (SRT / IRAM 3800 / OIT)
  */
 export interface SafetyIndicatorsInput {
   establecimiento?: string;
   periodo?: string;
+  cantidadTrabajadores: number;
+  diasLaborales: number;
+  horasJornada: number;
+  horasExtras: number;
+  horasNoTrabajadas: number;
   accidentesConBaja: number;
+  accidentesSinBaja: number;
   diasPerdidos: number;
-  horasHombreTrabajadas: number;
-  trabajadoresExpuestos: number;
+  factorK: 1000 | 1000000;
+  
+  // Campos retrocompatibles
+  horasHombreTrabajadas?: number;
+  trabajadoresExpuestos?: number;
+}
+
+export interface SafetyIndicatorCardFormula {
+  title: string;
+  formulaLatex: string;
+  substitutionLatex: string;
+  description: string;
 }
 
 export interface SafetyIndicatorsResult {
   establecimiento: string;
   periodo: string;
+  cantidadTrabajadores: number;
+  diasLaborales: number;
+  horasJornada: number;
+  horasExtras: number;
+  horasNoTrabajadas: number;
   accidentesConBaja: number;
+  accidentesSinBaja: number;
+  totalAccidentes: number;
   diasPerdidos: number;
+  factorK: 1000 | 1000000;
+  
+  // Horas calculadas
+  horasTeoricas: number; // cantidadTrabajadores * diasLaborales * horasJornada
+  horasPersonaTrabajo: number; // horasTeoricas + horasExtras - horasNoTrabajadas
+  
+  // Retrocompatibilidad
   horasHombreTrabajadas: number;
   trabajadoresExpuestos: number;
-  
+
   // 4 Indicadores Oficiales SRT
-  indiceFrecuencia: number; // IF = (Accidentes * 1.000.000) / HHT
-  indiceGravedad: number; // IG = (Días Perdidos * 1.000.000) / HHT
-  indiceIncidencia: number; // II = (Accidentes * 1.000) / Trabajadores
-  duracionMedia: number; // DM = Días Perdidos / Accidentes
+  indiceFrecuencia: number; // IF = (Accidentes con baja * k) / HPT
+  indiceGravedad: number; // IG = (Días Perdidos * k) / HPT
+  indiceIncidencia: number; // II = (Accidentes con baja * 1.000) / Trabajadores
+  duracionMedia: number; // DM = Días Perdidos / Accidentes con baja
+
+  // Textos y etiquetas descriptivas
+  baseTextHHT: string; // 'por cada millón HHT' o 'por cada mil HHT'
+  kLabel: string; // '1.000.000' o '1.000'
+  kUnit: string; // '10⁶ HHT' o '10³ HHT'
+
+  // Fórmulas KaTeX y reemplazo numérico para los dorsos de las tarjetas 3D
+  cardsFormulas: {
+    if: SafetyIndicatorCardFormula;
+    ig: SafetyIndicatorCardFormula;
+    ii: SafetyIndicatorCardFormula;
+    dm: SafetyIndicatorCardFormula;
+  };
 
   // Medidas Relativas Previas
   proporcionAccidentados: number; // Accidentes / Trabajadores (0 a 1)
   porcentajeAccidentados: number; // proporcion * 100
-  tasaCrudaHoras: number; // Accidentes / HHT
+  tasaCrudaHoras: number; // Accidentes / HPT
   razonDiasPorAccidente: number; // Días / Accidentes = DM
 
   // Diagnóstico e Informe Técnico Automático
@@ -282,10 +325,20 @@ export interface SafetyIndicatorPreset {
   establecimiento: string;
   periodo: string;
   sector: string;
+  cantidadTrabajadores: number;
+  diasLaborales: number;
+  horasJornada: number;
+  horasExtras: number;
+  horasNoTrabajadas: number;
   accidentesConBaja: number;
+  accidentesSinBaja: number;
   diasPerdidos: number;
-  horasHombreTrabajadas: number;
-  trabajadoresExpuestos: number;
+  factorK: 1000 | 1000000;
   description: string;
+  
+  // Retrocompatibilidad
+  horasHombreTrabajadas?: number;
+  trabajadoresExpuestos?: number;
 }
+
 

@@ -1325,53 +1325,126 @@ export function calculateSafetyIndicators(input: SafetyIndicatorsInput): SafetyI
   const {
     establecimiento = 'Planta Industrial General',
     periodo = 'Trimestre Anual',
-    accidentesConBaja,
-    diasPerdidos,
+    cantidadTrabajadores,
+    diasLaborales = 65,
+    horasJornada = 8,
+    horasExtras = 0,
+    horasNoTrabajadas = 0,
+    accidentesConBaja = 0,
+    accidentesSinBaja = 0,
+    diasPerdidos = 0,
+    factorK = 1000000,
+    // Retrocompatibilidad
+    trabajadoresExpuestos,
     horasHombreTrabajadas,
-    trabajadoresExpuestos
   } = input;
 
+  const trab = Math.max(1, Number(cantidadTrabajadores ?? trabajadoresExpuestos) || 1);
+  const dias = Math.max(1, Number(diasLaborales) || 1);
+  const jornada = Math.max(1, Number(horasJornada) || 1);
+  const extras = Math.max(0, Number(horasExtras) || 0);
+  const noTrab = Math.max(0, Number(horasNoTrabajadas) || 0);
+
   const N = Math.max(0, Number(accidentesConBaja) || 0);
+  const sinBaja = Math.max(0, Number(accidentesSinBaja) || 0);
+  const totalAcc = N + sinBaja;
   const J = Math.max(0, Number(diasPerdidos) || 0);
-  const HHT = Math.max(1, Number(horasHombreTrabajadas) || 1);
-  const Trab = Math.max(1, Number(trabajadoresExpuestos) || 1);
+  const k: 1000 | 1000000 = factorK === 1000 ? 1000 : 1000000;
 
-  // 1. Índice de Frecuencia (IF) = (N * 1.000.000) / HHT
-  const indiceFrecuencia = roundTo((N * 1000000) / HHT, 2);
+  // Horas Teóricas = cantidadTrabajadores * diasLaborales * horasJornada
+  const horasTeoricas = trab * dias * jornada;
 
-  // 2. Índice de Gravedad (IG) = (J * 1.000.000) / HHT
-  const indiceGravedad = roundTo((J * 1000000) / HHT, 2);
+  // Horas Persona Trabajo = Horas Teóricas + Horas Extras - Horas No Trabajadas
+  const horasPersonaTrabajo = Math.max(1, horasTeoricas + extras - noTrab);
 
-  // 3. Índice de Incidencia (II) = (N * 1.000) / Trab
-  const indiceIncidencia = roundTo((N * 1000) / Trab, 2);
+  // 1. Índice de Frecuencia (IF) = (N * k) / HPT
+  const indiceFrecuencia = roundTo((N * k) / horasPersonaTrabajo, 2);
+
+  // 2. Índice de Gravedad (IG) = (J * k) / HPT
+  const indiceGravedad = roundTo((J * k) / horasPersonaTrabajo, 2);
+
+  // 3. Índice de Incidencia (II) = (N * 1.000) / trab
+  const indiceIncidencia = roundTo((N * 1000) / trab, 2);
 
   // 4. Duración Media de las Bajas (DM) = J / N
   const duracionMedia = N > 0 ? roundTo(J / N, 2) : 0;
 
   // Medidas relativas previas
-  const proporcionAccidentados = roundTo(N / Trab, 4);
+  const proporcionAccidentados = roundTo(N / trab, 4);
   const porcentajeAccidentados = roundTo(proporcionAccidentados * 100, 2);
-  const tasaCrudaHoras = roundTo(N / HHT, 8);
+  const tasaCrudaHoras = roundTo(N / horasPersonaTrabajo, 8);
   const razonDiasPorAccidente = duracionMedia;
+
+  // Textos y etiquetas descriptivas
+  const baseTextHHT = k === 1000000 ? 'por cada millón HHT' : 'por cada mil HHT';
+  const kLabel = k === 1000000 ? '1.000.000' : '1.000';
+  const kUnit = k === 1000000 ? '10⁶ HHT' : '10³ HHT';
+
+  const kFormatted = k === 1000000 ? '1.000.000' : '1.000';
+  const hptFormatted = horasPersonaTrabajo.toLocaleString('es-AR');
+  const trabFormatted = trab.toLocaleString('es-AR');
+
+  // Fórmulas y desarrollos KaTeX para los dorsos de las 4 tarjetas 3D
+  const cardsFormulas = {
+    if: {
+      title: 'Índice de Frecuencia (IF)',
+      formulaLatex: `\\text{IF} = \\frac{\\text{N° Acc. con Baja} \\cdot k}{\\text{Horas Persona Trabajo (HPT)}}`,
+      substitutionLatex: `\\text{IF} = \\frac{${N} \\cdot ${kFormatted}}{${hptFormatted}} = ${indiceFrecuencia.toFixed(2)}`,
+      description: `Representa ${indiceFrecuencia.toFixed(2)} accidentes con baja médica ${baseTextHHT}.`
+    },
+    ig: {
+      title: 'Índice de Gravedad (IG)',
+      formulaLatex: `\\text{IG} = \\frac{\\text{Total Días Perdidos} \\cdot k}{\\text{Horas Persona Trabajo (HPT)}}`,
+      substitutionLatex: `\\text{IG} = \\frac{${J} \\cdot ${kFormatted}}{${hptFormatted}} = ${indiceGravedad.toFixed(2)}`,
+      description: `Representa ${indiceGravedad.toFixed(2)} jornadas de trabajo perdidas ${baseTextHHT}.`
+    },
+    ii: {
+      title: 'Índice de Incidencia (II)',
+      formulaLatex: `\\text{II} = \\frac{\\text{N° Acc. con Baja} \\cdot 1.000}{\\text{N° Trabajadores Expuestos}}`,
+      substitutionLatex: `\\text{II} = \\frac{${N} \\cdot 1.000}{${trabFormatted}} = ${indiceIncidencia.toFixed(2)}`,
+      description: `Representa ${indiceIncidencia.toFixed(2)} accidentes con baja por cada 1.000 trabajadores en nómina.`
+    },
+    dm: {
+      title: 'Duración Media (DM)',
+      formulaLatex: `\\text{DM} = \\frac{\\text{Total Días Perdidos}}{\\text{N° Acc. con Baja}}`,
+      substitutionLatex: N > 0 ? `\\text{DM} = \\frac{${J}}{${N}} = ${duracionMedia.toFixed(2)}` : `\\text{DM} = 0`,
+      description: `Promedio de ${duracionMedia.toFixed(2)} días no trabajados por cada accidente con baja ocurrido.`
+    }
+  };
 
   // Diagnóstico técnico institucional
   const diagnostico = {
-    severidad: `Durante el período evaluado (${periodo}), en el establecimiento "${establecimiento}", se registró un Índice de Frecuencia de ${indiceFrecuencia.toFixed(2)} accidentes con baja laboral por cada millón de horas persona efectivamente trabajadas, junto a un Índice de Incidencia de ${indiceIncidencia.toFixed(2)} accidentes por cada 1.000 trabajadores. Esto indica que el ${porcentajeAccidentados.toFixed(2)}% de la nómina laboral sufrió algún evento incapacitante durante el período.`,
-    tiempoPerdido: `La Duración Media de las Bajas (DM) se ubicó en ${duracionMedia.toFixed(2)} días perdidos por accidente, generando un Índice de Gravedad (IG) acumulado de ${indiceGravedad.toFixed(2)} jornadas perdidas por cada millón de horas persona trabajadas. La relación matemática IG = IF × DM (${indiceFrecuencia.toFixed(2)} × ${duracionMedia.toFixed(2)} = ${(indiceFrecuencia * duracionMedia).toFixed(2)}) confirma la coherencia global de las métricas de severidad.`,
-    recomendacion: `El impacto de ${J} días de inactividad médica representa una pérdida sustancial de capacidad operativa y costos de la seguridad asociados. Se recomienda cruzar estos indicadores con las tablas de frecuencias por sector y causa para concentrar las inspecciones preventivas y auditorías de EPP en las áreas de mayor siniestralidad.`
+    severidad: `Durante el período evaluado (${periodo}), en el establecimiento "${establecimiento}", se registró un Índice de Frecuencia de ${indiceFrecuencia.toFixed(2)} accidentes con baja laboral ${baseTextHHT}, junto a un Índice de Incidencia de ${indiceIncidencia.toFixed(2)} accidentes por cada 1.000 trabajadores. Esto indica que el ${porcentajeAccidentados.toFixed(2)}% de la nómina laboral sufrió algún evento incapacitante durante el período.`,
+    tiempoPerdido: `La Duración Media de las Bajas (DM) se ubicó en ${duracionMedia.toFixed(2)} días perdidos por accidente, generando un Índice de Gravedad (IG) acumulado de ${indiceGravedad.toFixed(2)} jornadas perdidas ${baseTextHHT}. La relación matemática IG = IF × DM (${indiceFrecuencia.toFixed(2)} × ${duracionMedia.toFixed(2)} = ${(indiceFrecuencia * duracionMedia).toFixed(2)}) confirma la coherencia global de las métricas de severidad.`,
+    recomendacion: `El impacto de ${J} días de inactividad médica representa una pérdida sustancial de capacidad operativa y costos de la seguridad asociados. Con una base de cálculo de ${hptFormatted} Horas Persona Trabajo (derivadas de ${horasTeoricas.toLocaleString('es-AR')} hs teóricas + ${extras.toLocaleString('es-AR')} hs extras - ${noTrab.toLocaleString('es-AR')} hs no trabajadas), se recomienda concentrar las inspecciones preventivas en las áreas de mayor siniestralidad.`
   };
 
   return {
     establecimiento,
     periodo,
+    cantidadTrabajadores: trab,
+    diasLaborales: dias,
+    horasJornada: jornada,
+    horasExtras: extras,
+    horasNoTrabajadas: noTrab,
     accidentesConBaja: N,
+    accidentesSinBaja: sinBaja,
+    totalAccidentes: totalAcc,
     diasPerdidos: J,
-    horasHombreTrabajadas: HHT,
-    trabajadoresExpuestos: Trab,
+    factorK: k,
+    horasTeoricas,
+    horasPersonaTrabajo,
+    // Retrocompatibilidad
+    horasHombreTrabajadas: horasPersonaTrabajo,
+    trabajadoresExpuestos: trab,
     indiceFrecuencia,
     indiceGravedad,
     indiceIncidencia,
     duracionMedia,
+    baseTextHHT,
+    kLabel,
+    kUnit,
+    cardsFormulas,
     proporcionAccidentados,
     porcentajeAccidentados,
     tasaCrudaHoras,
@@ -1391,11 +1464,18 @@ export const SAFETY_INDICATOR_PRESETS: SafetyIndicatorPreset[] = [
     establecimiento: 'Metalúrgica Belén S.A.',
     periodo: '1° Trimestre Anual',
     sector: 'Mecanizado y Soldadura',
+    cantidadTrabajadores: 100,
+    diasLaborales: 65,
+    horasJornada: 8,
+    horasExtras: 2000,
+    horasNoTrabajadas: 2000,
     accidentesConBaja: 15,
+    accidentesSinBaja: 5,
     diasPerdidos: 180,
+    factorK: 1000000,
     horasHombreTrabajadas: 52000,
     trabajadoresExpuestos: 100,
-    description: 'Caso oficial de la cátedra con 100 operarios expuestos en 13 semanas (40 hs/sem), con 15 bajas y 180 jornadas perdidas.'
+    description: 'Caso oficial de la cátedra con 100 operarios expuestos en 65 días laborales (8 hs/día), 2.000 hs extras y 2.000 hs de ausentismo, con 15 bajas y 180 jornadas perdidas.'
   },
   {
     id: 'indicador-construccion-obra',
@@ -1404,11 +1484,18 @@ export const SAFETY_INDICATOR_PRESETS: SafetyIndicatorPreset[] = [
     establecimiento: 'Constructora del Valle S.R.L.',
     periodo: 'Semestre Operativo',
     sector: 'Estructuras y Encofrado',
+    cantidadTrabajadores: 150,
+    diasLaborales: 125,
+    horasJornada: 8,
+    horasExtras: 15000,
+    horasNoTrabajadas: 5000,
     accidentesConBaja: 8,
+    accidentesSinBaja: 14,
     diasPerdidos: 120,
-    horasHombreTrabajadas: 300000,
+    factorK: 1000000,
+    horasHombreTrabajadas: 160000,
     trabajadoresExpuestos: 150,
-    description: 'Auditoría semestral en obra de construcción con 150 trabajadores y 300.000 horas hombre.'
+    description: 'Auditoría semestral en obra de construcción con 150 trabajadores, horas teóricas más horas extras de refuerzo.'
   },
   {
     id: 'indicador-mineria-planta',
@@ -1417,8 +1504,15 @@ export const SAFETY_INDICATOR_PRESETS: SafetyIndicatorPreset[] = [
     establecimiento: 'Complejo Minero San Carlos',
     periodo: 'Ejercicio Anual',
     sector: 'Extracción y Planta de Beneficio',
+    cantidadTrabajadores: 450,
+    diasLaborales: 240,
+    horasJornada: 8,
+    horasExtras: 26000,
+    horasNoTrabajadas: 40000,
     accidentesConBaja: 3,
+    accidentesSinBaja: 12,
     diasPerdidos: 45,
+    factorK: 1000000,
     horasHombreTrabajadas: 850000,
     trabajadoresExpuestos: 450,
     description: 'Yacimiento minero de alta dotación con estrictos estándares preventivos y bajo índice de frecuencia.'
@@ -1430,11 +1524,39 @@ export const SAFETY_INDICATOR_PRESETS: SafetyIndicatorPreset[] = [
     establecimiento: 'Frigorífico Andino',
     periodo: '2° Trimestre',
     sector: 'Despostado y Faena',
+    cantidadTrabajadores: 220,
+    diasLaborales: 65,
+    horasJornada: 8,
+    horasExtras: 4600,
+    horasNoTrabajadas: 4600,
     accidentesConBaja: 12,
+    accidentesSinBaja: 18,
     diasPerdidos: 96,
+    factorK: 1000000,
     horasHombreTrabajadas: 114400,
     trabajadoresExpuestos: 220,
     description: 'Planta procesadora con cortes y trastornos musculoesqueléticos frecuentes en líneas de faena.'
+  },
+  {
+    id: 'indicador-taller-pyme',
+    title: 'Taller PyME Metalúrgica (Factor k = 1.000)',
+    chipLabel: 'PyME (k=1.000)',
+    establecimiento: 'Mecanizados Catamarca PyME',
+    periodo: '1° Trimestre Anual',
+    sector: 'Tornería y Fresado',
+    cantidadTrabajadores: 25,
+    diasLaborales: 65,
+    horasJornada: 8,
+    horasExtras: 350,
+    horasNoTrabajadas: 350,
+    accidentesConBaja: 2,
+    accidentesSinBaja: 5,
+    diasPerdidos: 14,
+    factorK: 1000,
+    horasHombreTrabajadas: 13000,
+    trabajadoresExpuestos: 25,
+    description: 'Caso pedagógico para pequeña empresa utilizando factor k=1.000 (base por cada mil HHT según normativa PyME).'
   }
 ];
+
 

@@ -68,7 +68,7 @@ export const Footer: React.FC<FooterProps> = ({
           {/* COLUMNA 1: IDENTIDAD INSTITUCIONAL */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <HeaderLogo size="md" />
+              <HeaderLogo size="md" showSubtitle={false} />
             </div>
             
             <div className="space-y-1.5">

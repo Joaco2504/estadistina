@@ -287,10 +287,18 @@ export function exportSafetyIndicatorsToExcel(data: SafetyIndicatorsResult) {
   // Insumos de origen
   wsData.push(['1. DATOS PRIMARIOS DE EXPOSICIÓN Y ACCIDENTABILIDAD']);
   wsData.push(['Concepto / Insumo', 'Valor Numérico', 'Unidad de Medida']);
-  wsData.push(['Accidentes con Baja Laboral (N)', data.accidentesConBaja, 'Casos registrados']);
+  wsData.push(['Cantidad de Trabajadores Expuestos (Trab)', data.cantidadTrabajadores, 'Trabajadores en nómina']);
+  wsData.push(['Días Laborales del Período', data.diasLaborales, 'Días hábiles']);
+  wsData.push(['Horas por Jornada de Trabajo', data.horasJornada, 'Horas por jornada']);
+  wsData.push(['Horas Teóricas (Trab × Días × Horas)', data.horasTeoricas, 'Horas teóricas']);
+  wsData.push(['Horas Extras Trabajadas', data.horasExtras, 'Horas extras']);
+  wsData.push(['Horas No Trabajadas (Ausentismo / Licencias)', data.horasNoTrabajadas, 'Horas no trabajadas']);
+  wsData.push(['Horas Persona de Trabajo Efectivas (HPT)', data.horasPersonaTrabajo, 'Horas persona de exposición']);
+  wsData.push(['Factor k Seleccionado', data.factorK, data.baseTextHHT]);
+  wsData.push(['Accidentes con Baja Laboral (N)', data.accidentesConBaja, 'Casos incapacitantes']);
+  wsData.push(['Accidentes sin Baja Laboral', data.accidentesSinBaja, 'Casos leves']);
+  wsData.push(['Total de Accidentes Registrados', data.totalAccidentes, 'Eventos totales']);
   wsData.push(['Jornadas No Trabajadas / Días Perdidos (J)', data.diasPerdidos, 'Días de baja médica']);
-  wsData.push(['Horas-Hombre Efectivamente Trabajadas (HHT)', data.horasHombreTrabajadas, 'Horas persona de exposición']);
-  wsData.push(['Nómina Promedio de Trabajadores Expuestos (Trab)', data.trabajadoresExpuestos, 'Trabajadores en nómina']);
   wsData.push([]);
 
   // Indicadores Oficiales Calculados
@@ -298,19 +306,19 @@ export function exportSafetyIndicatorsToExcel(data: SafetyIndicatorsResult) {
   wsData.push(['Indicador', 'Fórmula Oficial', 'Valor Obtenido', 'Unidad de Medida / Interpretación']);
   wsData.push([
     'Índice de Frecuencia (IF)',
-    '(N * 1.000.000) / HHT',
+    `(N × ${data.kLabel}) / HPT`,
     { t: 'n', v: data.indiceFrecuencia, z: '0.00' },
-    'Accidentes con baja por millón de horas trabajadas'
+    `Accidentes con baja ${data.baseTextHHT}`
   ]);
   wsData.push([
     'Índice de Gravedad (IG)',
-    '(J * 1.000.000) / HHT',
+    `(J × ${data.kLabel}) / HPT`,
     { t: 'n', v: data.indiceGravedad, z: '0.00' },
-    'Jornadas perdidas por millón de horas trabajadas'
+    `Jornadas perdidas ${data.baseTextHHT}`
   ]);
   wsData.push([
     'Índice de Incidencia (II)',
-    '(N * 1.000) / Trab',
+    '(N × 1.000) / Trab',
     { t: 'n', v: data.indiceIncidencia, z: '0.00' },
     'Accidentes con baja por cada 1.000 trabajadores'
   ]);

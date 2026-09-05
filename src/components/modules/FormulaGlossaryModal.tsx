@@ -62,7 +62,7 @@ export const FormulaGlossaryModal: React.FC<FormulaGlossaryModalProps> = ({
               <strong className="text-amber-900 dark:text-amber-300 block font-bold mb-0.5">
                 Criterio Pedagógico de Evaluación Oficial:
               </strong>
-              En esta cátedra no se utiliza el símbolo abstracto $\Sigma$. En todas las resoluciones se debe indicar explícitamente en la fila de cierre:
+              En esta cátedra no se utiliza el símbolo abstracto Σ (sumatoria). En todas las resoluciones se debe indicar explícitamente en la fila de cierre:
               <strong className="text-amber-900 dark:text-amber-300 ml-1">"Total", "Suma total", "Total por fila", "Total por columna" y "Gran Total"</strong>.
             </div>
           </div>
