@@ -62,42 +62,19 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-50 w-full bg-[#0F2942] dark:bg-[#080D1A] border-b border-[#1C4874] dark:border-[#1E293B] shadow-md transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
-        <div className="flex items-center justify-between h-16 sm:h-[4.25rem] gap-2 sm:gap-4">
+        {/* FILA 1: Identidad institucional + acciones rápidas */}
+        <div className="flex items-center justify-between h-14 sm:h-16 gap-2 sm:gap-4">
           {/* Logo e Identidad Institucional */}
           <button 
             type="button"
             onClick={() => onSelectTab('simple')}
-            className="flex items-center text-left hover:opacity-95 transition-opacity cursor-pointer flex-shrink-0"
+            className="flex items-center text-left hover:opacity-95 transition-opacity cursor-pointer flex-shrink-0 min-w-0"
+            aria-label="Volver al módulo de Frecuencias Simples"
           >
             <HeaderLogo size="md" />
           </button>
 
-          {/* Navegación Desktop: Segmented Control Centrado (Sincronizado a md: 768px) */}
-          <nav className="hidden md:flex items-center gap-1 bg-[#0A1D30] dark:bg-[#0F172A] p-1 rounded-2xl border border-[#1C4874] dark:border-[#1E293B] flex-shrink-0">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => onSelectTab(item.id)}
-                  className={`group flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 whitespace-nowrap ${
-                    isActive
-                      ? 'bg-[#10b981] text-white shadow-md ring-2 ring-emerald-400/40'
-                      : 'text-slate-300 hover:text-white hover:bg-white/10'
-                  }`}
-                  title={item.label}
-                >
-                  <Icon className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
-                  <span className="hidden xl:inline">{item.label}</span>
-                  <span className="xl:hidden">{item.shortLabel}</span>
-                </button>
-              );
-            })}
-          </nav>
-
-          {/* Acciones del Header: Toggle Modo Oscuro + Botón Formulario con Animaciones UIverse */}
+          {/* Acciones del Header: Toggle Modo Oscuro + Botón Formulario */}
           <div className="flex items-center gap-2 sm:gap-2.5 flex-shrink-0">
             {/* Botón Switch Modo Oscuro / Claro con Halo Animado */}
             <button
@@ -122,13 +99,37 @@ export const Navbar: React.FC<NavbarProps> = ({
               title="Consultar fórmulas oficiales de la cátedra"
             >
               <FileText className="w-4 h-4 formula-icon text-amber-200 flex-shrink-0" />
-              <span className="hidden sm:inline lg:hidden xl:inline tracking-wide font-bold">Fórmulas Cátedra</span>
-              <span className="hidden lg:inline xl:hidden tracking-wide font-bold">Fórmulas</span>
+              <span className="hidden sm:inline tracking-wide font-bold">Fórmulas de Cátedra</span>
             </button>
           </div>
         </div>
 
-        {/* Barra de Pestañas Móvil (Scroll Horizontal Táctil y Suave para < md) */}
+        {/* FILA 2 (DESKTOP): Segmented Control Centrado en su propia fila */}
+        <nav className="hidden md:flex items-center justify-center gap-1 bg-[#0A1D30] dark:bg-[#0F172A] p-1 rounded-2xl border border-[#1C4874] dark:border-[#1E293B] mb-2.5 overflow-x-auto no-scrollbar">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onSelectTab(item.id)}
+                className={`group flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 whitespace-nowrap ${
+                  isActive
+                    ? 'bg-[#10b981] text-white shadow-md ring-2 ring-emerald-400/40'
+                    : 'text-slate-300 hover:text-white hover:bg-white/10'
+                }`}
+                title={item.label}
+              >
+                <Icon className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${isActive ? 'scale-110' : 'group-hover:scale-110'}`} />
+                <span className="hidden xl:inline">{item.label}</span>
+                <span className="xl:hidden">{item.shortLabel}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* FILA 2 (MOBILE): Barra de Pestañas con Scroll Horizontal Táctil */}
         <div className="md:hidden pb-2.5 pt-1 overflow-x-auto no-scrollbar flex items-center gap-1.5">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -154,4 +155,3 @@ export const Navbar: React.FC<NavbarProps> = ({
     </header>
   );
 };
-

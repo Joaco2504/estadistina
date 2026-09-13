@@ -141,6 +141,14 @@ export const ContingencyTableModule: React.FC = () => {
   const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ContingencyViewMode>('normal');
+  // Casilla seleccionada para mostrar su fórmula de cálculo en las vistas de porcentaje
+  const [selectedCell, setSelectedCell] = useState<{ r: number; c: number } | null>(null);
+
+  // Cambia el modo de vista y limpia la selección (la fórmula depende del modo)
+  const changeViewMode = (mode: ContingencyViewMode) => {
+    setViewMode(mode);
+    setSelectedCell(null);
+  };
 
   // Categorías y matriz: fuente única de verdad (canónica).
   const [rowCategories, setRowCategories] = useState<string[]>(['Mecanizado', 'Soldadura', 'Pintura', 'Depósito']);
@@ -367,7 +375,7 @@ export const ContingencyTableModule: React.FC = () => {
     <div className="flex flex-nowrap sm:flex-wrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-[#131C2E] rounded-xl border border-slate-300/70 dark:border-slate-700/70 select-none overflow-x-auto no-scrollbar">
       <button
         type="button"
-        onClick={() => setViewMode('normal')}
+        onClick={() => changeViewMode('normal')}
         className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'normal'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
@@ -381,7 +389,7 @@ export const ContingencyTableModule: React.FC = () => {
 
       <button
         type="button"
-        onClick={() => setViewMode('percent_total')}
+        onClick={() => changeViewMode('percent_total')}
         className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'percent_total'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
@@ -396,7 +404,7 @@ export const ContingencyTableModule: React.FC = () => {
 
       <button
         type="button"
-        onClick={() => setViewMode('percent_row')}
+        onClick={() => changeViewMode('percent_row')}
         className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'percent_row'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
@@ -411,7 +419,7 @@ export const ContingencyTableModule: React.FC = () => {
 
       <button
         type="button"
-        onClick={() => setViewMode('percent_col')}
+        onClick={() => changeViewMode('percent_col')}
         className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex-shrink-0 ${
           viewMode === 'percent_col'
             ? 'bg-[#0F2942] dark:bg-emerald-600 text-white shadow-xs'
@@ -526,6 +534,12 @@ export const ContingencyTableModule: React.FC = () => {
               {colCategories.map((colCat, cIdx) => {
                 const cellVal = Number(matrix[rIdx]?.[cIdx] ?? 0);
                 const colTot = colMarginalTotals[cIdx];
+                const isSelected = selectedCell !== null && selectedCell.r === rIdx && selectedCell.c === cIdx;
+                const handleCellSelect = () => {
+                  setSelectedCell(prev =>
+                    prev && prev.r === rIdx && prev.c === cIdx ? null : { r: rIdx, c: cIdx }
+                  );
+                };
 
                 if (viewMode === 'normal') {
                   return (
@@ -547,15 +561,22 @@ export const ContingencyTableModule: React.FC = () => {
                 if (viewMode === 'percent_total') {
                   const pct = grandTotal > 0 ? (cellVal / grandTotal) * 100 : 0;
                   return (
-                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-slate-50/60 dark:bg-[#0A1322]/60 min-w-[80px]">
-                      <div className="flex flex-col items-center justify-center">
+                    <td key={`cell-${rIdx}-${cIdx}`} className={`p-1.5 text-center min-w-[80px] transition-colors ${isSelected ? 'bg-emerald-50 dark:bg-emerald-950/40' : 'bg-slate-50/60 dark:bg-[#0A1322]/60'}`}>
+                      <button
+                        type="button"
+                        onClick={handleCellSelect}
+                        aria-pressed={isSelected}
+                        aria-label={`Ver fórmula de cálculo de la celda ${rowCat} × ${colCat} en % del total general`}
+                        title="Ver fórmula de cálculo paso a paso"
+                        className={`w-full flex flex-col items-center justify-center rounded-lg px-1 py-1.5 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-[#10B981] bg-white dark:bg-[#131C2E] shadow-xs' : 'hover:bg-white dark:hover:bg-[#131C2E]'}`}
+                      >
                         <span className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300">
                           {formatPercentage(pct)}
                         </span>
                         <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                           fa = {cellVal}
                         </span>
-                      </div>
+                      </button>
                     </td>
                   );
                 }
@@ -563,15 +584,22 @@ export const ContingencyTableModule: React.FC = () => {
                 if (viewMode === 'percent_row') {
                   const pct = rowTot > 0 ? (cellVal / rowTot) * 100 : 0;
                   return (
-                    <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-blue-50/40 dark:bg-blue-950/30 min-w-[80px]">
-                      <div className="flex flex-col items-center justify-center">
+                    <td key={`cell-${rIdx}-${cIdx}`} className={`p-1.5 text-center min-w-[80px] transition-colors ${isSelected ? 'bg-blue-50 dark:bg-blue-950/40' : 'bg-blue-50/40 dark:bg-blue-950/30'}`}>
+                      <button
+                        type="button"
+                        onClick={handleCellSelect}
+                        aria-pressed={isSelected}
+                        aria-label={`Ver fórmula de cálculo de la celda ${rowCat} × ${colCat} en % del total de la fila`}
+                        title="Ver fórmula de cálculo paso a paso"
+                        className={`w-full flex flex-col items-center justify-center rounded-lg px-1 py-1.5 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-[#10B981] bg-white dark:bg-[#131C2E] shadow-xs' : 'hover:bg-white dark:hover:bg-[#131C2E]'}`}
+                      >
                         <span className="font-mono font-bold text-xs text-blue-700 dark:text-blue-300">
                           {formatPercentage(pct)}
                         </span>
                         <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                           {cellVal} / {rowTot}
                         </span>
-                      </div>
+                      </button>
                     </td>
                   );
                 }
@@ -579,15 +607,22 @@ export const ContingencyTableModule: React.FC = () => {
                 // percent_col
                 const pct = colTot > 0 ? (cellVal / colTot) * 100 : 0;
                 return (
-                  <td key={`cell-${rIdx}-${cIdx}`} className="p-1.5 text-center bg-amber-50/40 dark:bg-amber-950/30 min-w-[80px]">
-                    <div className="flex flex-col items-center justify-center">
+                  <td key={`cell-${rIdx}-${cIdx}`} className={`p-1.5 text-center min-w-[80px] transition-colors ${isSelected ? 'bg-amber-50 dark:bg-amber-950/40' : 'bg-amber-50/40 dark:bg-amber-950/30'}`}>
+                    <button
+                      type="button"
+                      onClick={handleCellSelect}
+                      aria-pressed={isSelected}
+                      aria-label={`Ver fórmula de cálculo de la celda ${rowCat} × ${colCat} en % del total de la columna`}
+                      title="Ver fórmula de cálculo paso a paso"
+                      className={`w-full flex flex-col items-center justify-center rounded-lg px-1 py-1.5 cursor-pointer transition-all ${isSelected ? 'ring-2 ring-[#10B981] bg-white dark:bg-[#131C2E] shadow-xs' : 'hover:bg-white dark:hover:bg-[#131C2E]'}`}
+                    >
                       <span className="font-mono font-bold text-xs text-amber-700 dark:text-amber-300">
                         {formatPercentage(pct)}
                       </span>
                       <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                         {cellVal} / {colTot}
                       </span>
-                    </div>
+                    </button>
                   </td>
                 );
               })}
@@ -815,9 +850,9 @@ export const ContingencyTableModule: React.FC = () => {
                 </div>
               ) : (
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400 italic">
-                  {viewMode === 'percent_total' && 'Porcentajes relativos respecto al Gran Total (n).'}
-                  {viewMode === 'percent_row' && 'Distribución condicional por filas: cada fila totaliza 100%.'}
-                  {viewMode === 'percent_col' && 'Distribución condicional por columnas: cada columna totaliza 100%.'}
+                  {viewMode === 'percent_total' && 'Porcentajes relativos respecto al Gran Total (n). Toca una casilla para ver su fórmula.'}
+                  {viewMode === 'percent_row' && 'Distribución condicional por filas: cada fila totaliza 100%. Toca una casilla para ver su fórmula.'}
+                  {viewMode === 'percent_col' && 'Distribución condicional por columnas: cada columna totaliza 100%. Toca una casilla para ver su fórmula.'}
                 </span>
               )}
             </div>
@@ -845,6 +880,82 @@ export const ContingencyTableModule: React.FC = () => {
         <div className="overflow-x-auto p-3 sm:p-4">
           {renderTableContent()}
         </div>
+
+        {/* Fórmula de resolución de la casilla seleccionada (vistas de porcentaje) */}
+        {selectedCell !== null && viewMode !== 'normal' && (() => {
+          const r = selectedCell.r;
+          const c = selectedCell.c;
+          if (r >= matrix.length || c >= (matrix[r]?.length ?? 0)) return null;
+
+          const fa = Number(matrix[r]?.[c] ?? 0);
+          const rowTot = rowMarginalTotals[r] ?? 0;
+          const colTot = colMarginalTotals[c] ?? 0;
+          const rowCat = rowCategories[r] ?? `Fila ${r + 1}`;
+          const colCat = colCategories[c] ?? `Columna ${c + 1}`;
+
+          let formula = '';
+          let caption = '';
+          let note = '';
+          let accent = 'text-emerald-700 dark:text-emerald-300';
+          // El % debe escaparse para KaTeX (símbolo de comentario en LaTeX)
+          const pctLatex = (val: number) => formatPercentage(val).replace(/%/g, '\\%');
+
+          if (viewMode === 'percent_total') {
+            const pct = grandTotal > 0 ? (fa / grandTotal) * 100 : 0;
+            formula = `p_{ij} = \\frac{fa_{ij}}{n} \\times 100 = \\frac{${fa}}{${grandTotal}} \\times 100 \\approx ${pctLatex(pct)}`;
+            caption = '% del Total General';
+            note = `La casilla «${rowCat} × ${colCat}» concentra ${fa} de las ${grandTotal} observaciones totales: el ${formatPercentage(pct)} del total.`;
+          } else if (viewMode === 'percent_row') {
+            const pct = rowTot > 0 ? (fa / rowTot) * 100 : 0;
+            formula = rowTot > 0
+              ? `p_{ij} = \\frac{fa_{ij}}{\\text{Total fila}} \\times 100 = \\frac{${fa}}{${rowTot}} \\times 100 = ${pctLatex(pct)}`
+              : `p_{ij} = \\frac{fa_{ij}}{\\text{Total fila}} \\times 100 = \\text{No aplica (fila sin casos)}`;
+            caption = '% del Total de la Fila';
+            note = `Dentro de la fila «${rowCat}» (${rowTot} casos en total), la categoría «${colCat}» representa el ${formatPercentage(pct)}.`;
+            accent = 'text-blue-700 dark:text-blue-300';
+          } else {
+            const pct = colTot > 0 ? (fa / colTot) * 100 : 0;
+            formula = colTot > 0
+              ? `p_{ij} = \\frac{fa_{ij}}{\\text{Total columna}} \\times 100 = \\frac{${fa}}{${colTot}} \\times 100 = ${pctLatex(pct)}`
+              : `p_{ij} = \\frac{fa_{ij}}{\\text{Total columna}} \\times 100 = \\text{No aplica (columna sin casos)}`;
+            caption = '% del Total de la Columna';
+            note = `Dentro de la columna «${colCat}» (${colTot} casos en total), la categoría «${rowCat}» aporta el ${formatPercentage(pct)}.`;
+            accent = 'text-amber-700 dark:text-amber-300';
+          }
+
+          return (
+            <div className="border-t border-slate-200 dark:border-slate-800 bg-slate-50/90 dark:bg-[#131C2E] p-4 sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                <div className="flex items-center gap-2 text-xs sm:text-sm text-[#0F2942] dark:text-slate-100 font-bold">
+                  <Info className={`w-4 h-4 ${accent}`} />
+                  <span>
+                    Cálculo de la casilla:{' '}
+                    <span className="font-extrabold text-[#1B8A5A] dark:text-emerald-400">{rowCat}</span>
+                    {' × '}
+                    <span className="font-extrabold text-[#1B8A5A] dark:text-emerald-400">{colCat}</span>
+                    {' — '}
+                    <span className={`${accent} uppercase text-[11px] tracking-wide`}>{caption}</span>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedCell(null)}
+                  className="text-xs text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 underline font-medium cursor-pointer"
+                >
+                  Deseleccionar ✕
+                </button>
+              </div>
+
+              <div className="bg-white dark:bg-[#0A1322] p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 text-center text-sm sm:text-base">
+                <MathFormula formula={formula} displayMode />
+              </div>
+
+              <p className="text-xs text-slate-600 dark:text-slate-300 mt-2.5 leading-relaxed">
+                💡 {note}
+              </p>
+            </div>
+          );
+        })()}
       </div>
 
       {/* Ventana Flotante / Modal a Pantalla Completa para Tabla Bivariada */}

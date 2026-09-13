@@ -309,7 +309,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   onHoverIndex,
   data,
 }) => {
-  const [chartType, setChartType] = useState<'histogram' | 'polygon' | 'pie' | 'ogive'>('histogram');
+  const [chartType, setChartType] = useState<'histogram' | 'polygon' | 'ogive'>('histogram');
   const isDark = useIsDarkMode();
   const isMobile = useIsMobile();
 
@@ -320,7 +320,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   const dynamicYLabel = yLabel || getDescriptiveYLabel(
     variableName,
     unit,
-    chartType === 'ogive' ? 'cumulative' : chartType === 'pie' ? 'percentage' : 'absolute'
+    chartType === 'ogive' ? 'cumulative' : 'absolute'
   );
 
   const cartesianMargin = isMobile
@@ -338,7 +338,6 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {chartType === 'histogram' && `Histograma: Distribución de ${variableName}`}
             {chartType === 'polygon' && `Polígono de Frecuencias: Marcas de Clase Mc (${unit})`}
-            {chartType === 'pie' && `Distribución Porcentual Relativa (%) de ${variableName}`}
             {chartType === 'ogive' && `Ojiva de Frecuencias Acumuladas`}
           </p>
         </div>
@@ -350,19 +349,16 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
           options={[
             { value: 'histogram', label: 'Histograma', title: 'Histograma de Barras Continuas', icon: <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" /> },
             { value: 'polygon', label: 'Polígono', title: 'Polígono de Frecuencias', icon: <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" /> },
-            { value: 'pie', label: 'Circular', title: 'Gráfico Circular de Porcentajes', icon: <PieIcon className="w-3.5 h-3.5 chart-btn-icon" /> },
             { value: 'ogive', label: 'Ojiva (Fa)', title: 'Ojiva de Frecuencias Acumuladas', icon: <Activity className="w-3.5 h-3.5 chart-btn-icon" /> },
           ]}
         />
       </div>
 
       {/* Indicador de Eje Y en móviles para ganar ancho útil */}
-      {chartType !== 'pie' && (
-        <div className="sm:hidden flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 px-0.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span>{dynamicYLabel}</span>
-        </div>
-      )}
+      <div className="sm:hidden flex items-center gap-1.5 text-[11px] font-semibold text-slate-500 dark:text-slate-400 mb-1.5 px-0.5">
+        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+        <span>{dynamicYLabel}</span>
+      </div>
 
       {/* Área del Gráfico Renderizado */}
       <div className="h-80 sm:h-[22rem] w-full min-h-[280px]">
@@ -481,50 +477,6 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   fill="url(#polyGradient)"
                 />
               </AreaChart>
-            )}
-
-            {/* 3. GRÁFICO CIRCULAR (TORTA %) CON TOOLTIP CLARO Y TEXTO TOTALMENTE LEGIBLE */}
-            {chartType === 'pie' && (
-              <PieChart>
-                <Tooltip content={<CustomPieTooltip />} wrapperStyle={{ zIndex: 50, outline: 'none' }} />
-                <Legend 
-                  verticalAlign="bottom" 
-                  height={36} 
-                  formatter={(value: string) => <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{value}</span>}
-                />
-                <Pie
-                  data={data}
-                  dataKey="p"
-                  nameKey="intervalLabel"
-                  cx="50%"
-                  cy="50%"
-                  outerRadius={isMobile ? 70 : 95}
-                  innerRadius={isMobile ? 25 : 35}
-                  paddingAngle={3}
-                  label={(props: PieLabelRenderProps) => formatPercentage(Number(props.value || 0))}
-                  labelLine={true}
-                >
-                  {data.map((_, idx) => {
-                    const isTarget = (selectedIndex != null && selectedIndex === (idx + 1)) || (hoveredIndex != null && hoveredIndex === (idx + 1));
-                    return (
-                      <Cell 
-                        key={`pie-cell-${idx}`} 
-                        fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]} 
-                        stroke={isTarget ? '#F59E0B' : (isDark ? '#0F172A' : '#FFFFFF')}
-                        strokeWidth={isTarget ? 3.5 : 2}
-                        opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.4) : 1}
-                        className="cursor-pointer transition-all duration-150"
-                        onMouseEnter={() => onHoverIndex?.(idx + 1)}
-                        onMouseLeave={() => onHoverIndex?.(null)}
-                        onClick={(e: React.MouseEvent) => {
-                          e.stopPropagation();
-                          onSelectIndex?.(selectedIndex === (idx + 1) ? null : idx + 1);
-                        }}
-                      />
-                    );
-                  })}
-                </Pie>
-              </PieChart>
             )}
 
             {/* 4. OJIVA (FRECUENCIAS ACUMULADAS) */}

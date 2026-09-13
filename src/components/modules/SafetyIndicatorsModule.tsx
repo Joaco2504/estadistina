@@ -90,39 +90,39 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
   const colorStyles = {
     emerald: {
       border: 'border-emerald-200 dark:border-emerald-900/60 hover:border-emerald-400 dark:hover:border-emerald-700',
-      backBorder: 'border-emerald-500/50',
+      backBorder: 'border-emerald-300 dark:border-emerald-500/50',
       badge: 'text-emerald-800 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800',
       value: 'text-[#1B8A5A] dark:text-emerald-400',
       accentText: 'text-emerald-600 dark:text-emerald-400',
-      backHeader: 'text-emerald-400',
-      boxBg: 'bg-[#0D243B] border-emerald-800/40',
+      backHeader: 'text-emerald-700 dark:text-emerald-400',
+      boxBg: 'bg-slate-50 border-slate-200 dark:bg-[#0D243B] dark:border-emerald-800/40',
     },
     amber: {
       border: 'border-amber-200 dark:border-amber-900/60 hover:border-amber-400 dark:hover:border-amber-700',
-      backBorder: 'border-amber-500/50',
+      backBorder: 'border-amber-300 dark:border-amber-500/50',
       badge: 'text-amber-800 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800',
       value: 'text-[#E67E22] dark:text-amber-400',
       accentText: 'text-amber-600 dark:text-amber-400',
-      backHeader: 'text-amber-400',
-      boxBg: 'bg-[#291B0C] border-amber-800/40',
+      backHeader: 'text-amber-700 dark:text-amber-400',
+      boxBg: 'bg-slate-50 border-slate-200 dark:bg-[#291B0C] dark:border-amber-800/40',
     },
     blue: {
       border: 'border-blue-200 dark:border-blue-900/60 hover:border-blue-400 dark:hover:border-blue-700',
-      backBorder: 'border-blue-500/50',
+      backBorder: 'border-blue-300 dark:border-blue-500/50',
       badge: 'text-blue-800 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/60 border-blue-200 dark:border-blue-800',
       value: 'text-blue-600 dark:text-blue-400',
       accentText: 'text-blue-600 dark:text-blue-400',
-      backHeader: 'text-blue-400',
-      boxBg: 'bg-[#0C1E38] border-blue-800/40',
+      backHeader: 'text-blue-700 dark:text-blue-400',
+      boxBg: 'bg-slate-50 border-slate-200 dark:bg-[#0C1E38] dark:border-blue-800/40',
     },
     purple: {
       border: 'border-purple-200 dark:border-purple-900/60 hover:border-purple-400 dark:hover:border-purple-700',
-      backBorder: 'border-purple-500/50',
+      backBorder: 'border-purple-300 dark:border-purple-500/50',
       badge: 'text-purple-800 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/60 border-purple-200 dark:border-purple-800',
       value: 'text-purple-600 dark:text-purple-400',
       accentText: 'text-purple-600 dark:text-purple-400',
-      backHeader: 'text-purple-400',
-      boxBg: 'bg-[#231038] border-purple-800/40',
+      backHeader: 'text-purple-700 dark:text-purple-400',
+      boxBg: 'bg-slate-50 border-slate-200 dark:bg-[#231038] dark:border-purple-800/40',
     },
   }[themeColor];
 
@@ -179,21 +179,21 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
           </div>
         </div>
 
-        {/* DORSO DE LA TARJETA */}
-        <div className={`flip-card-back bg-[#08121E] dark:bg-[#050D17] text-white p-5 rounded-2xl border ${colorStyles.backBorder} shadow-xl flex flex-col justify-between overflow-y-auto`}>
+        {/* DORSO DE LA TARJETA (sigue el tema claro/oscuro de la página) */}
+        <div className={`flip-card-back bg-white dark:bg-[#050D17] text-slate-800 dark:text-white p-5 rounded-2xl border ${colorStyles.backBorder} shadow-xl flex flex-col justify-between overflow-y-auto`}>
           <div className="space-y-2.5">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-800 pb-2">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-2">
               <span className={`text-xs font-bold uppercase tracking-wide ${colorStyles.backHeader}`}>
                 {title} · Desarrollo Paso a Paso
               </span>
-              <span className="text-[11px] font-mono text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-mono text-slate-600 bg-slate-100 dark:text-slate-300 dark:bg-slate-800/90 px-2 py-0.5 rounded-full">
                 Cátedra SySO
               </span>
             </div>
 
             {/* Fórmula KaTeX */}
             <div className={`p-2 rounded-xl border ${colorStyles.boxBg}`}>
-              <span className="text-[11px] uppercase font-bold text-slate-400 block mb-1">
+              <span className="text-[11px] uppercase font-bold text-slate-500 dark:text-slate-400 block mb-1">
                 Fórmula Teórica Oficial:
               </span>
               <MathFormula formula={formulaLatex} />
@@ -207,17 +207,17 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
               <MathFormula formula={substitutionLatex} />
             </div>
 
-            <p className="text-xs text-slate-300 leading-snug">
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-snug">
               {formulaExplanation}
             </p>
           </div>
 
-          <div className="pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] font-semibold text-slate-300">
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300">
             <span className={`flex items-center gap-1.5 ${colorStyles.backHeader}`}>
               <RotateCw className="w-3.5 h-3.5 transition-transform duration-300 group-hover:-rotate-180" />
               Toca para volver al resultado
             </span>
-            <span className="text-[11px] text-slate-400 font-mono">
+            <span className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">
               Frente ↺
             </span>
           </div>
