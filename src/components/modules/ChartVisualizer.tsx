@@ -18,6 +18,7 @@ import {
   Tooltip,
   Legend,
   Cell,
+  type PieLabelRenderProps,
 } from 'recharts';
 import { 
   BarChart2, 
@@ -47,7 +48,21 @@ const DYNAMIC_CHART_COLORS = [
 /**
  * Tooltip personalizado de alto contraste para Gráfico Circular (Torta)
  */
-const CustomPieTooltip = ({ active, payload }: any) => {
+interface PieTooltipEntry {
+  name?: string;
+  value?: number | string;
+  color?: string;
+  payload?: {
+    variableValue?: string | number;
+    intervalLabel?: string;
+    fa?: number;
+    frecuenciaAbsoluta?: number;
+    value?: number;
+    fill?: string;
+  };
+}
+
+const CustomPieTooltip = ({ active, payload }: { active?: boolean; payload?: PieTooltipEntry[] }) => {
   if (active && payload && payload.length) {
     const data = payload[0];
     const categoryName = data.name || data.payload?.variableValue || data.payload?.intervalLabel || 'Categoría';
@@ -78,7 +93,21 @@ const CustomPieTooltip = ({ active, payload }: any) => {
 /**
  * Tooltip personalizado de alto contraste para Histogramas, Barras y Líneas (Compacto y responsivo)
  */
-const CustomCartesianTooltip = ({ active, payload, label, isCumulative }: any) => {
+interface CartesianTooltipEntry {
+  name?: string;
+  value?: number | string;
+  color?: string;
+  payload?: { fill?: string };
+}
+
+interface CartesianTooltipProps {
+  active?: boolean;
+  payload?: CartesianTooltipEntry[];
+  label?: string | number;
+  isCumulative?: boolean;
+}
+
+const CustomCartesianTooltip = ({ active, payload, label, isCumulative = false }: CartesianTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-[#0A1D30]/95 backdrop-blur-md text-white px-3 py-2 rounded-xl border border-[#1C4874] shadow-2xl text-xs space-y-1 max-w-[230px] pointer-events-none">
@@ -86,9 +115,9 @@ const CustomCartesianTooltip = ({ active, payload, label, isCumulative }: any) =
           {label}
         </p>
         <div className="space-y-1 max-h-40 overflow-y-auto no-scrollbar">
-          {payload.map((item: any, idx: number) => {
+          {payload.map((item: CartesianTooltipEntry, idx: number) => {
             const itemColor = item.color || item.payload?.fill || '#1B8A5A';
-            const val = typeof item.value === 'number' ? item.value : item.value;
+            const val = item.value;
             return (
               <div key={idx} className="flex items-center justify-between gap-2.5 font-mono text-[11px]">
                 <span className="flex items-center gap-1.5 text-slate-300 truncate">
@@ -199,6 +228,53 @@ function useIsMobile(): boolean {
 }
 
 /* -------------------------------------------------------------------------- */
+/* Componentes compartidos por todos los visualizadores                        */
+/* (Selector de tipo de gráfico y pie institucional: fuente única de verdad)  */
+/* -------------------------------------------------------------------------- */
+interface ChartTabOption<T extends string> {
+  value: T;
+  label: string;
+  title: string;
+  icon: React.ReactNode;
+}
+
+function ChartTypeTabs<T extends string>({
+  options,
+  active,
+  onChange,
+}: {
+  options: ChartTabOption<T>[];
+  active: T;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          onClick={() => onChange(opt.value)}
+          className={`stat-chart-btn group ${active === opt.value ? 'is-active' : ''}`}
+          title={opt.title}
+        >
+          {opt.icon}
+          <span>{opt.label}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function ChartFooter({ tag }: { tag: string }) {
+  return (
+    <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+      <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
+      <span className="font-mono text-[11px] text-slate-400">{tag}</span>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------- */
 /* 1. VISUALIZADOR DE DATOS AGRUPADOS MULTI-TIPO                              */
 /* (Histograma, Polígono, Circular/Torta, Ojiva)                              */
 /* -------------------------------------------------------------------------- */
@@ -233,14 +309,9 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
   onHoverIndex,
   data,
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
   const [chartType, setChartType] = useState<'histogram' | 'polygon' | 'pie' | 'ogive'>('histogram');
   const isDark = useIsDarkMode();
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   // Eje X: Nombre claro de la variable y unidad obligatoria entre paréntesis
   const formattedXLabel = xLabel || (unit ? `${variableName} (${unit})` : variableName);
@@ -273,47 +344,16 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos con Scroll Horizontal */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
-          <button
-            type="button"
-            onClick={() => setChartType('histogram')}
-            className={`stat-chart-btn group ${chartType === 'histogram' ? 'is-active' : ''}`}
-            title="Histograma de Barras Continuas"
-          >
-            <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Histograma</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setChartType('polygon')}
-            className={`stat-chart-btn group ${chartType === 'polygon' ? 'is-active' : ''}`}
-            title="Polígono de Frecuencias"
-          >
-            <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Polígono</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setChartType('pie')}
-            className={`stat-chart-btn group ${chartType === 'pie' ? 'is-active' : ''}`}
-            title="Gráfico Circular de Porcentajes"
-          >
-            <PieIcon className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Circular</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setChartType('ogive')}
-            className={`stat-chart-btn group ${chartType === 'ogive' ? 'is-active' : ''}`}
-            title="Ojiva de Frecuencias Acumuladas"
-          >
-            <Activity className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Ojiva (Fa)</span>
-          </button>
-        </div>
+        <ChartTypeTabs
+          active={chartType}
+          onChange={setChartType}
+          options={[
+            { value: 'histogram', label: 'Histograma', title: 'Histograma de Barras Continuas', icon: <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" /> },
+            { value: 'polygon', label: 'Polígono', title: 'Polígono de Frecuencias', icon: <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" /> },
+            { value: 'pie', label: 'Circular', title: 'Gráfico Circular de Porcentajes', icon: <PieIcon className="w-3.5 h-3.5 chart-btn-icon" /> },
+            { value: 'ogive', label: 'Ojiva (Fa)', title: 'Ojiva de Frecuencias Acumuladas', icon: <Activity className="w-3.5 h-3.5 chart-btn-icon" /> },
+          ]}
+        />
       </div>
 
       {/* Indicador de Eje Y en móviles para ganar ancho útil */}
@@ -326,8 +366,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
 
       {/* Área del Gráfico Renderizado */}
       <div className="h-80 sm:h-[22rem] w-full min-h-[280px]">
-        {isMounted ? (
-          <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%">
             {/* 1. HISTOGRAMA */}
             {chartType === 'histogram' && (
               <BarChart
@@ -377,11 +416,11 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                         strokeWidth={isTarget ? 3 : 1}
                         opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.45) : 1}
                         className="cursor-pointer transition-all duration-150"
-                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
-                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={(e: any) => {
-                          e?.stopPropagation?.();
-                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        onMouseEnter={() => onHoverIndex?.(idx + 1)}
+                        onMouseLeave={() => onHoverIndex?.(null)}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          onSelectIndex?.(selectedIndex === (idx + 1) ? null : idx + 1);
                         }}
                       />
                     );
@@ -462,7 +501,7 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                   outerRadius={isMobile ? 70 : 95}
                   innerRadius={isMobile ? 25 : 35}
                   paddingAngle={3}
-                  label={(props: any) => formatPercentage(Number(props.value || 0))}
+                  label={(props: PieLabelRenderProps) => formatPercentage(Number(props.value || 0))}
                   labelLine={true}
                 >
                   {data.map((_, idx) => {
@@ -475,11 +514,11 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                         strokeWidth={isTarget ? 3.5 : 2}
                         opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.4) : 1}
                         className="cursor-pointer transition-all duration-150"
-                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
-                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={(e: any) => {
-                          e?.stopPropagation?.();
-                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        onMouseEnter={() => onHoverIndex?.(idx + 1)}
+                        onMouseLeave={() => onHoverIndex?.(null)}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          onSelectIndex?.(selectedIndex === (idx + 1) ? null : idx + 1);
                         }}
                       />
                     );
@@ -534,19 +573,11 @@ export const HistogramVisualizer: React.FC<GroupedChartProps> = ({
                 />
               </LineChart>
             )}
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-xl">
-            <span className="text-xs text-slate-400">Cargando gráfico estadístico...</span>
-          </div>
-        )}
+        </ResponsiveContainer>
       </div>
 
       {/* Pie Institucional */}
-      <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-        <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
-        <span className="font-mono text-[10px] text-slate-400">Visualización Didáctica</span>
-      </div>
+      <ChartFooter tag="Visualización Didáctica" />
     </div>
   );
 };
@@ -586,14 +617,9 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
   onHoverIndex,
   data,
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
   const [chartType, setChartType] = useState<'bar' | 'pie' | 'line'>('bar');
   const isDark = useIsDarkMode();
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const isQualitative = variableType === 'qualitative';
 
@@ -633,37 +659,15 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
-          <button
-            type="button"
-            onClick={() => setChartType('bar')}
-            className={`stat-chart-btn group ${chartType === 'bar' ? 'is-active' : ''}`}
-            title="Diagrama de Barras"
-          >
-            <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Barras</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setChartType('pie')}
-            className={`stat-chart-btn group ${chartType === 'pie' ? 'is-active' : ''}`}
-            title="Gráfico Circular de Porcentajes"
-          >
-            <PieIcon className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Circular</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setChartType('line')}
-            className={`stat-chart-btn group ${chartType === 'line' ? 'is-active' : ''}`}
-            title="Gráfico de Líneas de Frecuencias"
-          >
-            <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Líneas</span>
-          </button>
-        </div>
+        <ChartTypeTabs
+          active={chartType}
+          onChange={setChartType}
+          options={[
+            { value: 'bar', label: 'Barras', title: 'Diagrama de Barras', icon: <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" /> },
+            { value: 'pie', label: 'Circular', title: 'Gráfico Circular de Porcentajes', icon: <PieIcon className="w-3.5 h-3.5 chart-btn-icon" /> },
+            { value: 'line', label: 'Líneas', title: 'Gráfico de Líneas de Frecuencias', icon: <TrendingUp className="w-3.5 h-3.5 chart-btn-icon" /> },
+          ]}
+        />
       </div>
 
       {/* Indicador de Eje Y en móviles para ganar ancho útil */}
@@ -676,8 +680,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 
       {/* Contenedor del Gráfico */}
       <div className="h-80 sm:h-[22rem] w-full min-h-[280px]">
-        {isMounted ? (
-          <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%">
             {/* 1. BARRAS MULTICOLOR */}
             {chartType === 'bar' && (
               <BarChart 
@@ -730,11 +733,11 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                         strokeWidth={isTarget ? 3 : 0}
                         opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.45) : 1}
                         className="cursor-pointer transition-all duration-150"
-                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
-                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={(e: any) => {
-                          e?.stopPropagation?.();
-                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        onMouseEnter={() => onHoverIndex?.(idx + 1)}
+                        onMouseLeave={() => onHoverIndex?.(null)}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          onSelectIndex?.(selectedIndex === (idx + 1) ? null : idx + 1);
                         }}
                       />
                     );
@@ -761,7 +764,7 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                   outerRadius={isMobile ? 70 : 95}
                   innerRadius={isMobile ? 25 : 35}
                   paddingAngle={3}
-                  label={(props: any) => formatPercentage(Number(props.value || 0))}
+                  label={(props: PieLabelRenderProps) => formatPercentage(Number(props.value || 0))}
                   labelLine={true}
                 >
                   {data.map((_, idx) => {
@@ -774,11 +777,11 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                         strokeWidth={isTarget ? 3.5 : 2}
                         opacity={selectedIndex != null || hoveredIndex != null ? (isTarget ? 1 : 0.4) : 1}
                         className="cursor-pointer transition-all duration-150"
-                        onMouseEnter={() => onHoverIndex && onHoverIndex(idx + 1)}
-                        onMouseLeave={() => onHoverIndex && onHoverIndex(null)}
-                        onClick={(e: any) => {
-                          e?.stopPropagation?.();
-                          onSelectIndex && onSelectIndex(selectedIndex === (idx + 1) ? null : idx + 1);
+                        onMouseEnter={() => onHoverIndex?.(idx + 1)}
+                        onMouseLeave={() => onHoverIndex?.(null)}
+                        onClick={(e: React.MouseEvent) => {
+                          e.stopPropagation();
+                          onSelectIndex?.(selectedIndex === (idx + 1) ? null : idx + 1);
                         }}
                       />
                     );
@@ -831,19 +834,11 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
                 />
               </LineChart>
             )}
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-xl">
-            <span className="text-xs text-slate-400">Cargando gráfico...</span>
-          </div>
-        )}
+        </ResponsiveContainer>
       </div>
 
       {/* Pie Institucional */}
-      <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-        <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
-        <span className="font-mono text-[10px] text-slate-400">Diagrama Estadístico</span>
-      </div>
+      <ChartFooter tag="Diagrama Estadístico" />
     </div>
   );
 };
@@ -852,15 +847,19 @@ export const SimpleBarVisualizer: React.FC<SimpleChartProps> = ({
 /* 3. VISUALIZADOR DE CONTINGENCIA MULTI-TIPO                                 */
 /* (Barras Agrupadas, Barras Apiladas)                                       */
 /* -------------------------------------------------------------------------- */
+interface ContingencyChartDatum {
+  categoryX: string;
+  [key: string]: string | number;
+}
+
 interface ContingencyChartProps {
   title: string;
   variableX: string;
   variableY: string;
   xLabel?: string;
   yLabel?: string;
-  categoriesX: string[];
   categoriesY: string[];
-  chartData: any[];
+  chartData: ContingencyChartDatum[];
 }
 
 export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
@@ -869,18 +868,12 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
   variableY,
   xLabel,
   yLabel,
-  categoriesX,
   categoriesY,
   chartData,
 }) => {
-  const [isMounted, setIsMounted] = useState(false);
   const [chartMode, setChartMode] = useState<'grouped' | 'stacked'>('grouped');
   const isDark = useIsDarkMode();
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
 
   const formattedXLabel = xLabel || variableX;
   const dynamicYLabel = yLabel || 'Número de casos observados';
@@ -905,27 +898,14 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
         </div>
 
         {/* Selector de Pestañas de Gráficos */}
-        <div className="flex items-center gap-1.5 bg-slate-100 dark:bg-[#131C2E] p-1.5 rounded-xl border border-slate-200 dark:border-slate-800 overflow-x-auto no-scrollbar max-w-full">
-          <button
-            type="button"
-            onClick={() => setChartMode('grouped')}
-            className={`stat-chart-btn group ${chartMode === 'grouped' ? 'is-active' : ''}`}
-            title="Distribución Conjunta en Barras Agrupadas"
-          >
-            <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Barras Agrupadas</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setChartMode('stacked')}
-            className={`stat-chart-btn group ${chartMode === 'stacked' ? 'is-active' : ''}`}
-            title="Distribución en Barras Apiladas"
-          >
-            <StackIcon className="w-3.5 h-3.5 chart-btn-icon" />
-            <span>Barras Apiladas</span>
-          </button>
-        </div>
+        <ChartTypeTabs
+          active={chartMode}
+          onChange={setChartMode}
+          options={[
+            { value: 'grouped', label: 'Barras Agrupadas', title: 'Distribución Conjunta en Barras Agrupadas', icon: <BarChart2 className="w-3.5 h-3.5 chart-btn-icon" /> },
+            { value: 'stacked', label: 'Barras Apiladas', title: 'Distribución en Barras Apiladas', icon: <StackIcon className="w-3.5 h-3.5 chart-btn-icon" /> },
+          ]}
+        />
       </div>
 
       {/* Leyenda HTML superior interactiva/responsiva que nunca colisiona con el gráfico SVG */}
@@ -949,8 +929,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
 
       {/* Contenedor del Gráfico */}
       <div className="h-80 sm:h-[22rem] w-full min-h-[280px]">
-        {isMounted ? (
-          <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} margin={cartesianMargin}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#334155' : '#E2E8F0'} />
               <XAxis
@@ -986,7 +965,7 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
               {categoriesY.map((catY, idx) => (
                 <Bar
                   key={catY}
-                  dataKey={(row: any) => Number(row[catY] ?? row['col_' + idx] ?? 0)}
+                  dataKey={(row: ContingencyChartDatum) => Number(row[catY] ?? 0)}
                   name={catY}
                   fill={DYNAMIC_CHART_COLORS[idx % DYNAMIC_CHART_COLORS.length]}
                   stackId={chartMode === 'stacked' ? 'stack-a' : undefined}
@@ -994,19 +973,11 @@ export const ContingencyBarVisualizer: React.FC<ContingencyChartProps> = ({
                 />
               ))}
             </BarChart>
-          </ResponsiveContainer>
-        ) : (
-          <div className="h-full w-full flex items-center justify-center bg-slate-50 dark:bg-[#0A1322] rounded-xl">
-            <span className="text-xs text-slate-400">Cargando gráfico bivariado...</span>
-          </div>
-        )}
+        </ResponsiveContainer>
       </div>
 
       {/* Pie Institucional */}
-      <div className="mt-4 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-        <span className="italic font-medium">Fuente: Cátedra de Estadística - I.E.S. Belén</span>
-        <span className="font-mono text-[10px] text-slate-400">Gráfico Bivariado</span>
-      </div>
+      <ChartFooter tag="Gráfico Bivariado" />
     </div>
   );
 };

@@ -26,6 +26,8 @@ export interface IntervalParameters {
   k: number; // Cantidad de intervalos: k = round(sqrt(n))
   amplitud: number; // A = R / k
   precision: number; // Decimales a redondear
+  kCalculatedRaw: number; // √n sin redondear (referencia didáctica)
+  isExactRoot: boolean; // true si √n es entero exacto
 }
 
 /**
@@ -290,6 +292,16 @@ export interface SafetyIndicatorsResult {
   indiceGravedad: number; // IG = (Días Perdidos * k) / HPT
   indiceIncidencia: number; // II = (Accidentes con baja * 1.000) / Trabajadores
   duracionMedia: number; // DM = Días Perdidos / Accidentes con baja
+
+  // Valores exactos sin redondeo para la verificación de coherencia matemática
+  indiceFrecuenciaRaw: number;
+  indiceGravedadRaw: number;
+  duracionMediaRaw: number;
+  coherencia: {
+    producto: number; // IF_raw × DM_raw
+    igExacto: number; // J × k / HPT
+    verifica: boolean; // identidad IG = IF × DM (exacta con N > 0)
+  };
 
   // Textos y etiquetas descriptivas
   baseTextHHT: string; // 'por cada millón HHT' o 'por cada mil HHT'

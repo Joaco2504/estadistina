@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Herramientas de QA locales (no forman parte de la aplicación)
+    "scratch/**",
   ]),
 ]);
 

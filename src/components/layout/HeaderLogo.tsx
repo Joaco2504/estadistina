@@ -2,6 +2,8 @@
 'use client';
 
 import React from 'react';
+import Image from 'next/image';
+import shieldIcon from '@/app/favicon.png';
 
 interface HeaderLogoProps {
   size?: 'sm' | 'md' | 'lg';
@@ -46,9 +48,11 @@ export const HeaderLogo: React.FC<HeaderLogoProps> = ({
   return (
     <div className={`flex items-center gap-2.5 sm:gap-3 select-none ${className}`}>
       {/* Escudo Institucional Oficial con fondo transparente */}
-      <img
-        src="/favicon.png"
+      <Image
+        src={shieldIcon}
         alt="Escudo Institucional I.E.S. de Belén"
+        width={48}
+        height={48}
         className={`${iconSize} object-contain flex-shrink-0 drop-shadow-[0_2px_8px_rgba(16,185,129,0.35)] transition-transform duration-200 hover:scale-105`}
       />
 

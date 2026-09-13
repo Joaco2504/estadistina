@@ -1,7 +1,7 @@
 // src/components/modules/DataInputSection.tsx
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Dices, 
   Sparkles, 
@@ -35,6 +35,13 @@ interface DataInputSectionProps {
   setVariableType?: (type: 'quantitative' | 'qualitative') => void;
   groupedVariableType?: 'continuous' | 'discrete';
   setGroupedVariableType?: (type: 'continuous' | 'discrete') => void;
+  // Estado elevado a la página para mantener sincronizadas las vistas móvil y escritorio
+  sampleSize: number;
+  onSampleSizeChange: (n: number) => void;
+  selectedPresetId: string;
+  onPresetSelect: (id: string) => void;
+  showManualParams: boolean;
+  onToggleManualParams: () => void;
   onCalculateWithValues: (
     customRaw?: string, 
     customVar?: string, 
@@ -42,6 +49,95 @@ interface DataInputSectionProps {
     customType?: 'quantitative' | 'qualitative',
     customGroupedType?: 'continuous' | 'discrete'
   ) => void;
+}
+
+/**
+ * Generador contextual de valores de muestra (fuera del componente:
+ * usa Math.random solo cuando se invoca desde un evento del usuario).
+ */
+function generateSampleValues(
+  varName: string,
+  targetN: number,
+  type: 'quantitative' | 'qualitative',
+  gType: 'continuous' | 'discrete' = 'continuous',
+  mode: 'grouped' | 'simple' = 'simple'
+): (number | string)[] {
+  const count = Math.max(3, Math.min(500, targetN || 25));
+
+  if (type === 'qualitative') {
+    const lower = varName.toLowerCase();
+    let categories = ['Corte en manos', 'Contusión', 'Quemadura térmica', 'Esguince', 'Fractura'];
+
+    if (lower.includes('ocupac') || lower.includes('puesto') || lower.includes('empleo')) {
+      categories = ['Empleado/a', 'Emprendedora', 'Estudiante', 'Operario de Planta', 'Técnico de Seguridad'];
+    } else if (lower.includes('epp') || lower.includes('protec') || lower.includes('condic')) {
+      categories = ['Excelente', 'Bueno', 'Regular', 'Deteriorado'];
+    } else if (lower.includes('riesgo') || lower.includes('ergo') || lower.includes('rula')) {
+      categories = ['Riesgo Bajo', 'Riesgo Moderado', 'Riesgo Alto', 'Riesgo Crítico'];
+    } else if (lower.includes('sector') || lower.includes('planta')) {
+      categories = ['Mecanizado', 'Soldadura', 'Pintura', 'Montaje', 'Depósito'];
+    }
+
+    const qualitativeItems: string[] = [];
+    for (let i = 0; i < count; i++) {
+      const cat = categories[Math.floor(Math.random() * categories.length)];
+      qualitativeItems.push(cat);
+    }
+    return qualitativeItems;
+  }
+
+  // Cuantitativo: evaluar si es discreto o continuo
+  const isDiscrete = mode === 'simple' || gType === 'discrete';
+  let min = 70;
+  let max = 100;
+  let decimals = isDiscrete ? 0 : 1;
+
+  const lower = varName.toLowerCase();
+  if (lower.includes('edad')) {
+    min = 20;
+    max = 60;
+    decimals = 0;
+  } else if (lower.includes('días') || lower.includes('licencia') || lower.includes('jornada') || lower.includes('accidente') || lower.includes('incidente') || lower.includes('simulacro')) {
+    min = 0;
+    max = 25;
+    decimals = 0;
+  } else if (lower.includes('auditor') || lower.includes('5s') || lower.includes('calificac')) {
+    min = 4;
+    max = 10;
+    decimals = 0;
+  } else if (lower.includes('lux') || lower.includes('iluminac')) {
+    min = 180;
+    max = 600;
+    decimals = 0;
+  } else if (lower.includes('co') || lower.includes('monóxido')) {
+    min = 8;
+    max = 35;
+    decimals = 1;
+  } else if (lower.includes('tgbh') || lower.includes('térmic') || lower.includes('calor')) {
+    min = 26;
+    max = 36;
+    decimals = 1;
+  } else if (lower.includes('polvo') || lower.includes('respirab')) {
+    min = 0.5;
+    max = 5.2;
+    decimals = 1;
+  } else if (lower.includes('carga') || lower.includes('peso') || lower.includes('levantam')) {
+    min = 10;
+    max = 26;
+    decimals = 1;
+  } else {
+    min = isDiscrete ? 1 : 75;
+    max = isDiscrete ? 50 : 96;
+    decimals = isDiscrete ? 0 : 1;
+  }
+
+  const randomNumbers: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const rand = Math.random() * (max - min) + min;
+    const rounded = decimals === 0 ? Math.round(rand) : Number(rand.toFixed(decimals));
+    randomNumbers.push(rounded);
+  }
+  return randomNumbers;
 }
 
 export const DataInputSection: React.FC<DataInputSectionProps> = ({
@@ -62,17 +158,18 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
   setVariableType,
   groupedVariableType = 'continuous',
   setGroupedVariableType,
+  sampleSize,
+  onSampleSizeChange,
+  selectedPresetId,
+  onPresetSelect,
+  showManualParams,
+  onToggleManualParams,
   onCalculateWithValues,
 }) => {
-  const [showManualParams, setShowManualParams] = useState(false);
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('');
-  
   // Conteo de elementos según el modo
   const countParsed = mode === 'grouped'
     ? parseGroupedDataString(rawInput, groupedVariableType === 'continuous').length
     : parseAnyDataString(rawInput).length;
-
-  const [customSampleSize, setCustomSampleSize] = useState<number>(countParsed > 0 ? countParsed : 25);
   const n = countParsed;
 
   // Cargar preset predefinido de Higiene y Seguridad respetando o seteando tamaño
@@ -83,7 +180,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     const presetType = preset.variableType || 'quantitative';
     const presetGroupedType = preset.groupedVariableType || 'continuous';
 
-    setSelectedPresetId(presetId);
+    onPresetSelect(presetId);
     setVariableName(preset.variableName);
     setUnit(preset.unit);
 
@@ -95,11 +192,12 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     }
     
     // Generar muestra según el tamaño configurado por el usuario
-    const generated = generateValuesForContext(
-      preset.variableName, 
-      customSampleSize, 
-      presetType, 
-      presetGroupedType
+    const generated = generateSampleValues(
+      preset.variableName,
+      sampleSize,
+      presetType,
+      presetGroupedType,
+      mode
     );
     const dataStr = generated.join('; ');
     setRawInput(dataStr);
@@ -112,103 +210,19 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
     onCalculateWithValues(dataStr, preset.variableName, preset.unit, presetType, presetGroupedType);
   };
 
-  // Generador contextual con tamaño exacto n ingresado por el usuario
-  const generateValuesForContext = (
-    varName: string, 
-    targetN: number, 
-    type: 'quantitative' | 'qualitative',
-    gType: 'continuous' | 'discrete' = 'continuous'
-  ): (number | string)[] => {
-    const count = Math.max(3, Math.min(500, targetN || 25));
-
-    if (type === 'qualitative') {
-      const lower = varName.toLowerCase();
-      let categories = ['Corte en manos', 'Contusión', 'Quemadura térmica', 'Esguince', 'Fractura'];
-      
-      if (lower.includes('ocupac') || lower.includes('puesto') || lower.includes('empleo')) {
-        categories = ['Empleado/a', 'Emprendedora', 'Estudiante', 'Operario de Planta', 'Técnico de Seguridad'];
-      } else if (lower.includes('epp') || lower.includes('protec') || lower.includes('condic')) {
-        categories = ['Excelente', 'Bueno', 'Regular', 'Deteriorado'];
-      } else if (lower.includes('riesgo') || lower.includes('ergo') || lower.includes('rula')) {
-        categories = ['Riesgo Bajo', 'Riesgo Moderado', 'Riesgo Alto', 'Riesgo Crítico'];
-      } else if (lower.includes('sector') || lower.includes('planta')) {
-        categories = ['Mecanizado', 'Soldadura', 'Pintura', 'Montaje', 'Depósito'];
-      }
-
-      const qualitativeItems: string[] = [];
-      for (let i = 0; i < count; i++) {
-        const cat = categories[Math.floor(Math.random() * categories.length)];
-        qualitativeItems.push(cat);
-      }
-      return qualitativeItems;
-    }
-
-    // Cuantitativo: evaluar si es discreto o continuo
-    const isDiscrete = mode === 'simple' || gType === 'discrete';
-    let min = 70;
-    let max = 100;
-    let decimals = isDiscrete ? 0 : 1;
-
-    const lower = varName.toLowerCase();
-    if (lower.includes('edad')) {
-      min = 20;
-      max = 60;
-      decimals = 0;
-    } else if (lower.includes('días') || lower.includes('licencia') || lower.includes('jornada') || lower.includes('accidente') || lower.includes('incidente') || lower.includes('simulacro')) {
-      min = 0;
-      max = 25;
-      decimals = 0;
-    } else if (lower.includes('auditor') || lower.includes('5s') || lower.includes('calificac')) {
-      min = 4;
-      max = 10;
-      decimals = 0;
-    } else if (lower.includes('lux') || lower.includes('iluminac')) {
-      min = 180;
-      max = 600;
-      decimals = 0;
-    } else if (lower.includes('co') || lower.includes('monóxido')) {
-      min = 8;
-      max = 35;
-      decimals = 1;
-    } else if (lower.includes('tgbh') || lower.includes('térmic') || lower.includes('calor')) {
-      min = 26;
-      max = 36;
-      decimals = 1;
-    } else if (lower.includes('polvo') || lower.includes('respirab')) {
-      min = 0.5;
-      max = 5.2;
-      decimals = 1;
-    } else if (lower.includes('carga') || lower.includes('peso') || lower.includes('levantam')) {
-      min = 10;
-      max = 26;
-      decimals = 1;
-    } else {
-      min = isDiscrete ? 1 : 75;
-      max = isDiscrete ? 50 : 96;
-      decimals = isDiscrete ? 0 : 1;
-    }
-
-    const randomNumbers: number[] = [];
-    for (let i = 0; i < count; i++) {
-      const rand = Math.random() * (max - min) + min;
-      const rounded = decimals === 0 ? Math.round(rand) : Number(rand.toFixed(decimals));
-      randomNumbers.push(rounded);
-    }
-    return randomNumbers;
-  };
-
   // Generar muestra aleatoria de tamaño exacto configurado por el alumno
   const handleGenerateCustomN = (overrideN?: number) => {
-    const targetN = overrideN !== undefined ? overrideN : customSampleSize;
+    const targetN = overrideN !== undefined ? overrideN : sampleSize;
     if (overrideN !== undefined) {
-      setCustomSampleSize(overrideN);
+      onSampleSizeChange(overrideN);
     }
 
-    const generated = generateValuesForContext(
-      variableName, 
-      targetN, 
-      variableType, 
-      groupedVariableType
+    const generated = generateSampleValues(
+      variableName,
+      targetN,
+      variableType,
+      groupedVariableType,
+      mode
     );
     const dataStr = generated.join('; ');
     setRawInput(dataStr);
@@ -231,7 +245,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const newUnit = 'Trabajadores';
       setVariableName(newVar);
       setUnit(newUnit);
-      const generated = generateValuesForContext(newVar, customSampleSize, 'qualitative');
+      const generated = generateSampleValues(newVar, sampleSize, 'qualitative', groupedVariableType, mode);
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
       onCalculateWithValues(dataStr, newVar, newUnit, 'qualitative', groupedVariableType);
@@ -240,7 +254,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const newUnit = 'Días corridos';
       setVariableName(newVar);
       setUnit(newUnit);
-      const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative');
+      const generated = generateSampleValues(newVar, sampleSize, 'quantitative', groupedVariableType, mode);
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
       onCalculateWithValues(dataStr, newVar, newUnit, 'quantitative', groupedVariableType);
@@ -257,7 +271,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const newUnit = 'Años';
       setVariableName(newVar);
       setUnit(newUnit);
-      const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative', 'discrete');
+      const generated = generateSampleValues(newVar, sampleSize, 'quantitative', 'discrete', mode);
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
       onCalculateWithValues(dataStr, newVar, newUnit, variableType, 'discrete');
@@ -266,7 +280,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
       const newUnit = 'dBA';
       setVariableName(newVar);
       setUnit(newUnit);
-      const generated = generateValuesForContext(newVar, customSampleSize, 'quantitative', 'continuous');
+      const generated = generateSampleValues(newVar, sampleSize, 'quantitative', 'continuous', mode);
       const dataStr = generated.join('; ');
       setRawInput(dataStr);
       onCalculateWithValues(dataStr, newVar, newUnit, variableType, 'continuous');
@@ -318,13 +332,14 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
         {/* Acciones de Muestra Rápida */}
         <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
           <div className="flex items-center gap-1.5 bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded-lg border border-[#1C4874] dark:border-slate-700">
-            <label className="text-xs text-slate-200 dark:text-slate-300 font-medium">Muestra (n):</label>
+            <label className="text-xs text-slate-200 dark:text-slate-300 font-medium" htmlFor={`sample-size-${mode}`}>Muestra (n):</label>
             <input
+              id={`sample-size-${mode}`}
               type="number"
               min={3}
               max={500}
-              value={customSampleSize}
-              onChange={(e) => setCustomSampleSize(Number(e.target.value))}
+              value={sampleSize === 0 ? '' : sampleSize}
+              onChange={(e) => onSampleSizeChange(e.target.value === '' ? 0 : Math.min(500, Math.max(3, Number(e.target.value))))}
               className="w-12 sm:w-14 bg-[#0A1D30] dark:bg-[#0F172A] text-white font-mono text-xs font-bold text-center px-1 py-0.5 rounded border border-slate-600 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-[#1B8A5A]"
             />
           </div>
@@ -447,7 +462,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
                 type="button"
                 onClick={() => handleGenerateCustomN(size)}
                 className={`px-2 py-0.5 rounded font-mono font-semibold transition-all cursor-pointer ${
-                  customSampleSize === size
+                  sampleSize === size
                     ? 'bg-[#1B8A5A] dark:bg-emerald-600 text-white shadow-2xs'
                     : 'bg-slate-100 dark:bg-[#1E293B] text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
                 }`}
@@ -540,7 +555,7 @@ export const DataInputSection: React.FC<DataInputSectionProps> = ({
           <div className="pt-1">
             <button
               type="button"
-              onClick={() => setShowManualParams(!showManualParams)}
+              onClick={onToggleManualParams}
               className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium transition-colors cursor-pointer"
             >
               <span>Personalizar Parámetros Manuales (R, k, A) - Opcional</span>

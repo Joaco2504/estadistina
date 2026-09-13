@@ -1,7 +1,7 @@
 // src/components/ui/FloatingRowDetailSheet.tsx
 'use client';
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { 
   X, 
   ChevronLeft, 
@@ -10,11 +10,11 @@ import {
   Percent, 
   TrendingUp, 
   Layers, 
-  Info,
   Calculator
 } from 'lucide-react';
 import { SimpleFrequencyRow, GroupedFrequencyRow } from '@/types/statistics';
 import { formatPercentage } from '@/lib/statistics';
+import { useDialog } from '@/lib/useDialog';
 
 interface FloatingRowDetailSheetProps {
   isOpen: boolean;
@@ -41,20 +41,8 @@ export const FloatingRowDetailSheet: React.FC<FloatingRowDetailSheetProps> = ({
   isQualitative = false,
   onNavigateRow,
 }) => {
-  // Cerrar con Escape
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    if (isOpen) {
-      window.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
-    }
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'auto';
-    };
-  }, [isOpen, onClose]);
+  // Cerrar con Escape, bloquear scroll y trampa de foco (hook compartido)
+  const dialogRef = useDialog(isOpen, onClose);
 
   if (!isOpen || !row) return null;
 
@@ -66,11 +54,16 @@ export const FloatingRowDetailSheet: React.FC<FloatingRowDetailSheetProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
       {/* Backdrop clickeable */}
-      <div className="absolute inset-0" onClick={onClose} />
+      <div className="absolute inset-0" onClick={onClose} aria-hidden="true" />
 
       {/* Ventana Flotante / Bottom Sheet */}
-      <div 
-        className="relative w-full max-w-lg bg-white dark:bg-[#0B1726] border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col z-10 animate-in slide-in-from-bottom-8 duration-300"
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Ficha estadística: fila ${row.index} de ${totalRows}`}
+        tabIndex={-1}
+        className="relative w-full max-w-lg bg-white dark:bg-[#0B1726] border-t sm:border border-slate-200 dark:border-slate-800 rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col z-10 animate-in slide-in-from-bottom-8 duration-300 outline-none"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Barra superior de arrastre / Handle táctil */}
@@ -124,6 +117,7 @@ export const FloatingRowDetailSheet: React.FC<FloatingRowDetailSheetProps> = ({
               onClick={onClose}
               className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer"
               title="Cerrar Ficha"
+              aria-label="Cerrar ficha"
             >
               <X className="w-4 h-4" />
             </button>

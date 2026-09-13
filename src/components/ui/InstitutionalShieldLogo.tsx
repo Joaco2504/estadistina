@@ -1,7 +1,7 @@
 // src/components/ui/InstitutionalShieldLogo.tsx
 'use client';
 
-import React from 'react';
+import React, { useId } from 'react';
 
 interface InstitutionalShieldLogoProps {
   size?: number;
@@ -21,6 +21,13 @@ export const InstitutionalShieldLogo: React.FC<InstitutionalShieldLogoProps> = (
   className = '',
   showGlow = true,
 }) => {
+  // IDs únicos por instancia para evitar colisiones de <defs> en el DOM
+  const uid = useId();
+  const shieldLeftGrad = `${uid}-shieldLeftGrad`;
+  const shieldRightGrad = `${uid}-shieldRightGrad`;
+  const goldCoinGrad = `${uid}-goldCoinGrad`;
+  const shieldClip = `${uid}-shieldClip`;
+
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -34,25 +41,25 @@ export const InstitutionalShieldLogo: React.FC<InstitutionalShieldLogoProps> = (
     >
       <defs>
         {/* Gradiente Azul Marino para la mitad izquierda */}
-        <linearGradient id="shieldLeftGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={shieldLeftGrad} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#15385B" />
           <stop offset="100%" stopColor="#0F2942" />
         </linearGradient>
 
         {/* Gradiente Verde Seguridad para la mitad derecha */}
-        <linearGradient id="shieldRightGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={shieldRightGrad} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#10B981" />
           <stop offset="100%" stopColor="#059669" />
         </linearGradient>
 
         {/* Gradiente Dorado para Costos de la Seguridad */}
-        <linearGradient id="goldCoinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <linearGradient id={goldCoinGrad} x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stopColor="#FBBF24" />
           <stop offset="100%" stopColor="#D97706" />
         </linearGradient>
 
         {/* Máscara de recorte del Escudo */}
-        <clipPath id="shieldClip">
+        <clipPath id={shieldClip}>
           <path d="M50 4 C72 16 94 10 94 48 C94 82 66 100 50 108 C34 100 6 82 6 48 C6 10 28 16 50 4 Z" />
         </clipPath>
       </defs>
@@ -67,11 +74,11 @@ export const InstitutionalShieldLogo: React.FC<InstitutionalShieldLogoProps> = (
       />
 
       {/* Cuerpo del Escudo con Mitad Izquierda (Azul) y Derecha (Verde) */}
-      <g clipPath="url(#shieldClip)">
+      <g clipPath={`url(#${shieldClip})`}>
         {/* Mitad Izquierda: Azul Marino */}
-        <rect x="0" y="0" width="50" height="115" fill="url(#shieldLeftGrad)" />
+        <rect x="0" y="0" width="50" height="115" fill={`url(#${shieldLeftGrad})`} />
         {/* Mitad Derecha: Verde Seguridad */}
-        <rect x="50" y="0" width="50" height="115" fill="url(#shieldRightGrad)" />
+        <rect x="50" y="0" width="50" height="115" fill={`url(#${shieldRightGrad})`} />
 
         {/* Línea divisoria central sutil */}
         <line x1="50" y1="4" x2="50" y2="108" stroke="rgba(255,255,255,0.25)" strokeWidth="1" />
@@ -122,7 +129,7 @@ export const InstitutionalShieldLogo: React.FC<InstitutionalShieldLogoProps> = (
       {/* Moneda / Símbolo de Costos de la Seguridad ($) */}
       <g transform="translate(62, 70)">
         <circle cx="16" cy="16" r="15" fill="#071322" stroke="#FFFFFF" strokeWidth="2" />
-        <circle cx="16" cy="16" r="13" fill="url(#goldCoinGrad)" />
+        <circle cx="16" cy="16" r="13" fill={`url(#${goldCoinGrad})`} />
         <text
           x="16"
           y="22.5"

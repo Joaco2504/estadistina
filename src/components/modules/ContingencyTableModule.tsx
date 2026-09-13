@@ -4,26 +4,26 @@
 import React, { useState, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { ContingencyTableResult, ContingencyViewMode } from '@/types/statistics';
-import { 
-  generateContingencyTable, 
-  parseContingencyDataString, 
-  formatContingencyPairsToString, 
-  generateRandomContingencyPairs, 
+import {
+  ContingencyDataEntry,
+  generateContingencyTable,
+  parseContingencyDataString,
+  formatContingencyPairsToString,
+  generateRandomContingencyPairs,
   formatPercentage,
-  SAFETY_PRESETS 
+  SAFETY_PRESETS
 } from '@/lib/statistics';
 import { ContingencyDataInputSection } from './ContingencyDataInputSection';
 import { MathFormula } from '@/components/ui/math-formula';
 import { exportContingencyTableToExcel } from '@/lib/excelExport';
-import { 
-  Table, 
-  Info, 
-  ChevronDown, 
-  ChevronUp, 
-  FileSpreadsheet, 
-  Plus, 
-  Trash2, 
-  Edit3, 
+import { ExcelExportButton } from '@/components/ui/ExcelExportButton';
+import {
+  Table,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Plus,
+  Trash2,
   Maximize2,
   Percent,
   Hash,
@@ -44,197 +44,59 @@ const ContingencyBarVisualizer = dynamic(
   }
 );
 
-export const ContingencyTableModule: React.FC = () => {
-  const defaultPreset = SAFETY_PRESETS.find(p => p.id === 'contingencia-epp')!;
-  
-  const [variableX, setVariableX] = useState<string>(defaultPreset.defaultXName || 'Sector de Planta');
-  const [variableY, setVariableY] = useState<string>(defaultPreset.defaultYName || 'Grado de Uso de EPP');
-  const [selectedPresetId, setSelectedPresetId] = useState<string>('contingencia-epp');
-  const [isFloatingTableOpen, setIsFloatingTableOpen] = useState(false);
-  const [customN, setCustomN] = useState<number>(45);
-  const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ContingencyViewMode>('normal');
+/** Fila del gráfico bivariado: categoría X más una clave numérica por categoría Y. */
+interface ContingencyChartDatum {
+  categoryX: string;
+  [colCategory: string]: string | number;
+}
 
-  // Inicializar rawInput con los pares del caso predefinido
-  const initialPairs = defaultPreset.bivariateDataGenerator ? defaultPreset.bivariateDataGenerator() : [];
-  const [rawInput, setRawInput] = useState<string>(formatContingencyPairsToString(initialPairs));
-  
-  // Categorías y Matriz Directamente Editables
-  const [rowCategories, setRowCategories] = useState<string[]>(['Mecanizado', 'Soldadura', 'Pintura', 'Depósito']);
-  const [colCategories, setColCategories] = useState<string[]>(['Cumple Siempre', 'Uso Parcial', 'No Cumple']);
-  const [matrix, setMatrix] = useState<number[][]>([
-    [12, 3, 1],
-    [9, 4, 2],
-    [7, 2, 0],
-    [3, 1, 1]
-  ]);
-
-  // Detección en vivo de categorías y observaciones para el campo de entrada
-  const parsedCurrentEntries = useMemo(() => {
-    return parseContingencyDataString(rawInput);
-  }, [rawInput]);
-
-  const detectedRows = useMemo(() => {
-    const set = new Set<string>();
-    parsedCurrentEntries.forEach((e) => {
-      if (e.x) set.add(e.x);
-    });
-    return Array.from(set);
-  }, [parsedCurrentEntries]);
-
-  const detectedCols = useMemo(() => {
-    const set = new Set<string>();
-    parsedCurrentEntries.forEach((e) => {
-      if (e.y) set.add(e.y);
-    });
-    return Array.from(set);
-  }, [parsedCurrentEntries]);
-
-  const totalParsedN = useMemo(() => {
-    return parsedCurrentEntries.reduce((acc, curr) => acc + (curr.count || 1), 0);
-  }, [parsedCurrentEntries]);
-
-  // Totales calculados en tiempo real
-  const rowMarginalTotals = matrix.map(row => row.reduce((acc, curr) => acc + (Number(curr) || 0), 0));
-  const colMarginalTotals = colCategories.map((_, cIdx) => 
-    matrix.reduce((acc, row) => acc + (Number(row[cIdx]) || 0), 0)
-  );
-  const grandTotal = rowMarginalTotals.reduce((acc, val) => acc + val, 0);
-
-  // Cargar preset predefinido de Higiene y Seguridad
-  const handleLoadPreset = (presetId: string) => {
-    const preset = SAFETY_PRESETS.find((p) => p.id === presetId);
-    if (!preset) return;
-
-    setSelectedPresetId(presetId);
-    const varX = preset.defaultXName || 'Variable X';
-    const varY = preset.defaultYName || 'Variable Y';
-    setVariableX(varX);
-    setVariableY(varY);
-
-    if (preset.bivariateDataGenerator) {
-      const pairs = preset.bivariateDataGenerator();
-      const rawStr = formatContingencyPairsToString(pairs);
-      setRawInput(rawStr);
-      setCustomN(pairs.length);
-
-      const entries = parseContingencyDataString(rawStr);
-      try {
-        const tableResult = generateContingencyTable(varX, varY, entries);
-        setRowCategories(tableResult.rowCategories);
-        setColCategories(tableResult.colCategories);
-        setMatrix(tableResult.matrix);
-        setErrorMessage(null);
-      } catch (err: any) {
-        setErrorMessage(err.message || 'Error al cargar el caso bivariado.');
+/** Convierte la matriz canónica en pares (solo celdas con conteo > 0). */
+function buildPairsFromMatrix(
+  rowCategories: string[],
+  colCategories: string[],
+  matrix: number[][]
+): ContingencyDataEntry[] {
+  const pairs: ContingencyDataEntry[] = [];
+  for (let r = 0; r < rowCategories.length; r++) {
+    for (let c = 0; c < colCategories.length; c++) {
+      const count = matrix[r]?.[c] ?? 0;
+      if (count > 0) {
+        pairs.push({ x: rowCategories[r], y: colCategories[c], count });
       }
     }
-  };
+  }
+  return pairs;
+}
 
-  // Generar muestra aleatoria de pares con tamaño exacto N
-  const handleRandomize = (overrideN?: number) => {
-    const targetN = overrideN !== undefined ? overrideN : customN;
-    if (overrideN !== undefined) {
-      setCustomN(overrideN);
-    }
+/**
+ * Calcula el resultado de la tabla de contingencia desde la matriz canónica.
+ * Usa generateContingencyTable; ante la ausencia de pares o categorías vacías
+ * (filas/columnas con todas las celdas en cero) devuelve un resultado alineado
+ * a la matriz visible para que Excel y el desglose didáctico coincidan.
+ */
+function computeContingencyResult(
+  variableX: string,
+  variableY: string,
+  rowCategories: string[],
+  colCategories: string[],
+  matrix: number[][]
+): ContingencyTableResult {
+  const rowMarginalTotals = matrix.map((row) => row.reduce((acc, curr) => acc + curr, 0));
+  const colMarginalTotals = colCategories.map((_, cIdx) => matrix.reduce((acc, row) => acc + (row[cIdx] || 0), 0));
+  const grandTotal = rowMarginalTotals.reduce((acc, val) => acc + val, 0);
 
-    const currentRows = rowCategories.length > 0 ? rowCategories : ['Mecanizado', 'Soldadura', 'Pintura', 'Depósito'];
-    const currentCols = colCategories.length > 0 ? colCategories : ['Cumple Siempre', 'Uso Parcial', 'No Cumple'];
+  const pairs = buildPairsFromMatrix(rowCategories, colCategories, matrix);
+  const generated = pairs.length > 0 ? generateContingencyTable(variableX, variableY, pairs) : null;
 
-    const randomPairs = generateRandomContingencyPairs(currentRows, currentCols, targetN);
-    const rawStr = formatContingencyPairsToString(randomPairs);
-    setRawInput(rawStr);
+  if (
+    generated &&
+    generated.rowCategories.length === rowCategories.length &&
+    generated.colCategories.length === colCategories.length
+  ) {
+    return generated;
+  }
 
-    const entries = parseContingencyDataString(rawStr);
-    try {
-      const tableResult = generateContingencyTable(variableX, variableY, entries);
-      setRowCategories(tableResult.rowCategories);
-      setColCategories(tableResult.colCategories);
-      setMatrix(tableResult.matrix);
-      setErrorMessage(null);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Error al generar la muestra aleatoria.');
-    }
-  };
-
-  // Actualizar tabla a partir del campo de texto de datos en bruto
-  const handleUpdateFromRaw = (customInput?: string, customX?: string, customY?: string) => {
-    const textToParse = customInput !== undefined ? customInput : rawInput;
-    const activeX = customX !== undefined ? customX : variableX;
-    const activeY = customY !== undefined ? customY : variableY;
-
-    const entries = parseContingencyDataString(textToParse);
-    if (entries.length === 0) {
-      setErrorMessage('Por favor ingrese al menos un par de observaciones bivariadas válidas (ej: Mecanizado, Cumple Siempre).');
-      return;
-    }
-
-    try {
-      const tableResult = generateContingencyTable(activeX, activeY, entries);
-      setRowCategories(tableResult.rowCategories);
-      setColCategories(tableResult.colCategories);
-      setMatrix(tableResult.matrix);
-      setCustomN(tableResult.grandTotal);
-      setErrorMessage(null);
-    } catch (err: any) {
-      setErrorMessage(err.message || 'Error al procesar los datos bivariados en bruto.');
-    }
-  };
-
-  // Manejo de edición de celdas
-  const handleCellChange = (rIdx: number, cIdx: number, val: string) => {
-    const num = Math.max(0, parseInt(val, 10) || 0);
-    const newMatrix = matrix.map((row, r) => 
-      row.map((cell, c) => (r === rIdx && c === cIdx ? num : cell))
-    );
-    setMatrix(newMatrix);
-  };
-
-  // Manejo de edición de nombres de fila
-  const handleRowCategoryChange = (rIdx: number, newName: string) => {
-    const updated = [...rowCategories];
-    updated[rIdx] = newName;
-    setRowCategories(updated);
-  };
-
-  // Manejo de edición de nombres de columna
-  const handleColCategoryChange = (cIdx: number, newName: string) => {
-    const updated = [...colCategories];
-    updated[cIdx] = newName;
-    setColCategories(updated);
-  };
-
-  // Agregar Fila
-  const handleAddRow = () => {
-    const newRowName = `Categoría Fila ${rowCategories.length + 1}`;
-    setRowCategories([...rowCategories, newRowName]);
-    setMatrix([...matrix, new Array(colCategories.length).fill(1)]);
-  };
-
-  // Eliminar Fila
-  const handleDeleteRow = (rIdx: number) => {
-    if (rowCategories.length <= 2) return;
-    setRowCategories(rowCategories.filter((_, i) => i !== rIdx));
-    setMatrix(matrix.filter((_, i) => i !== rIdx));
-  };
-
-  // Agregar Columna
-  const handleAddCol = () => {
-    const newColName = `Categoría Col ${colCategories.length + 1}`;
-    setColCategories([...colCategories, newColName]);
-    setMatrix(matrix.map(row => [...row, 1]));
-  };
-
-  // Eliminar Columna
-  const handleDeleteCol = (cIdx: number) => {
-    if (colCategories.length <= 2) return;
-    setColCategories(colCategories.filter((_, i) => i !== cIdx));
-    setMatrix(matrix.map(row => row.filter((_, i) => i !== cIdx)));
-  };
-
-  // Objeto estructurado para el Excel y Gráfico
-  const result: ContingencyTableResult = {
+  return {
     variableX,
     variableY,
     sampleSize: grandTotal,
@@ -257,30 +119,252 @@ export const ContingencyTableModule: React.FC = () => {
       })),
       step4ColMarginals: colCategories.map((cat, cIdx) => ({
         category: cat,
-        calculation: matrix.map(r => r[cIdx]).join(' + '),
+        calculation: matrix.map((r) => r[cIdx]).join(' + '),
         total: colMarginalTotals[cIdx],
       })),
       step5GrandTotal: {
-        calculation: rowMarginalTotals.join(' + ') + ' = ' + colMarginalTotals.join(' + '),
+        calculation: `${rowMarginalTotals.join(' + ')} = ${colMarginalTotals.join(' + ')}`,
         total: grandTotal,
       },
     },
   };
+}
 
-  // Transformar matriz para Recharts
-  const chartData = React.useMemo(() => {
+export const ContingencyTableModule: React.FC = () => {
+  const defaultPreset = SAFETY_PRESETS.find(p => p.id === 'contingencia-epp')!;
+
+  const [variableX, setVariableX] = useState<string>(defaultPreset.defaultXName || 'Sector de Planta');
+  const [variableY, setVariableY] = useState<string>(defaultPreset.defaultYName || 'Grado de Uso de EPP');
+  const [selectedPresetId, setSelectedPresetId] = useState<string>('contingencia-epp');
+  const [isFloatingTableOpen, setIsFloatingTableOpen] = useState(false);
+  const [customN, setCustomN] = useState<number>(45);
+  const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<ContingencyViewMode>('normal');
+
+  // Categorías y matriz: fuente única de verdad (canónica).
+  const [rowCategories, setRowCategories] = useState<string[]>(['Mecanizado', 'Soldadura', 'Pintura', 'Depósito']);
+  const [colCategories, setColCategories] = useState<string[]>(['Cumple Siempre', 'Uso Parcial', 'No Cumple']);
+  const [matrix, setMatrix] = useState<number[][]>([
+    [12, 3, 1],
+    [9, 4, 2],
+    [7, 2, 0],
+    [3, 1, 1]
+  ]);
+
+  // Textarea: vista derivada de la matriz (se regenera en cada edición).
+  const [rawInput, setRawInput] = useState<string>(() =>
+    formatContingencyPairsToString(defaultPreset.bivariateDataGenerator?.() ?? [])
+  );
+
+  // Borradores por celda para permitir vaciar el input numérico sin que salte a 0.
+  const [cellDrafts, setCellDrafts] = useState<Record<string, string>>({});
+
+  // Totales derivados de la matriz canónica.
+  const rowMarginalTotals = useMemo(
+    () => matrix.map((row) => row.reduce((acc, curr) => acc + curr, 0)),
+    [matrix]
+  );
+  const colMarginalTotals = useMemo(
+    () => colCategories.map((_, cIdx) => matrix.reduce((acc, row) => acc + (row[cIdx] || 0), 0)),
+    [matrix, colCategories]
+  );
+  const grandTotal = useMemo(
+    () => rowMarginalTotals.reduce((acc, val) => acc + val, 0),
+    [rowMarginalTotals]
+  );
+
+  const result = useMemo<ContingencyTableResult>(
+    () => computeContingencyResult(variableX, variableY, rowCategories, colCategories, matrix),
+    [variableX, variableY, rowCategories, colCategories, matrix]
+  );
+
+  const chartData = useMemo<ContingencyChartDatum[]>(() => {
     return rowCategories.map((rowCat, rIdx) => {
-      const entry: any = { categoryX: rowCat };
+      const entry: ContingencyChartDatum = { categoryX: rowCat };
       colCategories.forEach((colCat, cIdx) => {
         entry[colCat] = Number(matrix[rIdx]?.[cIdx] ?? 0);
-        entry[`col_${cIdx}`] = Number(matrix[rIdx]?.[cIdx] ?? 0);
       });
       return entry;
     });
   }, [rowCategories, colCategories, matrix]);
 
+  // Regenera el textarea a partir de un estado de matriz dado (formato "X, Y: n").
+  const syncRawInputFromMatrix = (rows: string[], cols: string[], m: number[][]) => {
+    setRawInput(formatContingencyPairsToString(buildPairsFromMatrix(rows, cols, m)));
+  };
+
+  // Cargar preset predefinido de Higiene y Seguridad
+  const handleLoadPreset = (presetId: string) => {
+    const preset = SAFETY_PRESETS.find((p) => p.id === presetId);
+    if (!preset) return;
+
+    setSelectedPresetId(presetId);
+    const varX = preset.defaultXName || 'Variable X';
+    const varY = preset.defaultYName || 'Variable Y';
+    setVariableX(varX);
+    setVariableY(varY);
+
+    if (preset.bivariateDataGenerator) {
+      const pairs = preset.bivariateDataGenerator();
+      try {
+        const tableResult = generateContingencyTable(varX, varY, pairs);
+        setRowCategories(tableResult.rowCategories);
+        setColCategories(tableResult.colCategories);
+        setMatrix(tableResult.matrix);
+        syncRawInputFromMatrix(tableResult.rowCategories, tableResult.colCategories, tableResult.matrix);
+        setCustomN(tableResult.grandTotal);
+        setErrorMessage(null);
+      } catch (err: unknown) {
+        setErrorMessage(err instanceof Error ? err.message : 'Error al cargar el caso bivariado.');
+      }
+    }
+  };
+
+  // Generar muestra aleatoria de pares con tamaño exacto N
+  const handleRandomize = (overrideN?: number) => {
+    const targetN = overrideN !== undefined ? overrideN : customN;
+    if (overrideN !== undefined) {
+      setCustomN(overrideN);
+    }
+
+    const currentRows = rowCategories.length > 0 ? rowCategories : ['Mecanizado', 'Soldadura', 'Pintura', 'Depósito'];
+    const currentCols = colCategories.length > 0 ? colCategories : ['Cumple Siempre', 'Uso Parcial', 'No Cumple'];
+
+    const randomPairs = generateRandomContingencyPairs(currentRows, currentCols, targetN);
+    try {
+      const tableResult = generateContingencyTable(variableX, variableY, randomPairs);
+      setRowCategories(tableResult.rowCategories);
+      setColCategories(tableResult.colCategories);
+      setMatrix(tableResult.matrix);
+      syncRawInputFromMatrix(tableResult.rowCategories, tableResult.colCategories, tableResult.matrix);
+      setCustomN(tableResult.grandTotal);
+      setErrorMessage(null);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Error al generar la muestra aleatoria.');
+    }
+  };
+
+  // Actualizar la matriz canónica a partir del borrador del textarea.
+  const handleUpdateFromRaw = () => {
+    const entries = parseContingencyDataString(rawInput);
+    if (entries.length === 0) {
+      setErrorMessage('Por favor ingrese al menos un par de observaciones bivariadas válidas (ej: Mecanizado, Cumple Siempre).');
+      return;
+    }
+
+    try {
+      const tableResult = generateContingencyTable(variableX, variableY, entries);
+      setRowCategories(tableResult.rowCategories);
+      setColCategories(tableResult.colCategories);
+      setMatrix(tableResult.matrix);
+      syncRawInputFromMatrix(tableResult.rowCategories, tableResult.colCategories, tableResult.matrix);
+      setCustomN(tableResult.grandTotal);
+      setErrorMessage(null);
+    } catch (err: unknown) {
+      setErrorMessage(err instanceof Error ? err.message : 'Error al procesar los datos bivariados en bruto.');
+    }
+  };
+
+  // Manejo de edición de celdas (permite vaciar el campo sin saltar a 0 instantáneamente)
+  const handleCellChange = (rIdx: number, cIdx: number, val: string) => {
+    const key = `${rIdx}-${cIdx}`;
+    if (val === '') {
+      setCellDrafts((prev) => ({ ...prev, [key]: '' }));
+      return;
+    }
+    const num = Number(val);
+    if (!Number.isFinite(num)) {
+      setCellDrafts((prev) => ({ ...prev, [key]: val }));
+      return;
+    }
+    const clamped = Math.max(0, Math.floor(num));
+    setCellDrafts((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    const nextMatrix = matrix.map((row, r) =>
+      row.map((cell, c) => (r === rIdx && c === cIdx ? clamped : cell))
+    );
+    setMatrix(nextMatrix);
+    syncRawInputFromMatrix(rowCategories, colCategories, nextMatrix);
+  };
+
+  const handleCellBlur = (rIdx: number, cIdx: number) => {
+    const key = `${rIdx}-${cIdx}`;
+    const draft = cellDrafts[key];
+    setCellDrafts((prev) => {
+      const next = { ...prev };
+      delete next[key];
+      return next;
+    });
+    // Vacío o inválido -> se aplica 0 al perder el foco (mismo criterio de clamp anterior).
+    if (draft === '' || (draft !== undefined && !Number.isFinite(Number(draft)))) {
+      const nextMatrix = matrix.map((row, r) =>
+        row.map((cell, c) => (r === rIdx && c === cIdx ? 0 : cell))
+      );
+      setMatrix(nextMatrix);
+      syncRawInputFromMatrix(rowCategories, colCategories, nextMatrix);
+    }
+  };
+
+  // Manejo de edición de nombres de fila
+  const handleRowCategoryChange = (rIdx: number, newName: string) => {
+    const updated = [...rowCategories];
+    updated[rIdx] = newName;
+    setRowCategories(updated);
+    syncRawInputFromMatrix(updated, colCategories, matrix);
+  };
+
+  // Manejo de edición de nombres de columna
+  const handleColCategoryChange = (cIdx: number, newName: string) => {
+    const updated = [...colCategories];
+    updated[cIdx] = newName;
+    setColCategories(updated);
+    syncRawInputFromMatrix(rowCategories, updated, matrix);
+  };
+
+  // Agregar Fila
+  const handleAddRow = () => {
+    const newRows = [...rowCategories, `Categoría Fila ${rowCategories.length + 1}`];
+    const newMatrix = [...matrix, new Array(colCategories.length).fill(1)];
+    setRowCategories(newRows);
+    setMatrix(newMatrix);
+    syncRawInputFromMatrix(newRows, colCategories, newMatrix);
+  };
+
+  // Eliminar Fila
+  const handleDeleteRow = (rIdx: number) => {
+    if (rowCategories.length <= 2) return;
+    const newRows = rowCategories.filter((_, i) => i !== rIdx);
+    const newMatrix = matrix.filter((_, i) => i !== rIdx);
+    setRowCategories(newRows);
+    setMatrix(newMatrix);
+    syncRawInputFromMatrix(newRows, colCategories, newMatrix);
+  };
+
+  // Agregar Columna
+  const handleAddCol = () => {
+    const newCols = [...colCategories, `Categoría Col ${colCategories.length + 1}`];
+    const newMatrix = matrix.map((row) => [...row, 1]);
+    setColCategories(newCols);
+    setMatrix(newMatrix);
+    syncRawInputFromMatrix(rowCategories, newCols, newMatrix);
+  };
+
+  // Eliminar Columna
+  const handleDeleteCol = (cIdx: number) => {
+    if (colCategories.length <= 2) return;
+    const newCols = colCategories.filter((_, i) => i !== cIdx);
+    const newMatrix = matrix.map((row) => row.filter((_, i) => i !== cIdx));
+    setColCategories(newCols);
+    setMatrix(newMatrix);
+    syncRawInputFromMatrix(rowCategories, newCols, newMatrix);
+  };
+
   const renderViewModeButtons = () => (
-    <div className="flex flex-nowrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-[#131C2E] rounded-xl border border-slate-300/70 dark:border-slate-700/70 select-none overflow-x-auto no-scrollbar">
+    <div className="flex flex-nowrap sm:flex-wrap items-center gap-1 p-1 bg-slate-200/80 dark:bg-[#131C2E] rounded-xl border border-slate-300/70 dark:border-slate-700/70 select-none overflow-x-auto no-scrollbar">
       <button
         type="button"
         onClick={() => setViewMode('normal')}
@@ -352,7 +436,7 @@ export const ContingencyTableModule: React.FC = () => {
               <span className="text-emerald-400 font-extrabold text-[11px] uppercase tracking-wider truncate" title={variableX}>
                 {variableX}
               </span>
-              <span className="text-slate-400 text-[10px] font-medium truncate" title={variableY}>
+              <span className="text-slate-400 text-[11px] font-medium truncate" title={variableY}>
                 ▼ por {variableY}
               </span>
             </div>
@@ -368,6 +452,7 @@ export const ContingencyTableModule: React.FC = () => {
                       onChange={(e) => handleColCategoryChange(cIdx, e.target.value)}
                       className="bg-transparent text-white font-bold text-xs text-center focus:outline-none focus:bg-white/10 hover:bg-white/5 px-1 py-1 rounded w-full min-w-0 border border-transparent focus:border-emerald-400/50 transition-colors"
                       title={`Editar columna: ${colCat}`}
+                      aria-label={`Nombre de la columna: ${colCat}`}
                       placeholder={`Col ${cIdx + 1}`}
                     />
                     {colCategories.length > 2 && (
@@ -376,6 +461,7 @@ export const ContingencyTableModule: React.FC = () => {
                         onClick={() => handleDeleteCol(cIdx)}
                         className="text-slate-400 hover:text-red-400 p-1 rounded hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
                         title="Eliminar columna"
+                        aria-label={`Eliminar columna ${colCat}`}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -413,6 +499,7 @@ export const ContingencyTableModule: React.FC = () => {
                         onChange={(e) => handleRowCategoryChange(rIdx, e.target.value)}
                         className="bg-transparent font-bold text-xs text-[#0F2942] dark:text-slate-100 focus:outline-none focus:bg-white/60 dark:focus:bg-[#131C2E] hover:bg-black/5 dark:hover:bg-white/5 px-1 py-1 rounded w-full min-w-0 border-b border-transparent focus:border-emerald-500/50 transition-colors"
                         title={`Editar fila: ${rowCat}`}
+                        aria-label={`Nombre de la fila: ${rowCat}`}
                         placeholder={`Fila ${rIdx + 1}`}
                       />
                       {rowCategories.length > 2 && (
@@ -421,6 +508,7 @@ export const ContingencyTableModule: React.FC = () => {
                           onClick={() => handleDeleteRow(rIdx)}
                           className="text-slate-400 hover:text-red-500 p-1 rounded hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer flex-shrink-0"
                           title="Eliminar fila"
+                          aria-label={`Eliminar fila ${rowCat}`}
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -435,7 +523,7 @@ export const ContingencyTableModule: React.FC = () => {
               </td>
 
               {/* Celdas centrales según el modo de visualización */}
-              {colCategories.map((_, cIdx) => {
+              {colCategories.map((colCat, cIdx) => {
                 const cellVal = Number(matrix[rIdx]?.[cIdx] ?? 0);
                 const colTot = colMarginalTotals[cIdx];
 
@@ -445,8 +533,11 @@ export const ContingencyTableModule: React.FC = () => {
                       <input
                         type="number"
                         min={0}
-                        value={cellVal}
+                        value={cellDrafts[`${rIdx}-${cIdx}`] ?? String(matrix[rIdx][cIdx])}
                         onChange={(e) => handleCellChange(rIdx, cIdx, e.target.value)}
+                        onBlur={() => handleCellBlur(rIdx, cIdx)}
+                        onFocus={(e) => e.target.select()}
+                        aria-label={`Celda ${rowCat} × ${colCat}`}
                         className="w-full text-center font-mono font-bold text-slate-800 dark:text-slate-100 bg-slate-50 dark:bg-[#0A1322] hover:bg-white dark:hover:bg-[#131C2E] focus:bg-white dark:focus:bg-[#131C2E] focus:ring-2 focus:ring-[#10B981] rounded-lg px-2 py-1.5 border border-slate-200 dark:border-slate-700 text-xs transition-all"
                       />
                     </td>
@@ -461,7 +552,7 @@ export const ContingencyTableModule: React.FC = () => {
                         <span className="font-mono font-bold text-xs text-emerald-700 dark:text-emerald-300">
                           {formatPercentage(pct)}
                         </span>
-                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                        <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                           fa = {cellVal}
                         </span>
                       </div>
@@ -477,7 +568,7 @@ export const ContingencyTableModule: React.FC = () => {
                         <span className="font-mono font-bold text-xs text-blue-700 dark:text-blue-300">
                           {formatPercentage(pct)}
                         </span>
-                        <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                        <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                           {cellVal} / {rowTot}
                         </span>
                       </div>
@@ -493,7 +584,7 @@ export const ContingencyTableModule: React.FC = () => {
                       <span className="font-mono font-bold text-xs text-amber-700 dark:text-amber-300">
                         {formatPercentage(pct)}
                       </span>
-                      <span className="text-[10px] font-mono text-slate-400 dark:text-slate-500">
+                      <span className="text-[11px] font-mono text-slate-400 dark:text-slate-500">
                         {cellVal} / {colTot}
                       </span>
                     </div>
@@ -507,19 +598,19 @@ export const ContingencyTableModule: React.FC = () => {
                 {viewMode === 'percent_total' && (
                   <div className="flex flex-col items-center justify-center">
                     <span>{formatPercentage(grandTotal > 0 ? (rowTot / grandTotal) * 100 : 0)}</span>
-                    <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
+                    <span className="text-[11px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
                   </div>
                 )}
                 {viewMode === 'percent_row' && (
                   <div className="flex flex-col items-center justify-center">
                     <span>100%</span>
-                    <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
+                    <span className="text-[11px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
                   </div>
                 )}
                 {viewMode === 'percent_col' && (
                   <div className="flex flex-col items-center justify-center">
                     <span>{formatPercentage(grandTotal > 0 ? (rowTot / grandTotal) * 100 : 0)}</span>
-                    <span className="text-[10px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
+                    <span className="text-[11px] text-emerald-700/70 dark:text-emerald-300/70">fa = {rowTot}</span>
                   </div>
                 )}
               </td>
@@ -543,19 +634,19 @@ export const ContingencyTableModule: React.FC = () => {
                 {viewMode === 'percent_total' && (
                   <div className="flex flex-col items-center justify-center">
                     <span>{formatPercentage(grandTotal > 0 ? (colTot / grandTotal) * 100 : 0)}</span>
-                    <span className="text-[10px] text-slate-400">fa = {colTot}</span>
+                    <span className="text-[11px] text-slate-400">fa = {colTot}</span>
                   </div>
                 )}
                 {viewMode === 'percent_col' && (
                   <div className="flex flex-col items-center justify-center">
                     <span>100%</span>
-                    <span className="text-[10px] text-slate-400">fa = {colTot}</span>
+                    <span className="text-[11px] text-slate-400">fa = {colTot}</span>
                   </div>
                 )}
                 {viewMode === 'percent_row' && (
                   <div className="flex flex-col items-center justify-center">
                     <span>{formatPercentage(grandTotal > 0 ? (colTot / grandTotal) * 100 : 0)}</span>
-                    <span className="text-[10px] text-slate-400">fa = {colTot}</span>
+                    <span className="text-[11px] text-slate-400">fa = {colTot}</span>
                   </div>
                 )}
               </td>
@@ -567,7 +658,7 @@ export const ContingencyTableModule: React.FC = () => {
             ) : (
               <div className="flex flex-col items-center justify-center">
                 <span>100%</span>
-                <span className="text-[10px] text-emerald-200">n = {grandTotal}</span>
+                <span className="text-[11px] text-emerald-200">n = {grandTotal}</span>
               </div>
             )}
           </td>
@@ -592,17 +683,20 @@ export const ContingencyTableModule: React.FC = () => {
         onLoadPreset={handleLoadPreset}
         onGenerateRandomSample={handleRandomize}
         onUpdateTable={handleUpdateFromRaw}
-        detectedRows={detectedRows}
-        detectedCols={detectedCols}
-        totalParsedN={totalParsedN}
+        rowCategories={rowCategories}
+        colCategories={colCategories}
+        grandTotal={grandTotal}
         errorMessage={errorMessage}
       />
 
       {/* 1. DESGLOSE DIDÁCTICO PASO A PASO */}
       <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <div 
+        <button
+          type="button"
           onClick={() => setShowDidacticSteps(!showDidacticSteps)}
-          className="px-4 sm:px-5 py-3 bg-slate-50 dark:bg-[#0A1322] flex items-center justify-between cursor-pointer border-b border-slate-100 dark:border-slate-800"
+          aria-expanded={showDidacticSteps}
+          aria-controls="didactic-breakdown-panel"
+          className="w-full px-4 sm:px-5 py-3 bg-slate-50 dark:bg-[#0A1322] flex items-center justify-between cursor-pointer border-b border-slate-100 dark:border-slate-800 text-left"
         >
           <div className="flex items-center gap-2 text-[#0F2942] dark:text-slate-200">
             <Info className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
@@ -610,15 +704,17 @@ export const ContingencyTableModule: React.FC = () => {
               Desglose Didáctico de Frecuencias Simples, Conjuntas y Marginales
             </span>
           </div>
-          <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">
-            {showDidacticSteps ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-        </div>
+          {showDidacticSteps ? (
+            <ChevronUp className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+          ) : (
+            <ChevronDown className="w-4 h-4 text-slate-400 dark:text-slate-500" />
+          )}
+        </button>
 
         {showDidacticSteps && (
-          <div className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/50 dark:bg-[#131C2E]">
+          <div id="didactic-breakdown-panel" className="p-4 grid grid-cols-1 sm:grid-cols-3 gap-3 bg-slate-50/50 dark:bg-[#131C2E]">
             <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
+              <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
                 1. Frecuencias Simples
               </span>
               <div className="space-y-1 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
@@ -628,7 +724,7 @@ export const ContingencyTableModule: React.FC = () => {
             </div>
 
             <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
+              <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
                 2. Frecuencias Dobles (fa_ij)
               </span>
               <p className="text-[11px] text-slate-600 dark:text-slate-300 mb-1">Conteo conjunto en cada celda interior:</p>
@@ -636,7 +732,7 @@ export const ContingencyTableModule: React.FC = () => {
             </div>
 
             <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-800 text-xs">
-              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
+              <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 block mb-1">
                 3. Totales Marginales
               </span>
               <p className="text-[11px] text-slate-600 dark:text-slate-300">
@@ -664,68 +760,76 @@ export const ContingencyTableModule: React.FC = () => {
               onClick={() => setIsFloatingTableOpen(true)}
               className="flex items-center gap-1.5 bg-[#15385B] dark:bg-[#1E293B] hover:bg-[#1E4D7B] dark:hover:bg-slate-700 active:scale-95 text-white text-xs font-bold px-3 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer border border-[#1C4874] dark:border-slate-700"
               title="Abrir tabla en Ventana Flotante / Pantalla Completa"
+              aria-label="Abrir tabla en Ventana Flotante / Pantalla Completa"
             >
               <Maximize2 className="w-3.5 h-3.5 text-emerald-300" />
               <span className="hidden sm:inline">Flotante</span>
             </button>
 
             {/* BOTÓN EXPORTAR A EXCEL */}
-            <button
-              type="button"
-              onClick={() => exportContingencyTableToExcel(result, viewMode)}
-              className="flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all shadow-xs cursor-pointer"
-              title="Descargar tabla en formato Excel (.xlsx)"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Excel</span>
-            </button>
+            <ExcelExportButton
+              onExport={() => exportContingencyTableToExcel(result, viewMode)}
+              label="Excel"
+            />
 
-            <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-white border border-[#1C4874] dark:border-slate-700 hidden sm:inline">
-              Gran Total: {grandTotal}
+            <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-white border border-[#1C4874] dark:border-slate-700">
+              <span className="sm:hidden">n = {grandTotal}</span>
+              <span className="hidden sm:inline">Gran Total: {grandTotal}</span>
             </span>
           </div>
         </div>
 
         {/* Barra de Modos de Visualización de la Tabla */}
-        <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0A1322] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
-              <Percent className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Vista de la Tabla:</span>
-            </span>
-            {renderViewModeButtons()}
+        <div className="px-4 py-2.5 bg-slate-50 dark:bg-[#0A1322] border-b border-slate-200 dark:border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wide flex items-center gap-1.5">
+                <Percent className="w-3.5 h-3.5 text-emerald-500" />
+                <span>Vista de la Tabla:</span>
+              </span>
+              {renderViewModeButtons()}
+            </div>
+
+            <div className="flex items-center gap-2">
+              {viewMode === 'normal' ? (
+                <div className="flex items-center gap-1.5 text-xs">
+                  <span className="text-slate-500 dark:text-slate-400 hidden xl:inline mr-1 text-xs">
+                    Haz clic en celdas para editar:
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleAddRow}
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer text-xs"
+                  >
+                    <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
+                    <span>+ Fila</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAddCol}
+                    className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer text-xs"
+                  >
+                    <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
+                    <span>+ Columna</span>
+                  </button>
+                </div>
+              ) : (
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400 italic">
+                  {viewMode === 'percent_total' && 'Porcentajes relativos respecto al Gran Total (n).'}
+                  {viewMode === 'percent_row' && 'Distribución condicional por filas: cada fila totaliza 100%.'}
+                  {viewMode === 'percent_col' && 'Distribución condicional por columnas: cada columna totaliza 100%.'}
+                </span>
+              )}
+            </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            {viewMode === 'normal' ? (
-              <div className="flex items-center gap-1.5 text-xs">
-                <span className="text-slate-500 dark:text-slate-400 hidden xl:inline mr-1 text-[11px]">
-                  Haz clic en celdas para editar:
-                </span>
-                <button
-                  type="button"
-                  onClick={handleAddRow}
-                  className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer text-xs"
-                >
-                  <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
-                  <span>+ Fila</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddCol}
-                  className="flex items-center gap-1 px-2 py-1 rounded bg-white dark:bg-[#131C2E] border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold cursor-pointer text-xs"
-                >
-                  <Plus className="w-3 h-3 text-[#1B8A5A] dark:text-emerald-400" />
-                  <span>+ Columna</span>
-                </button>
-              </div>
-            ) : (
-              <span className="text-[11px] font-medium text-slate-500 dark:text-slate-400 italic">
-                {viewMode === 'percent_total' && 'Porcentajes relativos respecto al Gran Total (n).'}
-                {viewMode === 'percent_row' && 'Distribución condicional por filas: cada fila totaliza 100%.'}
-                {viewMode === 'percent_col' && 'Distribución condicional por columnas: cada columna totaliza 100%.'}
-              </span>
-            )}
+          {/* Pista de desplazamiento horizontal en el selector de modos de vista (móvil) */}
+          <div className="sm:hidden flex items-center justify-between mt-2 px-0.5 text-[11px] text-slate-500 dark:text-slate-400 select-none">
+            <span className="flex items-center gap-1.5 font-medium">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse flex-shrink-0" />
+              Desliza horizontalmente para ver todos los modos de vista
+            </span>
+            <span className="font-bold text-emerald-600 dark:text-emerald-400 flex-shrink-0 text-xs">↔</span>
           </div>
         </div>
 
@@ -768,7 +872,6 @@ export const ContingencyTableModule: React.FC = () => {
         variableY={variableY}
         xLabel={variableX}
         yLabel="Cantidad de Casos Registrados"
-        categoriesX={rowCategories}
         categoriesY={colCategories}
         chartData={chartData}
       />

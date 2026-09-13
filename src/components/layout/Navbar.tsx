@@ -26,21 +26,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   onSelectTab,
   onOpenGlossary,
 }) => {
-  const [theme, setTheme] = useState<ThemeMode>('light');
+  const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const initial = getInitialTheme();
-    setTheme(initial);
-    applyTheme(initial);
-    setMounted(true);
+    applyTheme(theme);
 
-    const handleThemeChange = (e: any) => {
-      if (e.detail) setTheme(e.detail);
+    const handleThemeChange = (e: Event) => {
+      const detail = (e as CustomEvent<ThemeMode>).detail;
+      if (detail === 'dark' || detail === 'light') setTheme(detail);
     };
     window.addEventListener('theme-change', handleThemeChange);
+    // Guarda de hidratación: el icono correcto (Sol/Luna) solo puede decidirse en el cliente.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
     return () => window.removeEventListener('theme-change', handleThemeChange);
-  }, []);
+  }, [theme]);
 
   const toggleTheme = () => {
     const nextTheme: ThemeMode = theme === 'dark' ? 'light' : 'dark';
@@ -81,7 +82,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                   key={item.id}
                   type="button"
                   onClick={() => onSelectTab(item.id)}
-                  className={`group flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3.5 py-1.5 rounded-xl text-[11px] lg:text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 whitespace-nowrap ${
+                  className={`group flex items-center gap-1.5 lg:gap-2 px-2.5 lg:px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 whitespace-nowrap ${
                     isActive
                       ? 'bg-[#10b981] text-white shadow-md ring-2 ring-emerald-400/40'
                       : 'text-slate-300 hover:text-white hover:bg-white/10'
@@ -137,7 +138,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectTab(item.id)}
-                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold transition-all cursor-pointer active:scale-95 whitespace-nowrap ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer active:scale-95 whitespace-nowrap ${
                   isActive
                     ? 'bg-[#10b981] text-white shadow-xs ring-1 ring-emerald-400/40'
                     : 'bg-[#0A1D30] dark:bg-[#0F172A] text-slate-300 dark:text-slate-300 border border-[#1C4874] dark:border-[#1E293B] hover:text-white'

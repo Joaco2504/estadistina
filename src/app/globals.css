@@ -1002,3 +1002,68 @@
 .stat-var-card.is-active .var-icon {
   transform: scale(1.1);
 }
+
+/* ==========================================================================
+   ACCESIBILIDAD: FOCO VISIBLE, MOVIMIENTO REDUCIDO E IMPRESIÓN
+   ========================================================================== */
+
+/* Foco de teclado visible en todos los controles interactivos */
+:focus-visible {
+  outline: 2px solid #10B981;
+  outline-offset: 2px;
+}
+
+.dark :focus-visible {
+  outline-color: #34D399;
+}
+
+/* Respetar la preferencia del sistema de movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Impresión: solo se imprime el contenido marcado como .print-area
+   (por ejemplo, los apuntes de cátedra abiertos en su modal). */
+@media print {
+  header,
+  footer,
+  nav,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-height: none !important;
+    overflow: visible !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 1rem !important;
+  }
+}

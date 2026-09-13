@@ -1,7 +1,7 @@
 // src/components/modules/SimpleFrequenciesModule.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { SimpleFrequencyTableResult } from '@/types/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
@@ -10,7 +10,6 @@ import { formatPercentage } from '@/lib/statistics';
 import { 
   BarChart2, 
   Info,
-  FileSpreadsheet,
   Sparkles,
   Tag,
   Hash,
@@ -19,6 +18,7 @@ import {
 import { StatisticalLoader } from '@/components/ui/StatisticalLoader';
 import { FloatingRowDetailSheet } from '@/components/ui/FloatingRowDetailSheet';
 import { FloatingTableModal } from '@/components/ui/FloatingTableModal';
+import { ExcelExportButton } from '@/components/ui/ExcelExportButton';
 
 const SimpleBarVisualizer = dynamic(
   () => import('./ChartVisualizer').then((mod) => mod.SimpleBarVisualizer),
@@ -84,11 +84,11 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
 
   const isQualitative = data.variableType === 'qualitative';
 
-  const chartData = data.rows.map((row) => ({
+  const chartData = useMemo(() => data.rows.map((row) => ({
     variableValue: row.variableValue,
     fa: row.frecuenciaAbsoluta,
     p: row.porcentaje,
-  }));
+  })), [data.rows]);
 
   const selectedRow = selectedRowIndex !== null ? (data.rows.find((r) => r.index === selectedRowIndex) || null) : null;
 
@@ -364,16 +364,8 @@ export const SimpleFrequenciesModule: React.FC<SimpleFrequenciesModuleProps> = (
               <span className="hidden sm:inline">Flotante</span>
             </button>
 
-            {/* BOTÓN EXPORTAR A EXCEL */}
-            <button
-              type="button"
-              onClick={() => exportSimpleTableToExcel(data)}
-              className="group flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
-              title="Descargar tabla en formato Excel (.xlsx)"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
-              <span className="hidden sm:inline">Excel</span>
-            </button>
+            {/* BOTÓN EXPORTAR A EXCEL (con feedback de progreso/error) */}
+            <ExcelExportButton onExport={() => exportSimpleTableToExcel(data)} />
           </div>
         </div>
 

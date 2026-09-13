@@ -13,29 +13,85 @@ import { CourseNotesModule } from '@/components/modules/CourseNotesModule';
 import { FormulaGlossaryModal } from '@/components/modules/FormulaGlossaryModal';
 import { StatisticalLoader } from '@/components/ui/StatisticalLoader';
 
-import { 
-  ChevronDown, 
-  BarChart3, 
-  Table2, 
-  ShieldCheck, 
-  Layers, 
-  BookOpen 
+import {
+  ChevronDown,
+  BarChart3,
+  Table2,
+  ShieldCheck,
+  Layers,
+  BookOpen
 } from 'lucide-react';
 
-import { 
-  parseGroupedDataString, 
+import {
+  parseGroupedDataString,
   parseAnyDataString,
-  generateGroupedFrequencyTable, 
-  generateSimpleFrequencyTable, 
-  SAFETY_PRESETS 
+  generateGroupedFrequencyTable,
+  generateSimpleFrequencyTable,
+  SAFETY_PRESETS
 } from '@/lib/statistics';
-import { 
-  GroupedFrequencyTableResult, 
-  SimpleFrequencyTableResult 
+import {
+  GroupedFrequencyTableResult,
+  SimpleFrequencyTableResult
 } from '@/types/statistics';
 
+/** Identificadores de los 5 módulos didácticos (orden pedagógico de la Unidad 1) */
+export type ModuleId = 'simple' | 'grouped' | 'indicators' | 'contingency' | 'notes';
+
+interface ModuleMeta {
+  id: ModuleId;
+  title: string;
+  emoji: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge: string;
+  description: string;
+}
+
+/** Definición ÚNICA de módulos: alimenta la vista desktop y el acordeón móvil */
+const MODULES: ModuleMeta[] = [
+  {
+    id: 'simple',
+    title: 'Frecuencias Simples',
+    emoji: '📊',
+    icon: BarChart3,
+    badge: 'Discreta / Cualitativa',
+    description: 'Tablas de frecuencias simples, porcentajes y gráficos de barras',
+  },
+  {
+    id: 'grouped',
+    title: 'Frecuencias Agrupadas',
+    emoji: '📑',
+    icon: Table2,
+    badge: 'k = √n',
+    description: 'Intervalos de clase, marcas de clase e histogramas de frecuencias',
+  },
+  {
+    id: 'indicators',
+    title: 'Indicadores SRT',
+    emoji: '🛡️',
+    icon: ShieldCheck,
+    badge: 'IF · IG · II',
+    description: 'Fórmulas oficiales de accidentabilidad laboral según normativa SRT / IRAM',
+  },
+  {
+    id: 'contingency',
+    title: 'Tabla de Contingencia',
+    emoji: '⊞',
+    icon: Layers,
+    badge: 'Bivariada',
+    description: 'Análisis de frecuencias conjuntas y tablas de doble entrada',
+  },
+  {
+    id: 'notes',
+    title: 'Apuntes de Cátedra',
+    emoji: '📘',
+    icon: BookOpen,
+    badge: 'Teoría & Guía',
+    description: 'Conceptos teóricos de la cátedra, definiciones y fórmulas didácticas',
+  },
+];
+
 export default function HomePage() {
-  // Estado de Carga Inicial con Loader Orbital
+  // Estado de Carga Inicial con Loader Orbital (breve, solo al montar)
   const [isInitialLoading, setIsInitialLoading] = useState<boolean>(true);
 
   // Orden prioritario: 1. Simples, 2. Agrupadas, 3. Indicadores SRT, 4. Contingencia, 5. Apuntes
@@ -45,7 +101,7 @@ export default function HomePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsInitialLoading(false);
-    }, 500);
+    }, 300);
     return () => clearTimeout(timer);
   }, []);
 
@@ -57,23 +113,51 @@ export default function HomePage() {
 
   // Preset inicial
   const defaultSimplePreset = SAFETY_PRESETS.find(p => p.id === 'dias-baja') || SAFETY_PRESETS[0];
-  const [variableName, setVariableName] = useState<string>(defaultSimplePreset.variableName);
-  const [unit, setUnit] = useState<string>(defaultSimplePreset.unit);
-  const [rawInput, setRawInput] = useState<string>(defaultSimplePreset.dataGenerator().join('; '));
-  
+  const initialRawInput = defaultSimplePreset.dataGenerator().join('; ');
+  const initialVariableName = defaultSimplePreset.variableName;
+  const initialUnit = defaultSimplePreset.unit;
+
+  const [variableName, setVariableName] = useState<string>(initialVariableName);
+  const [unit, setUnit] = useState<string>(initialUnit);
+  const [rawInput, setRawInput] = useState<string>(initialRawInput);
+
   // Parámetros manuales opcionales para agrupadas
   const [rango, setRango] = useState<string>('');
   const [kValue, setKValue] = useState<string>('');
   const [amplitud, setAmplitud] = useState<string>('');
 
-  // Estados de Resultados Calculados
-  const [simpleResult, setSimpleResult] = useState<SimpleFrequencyTableResult | null>(null);
-  const [groupedResult, setGroupedResult] = useState<GroupedFrequencyTableResult | null>(null);
+  // Estado local de DataInputSection elevado aquí para mantener sincronizadas
+  // las instancias móvil y escritorio de cada modo (las pestañas no se desmontan).
+  const [simpleSampleSize, setSimpleSampleSize] = useState<number>(20);
+  const [groupedSampleSize, setGroupedSampleSize] = useState<number>(25);
+  const [simplePresetId, setSimplePresetId] = useState<string>('');
+  const [groupedPresetId, setGroupedPresetId] = useState<string>('');
+  const [groupedManualParamsOpen, setGroupedManualParamsOpen] = useState<boolean>(false);
+
+  // Estados de Resultados Calculados (inicializados de forma lazy con el preset de arranque)
+  const [simpleResult, setSimpleResult] = useState<SimpleFrequencyTableResult | null>(() => {
+    try {
+      const parsed = parseAnyDataString(initialRawInput);
+      if (parsed.length === 0) return null;
+      return generateSimpleFrequencyTable(initialVariableName, initialUnit, parsed, 'quantitative');
+    } catch {
+      return null;
+    }
+  });
+  const [groupedResult, setGroupedResult] = useState<GroupedFrequencyTableResult | null>(() => {
+    try {
+      const parsed = parseGroupedDataString(initialRawInput, true);
+      if (parsed.length === 0) return null;
+      return generateGroupedFrequencyTable(initialVariableName, initialUnit, parsed, undefined, 'continuous');
+    } catch {
+      return null;
+    }
+  });
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  // Manejo de cambio de pestaña / módulo
+  // Manejo de cambio de pestaña / módulo (vista desktop)
   const handleTabChange = (tabId: string) => {
-    setActiveTab(prev => (prev === tabId ? tabId : tabId));
+    setActiveTab(tabId);
   };
 
   // Función para colapsar / expandir en vista móvil
@@ -83,9 +167,9 @@ export default function HomePage() {
 
   // Función principal de cálculo
   const handleCalculate = useCallback((
-    customRaw?: string, 
-    customVar?: string, 
-    customUnit?: string, 
+    customRaw?: string,
+    customVar?: string,
+    customUnit?: string,
     customType?: 'quantitative' | 'qualitative',
     customGroupedType?: 'continuous' | 'discrete'
   ) => {
@@ -131,123 +215,98 @@ export default function HomePage() {
         );
         setGroupedResult(grouped);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Ocurrió un error al procesar los datos estadísticos.';
       console.error('Calculation error:', err);
-      setErrorMessage(err.message || 'Ocurrió un error al procesar los datos estadísticos.');
+      setErrorMessage(message);
     }
   }, [rawInput, variableName, unit, variableType, groupedVariableType, rango, kValue, amplitud]);
 
-  // Ejecutar cálculo inicial
-  useEffect(() => {
-    handleCalculate();
-  }, [handleCalculate]);
-
-  // Definición de los 5 módulos para la vista de acordeón móvil
-  const mobileModules = [
-    {
-      id: 'simple',
-      title: 'Frecuencias Simples',
-      emoji: '📊',
-      icon: BarChart3,
-      badge: 'Discreta / Cualitativa',
-      description: 'Tablas de frecuencias simples, porcentajes y gráficos de barras',
-      render: () => (
-        <div className="space-y-6 pt-2">
-          <DataInputSection
-            variableName={variableName}
-            setVariableName={setVariableName}
-            unit={unit}
-            setUnit={setUnit}
-            rawInput={rawInput}
-            setRawInput={setRawInput}
-            rango={rango}
-            setRango={setRango}
-            kValue={kValue}
-            setKValue={setKValue}
-            amplitud={amplitud}
-            setAmplitud={setAmplitud}
-            mode="simple"
-            variableType={variableType}
-            setVariableType={setVariableType}
-            groupedVariableType={groupedVariableType}
-            setGroupedVariableType={setGroupedVariableType}
-            onCalculateWithValues={handleCalculate}
-          />
-          {simpleResult && <SimpleFrequenciesModule data={simpleResult} />}
-        </div>
-      )
-    },
-    {
-      id: 'grouped',
-      title: 'Frecuencias Agrupadas',
-      emoji: '📑',
-      icon: Table2,
-      badge: 'k = √n',
-      description: 'Intervalos de clase, marcas de clase e histogramas de frecuencias',
-      render: () => (
-        <div className="space-y-6 pt-2">
-          <DataInputSection
-            variableName={variableName}
-            setVariableName={setVariableName}
-            unit={unit}
-            setUnit={setUnit}
-            rawInput={rawInput}
-            setRawInput={setRawInput}
-            rango={rango}
-            setRango={setRango}
-            kValue={kValue}
-            setKValue={setKValue}
-            amplitud={amplitud}
-            setAmplitud={setAmplitud}
-            mode="grouped"
-            groupedVariableType={groupedVariableType}
-            setGroupedVariableType={setGroupedVariableType}
-            onCalculateWithValues={handleCalculate}
-          />
-          {groupedResult && <GroupedFrequenciesModule data={groupedResult} />}
-        </div>
-      )
-    },
-    {
-      id: 'indicators',
-      title: 'Indicadores SRT',
-      emoji: '🛡️',
-      icon: ShieldCheck,
-      badge: 'IF · IG · II',
-      description: 'Fórmulas oficiales de accidentabilidad laboral según normativa SRT / IRAM',
-      render: () => (
-        <div className="pt-2">
-          <SafetyIndicatorsModule />
-        </div>
-      )
-    },
-    {
-      id: 'contingency',
-      title: 'Tabla de Contingencia',
-      emoji: '⊞',
-      icon: Layers,
-      badge: 'Bivariada',
-      description: 'Análisis de frecuencias conjuntas y tablas de doble entrada',
-      render: () => (
-        <div className="pt-2">
-          <ContingencyTableModule />
-        </div>
-      )
-    },
-    {
-      id: 'notes',
-      title: 'Apuntes de Cátedra',
-      emoji: '📘',
-      icon: BookOpen,
-      badge: 'Teoría & Guía',
-      description: 'Conceptos teóricos de la cátedra, definiciones y fórmulas didácticas',
-      render: () => (
-        <div className="pt-2">
-          <CourseNotesModule />
-        </div>
-      )
+  /** Renderiza el contenido de un módulo a partir de su id (fuente única de verdad) */
+  const renderModule = (id: ModuleId) => {
+    switch (id) {
+      case 'simple':
+        return (
+          <div className="space-y-6 pt-2">
+            <DataInputSection
+              variableName={variableName}
+              setVariableName={setVariableName}
+              unit={unit}
+              setUnit={setUnit}
+              rawInput={rawInput}
+              setRawInput={setRawInput}
+              rango={rango}
+              setRango={setRango}
+              kValue={kValue}
+              setKValue={setKValue}
+              amplitud={amplitud}
+              setAmplitud={setAmplitud}
+              mode="simple"
+              variableType={variableType}
+              setVariableType={setVariableType}
+              groupedVariableType={groupedVariableType}
+              setGroupedVariableType={setGroupedVariableType}
+              sampleSize={simpleSampleSize}
+              onSampleSizeChange={setSimpleSampleSize}
+              selectedPresetId={simplePresetId}
+              onPresetSelect={setSimplePresetId}
+              showManualParams={false}
+              onToggleManualParams={() => {}}
+              onCalculateWithValues={handleCalculate}
+            />
+            {simpleResult && <SimpleFrequenciesModule data={simpleResult} />}
+          </div>
+        );
+      case 'grouped':
+        return (
+          <div className="space-y-6 pt-2">
+            <DataInputSection
+              variableName={variableName}
+              setVariableName={setVariableName}
+              unit={unit}
+              setUnit={setUnit}
+              rawInput={rawInput}
+              setRawInput={setRawInput}
+              rango={rango}
+              setRango={setRango}
+              kValue={kValue}
+              setKValue={setKValue}
+              amplitud={amplitud}
+              setAmplitud={setAmplitud}
+              mode="grouped"
+              groupedVariableType={groupedVariableType}
+              setGroupedVariableType={setGroupedVariableType}
+              sampleSize={groupedSampleSize}
+              onSampleSizeChange={setGroupedSampleSize}
+              selectedPresetId={groupedPresetId}
+              onPresetSelect={setGroupedPresetId}
+              showManualParams={groupedManualParamsOpen}
+              onToggleManualParams={() => setGroupedManualParamsOpen(prev => !prev)}
+              onCalculateWithValues={handleCalculate}
+            />
+            {groupedResult && <GroupedFrequenciesModule data={groupedResult} />}
+          </div>
+        );
+      case 'indicators':
+        return (
+          <div className="pt-2">
+            <SafetyIndicatorsModule />
+          </div>
+        );
+      case 'contingency':
+        return (
+          <div className="pt-2">
+            <ContingencyTableModule />
+          </div>
+        );
+      case 'notes':
+        return (
+          <div className="pt-2">
+            <CourseNotesModule />
+          </div>
+        );
     }
-  ];
+  };
 
   return (
     <div className="min-h-screen flex flex-col transition-colors duration-150">
@@ -270,9 +329,17 @@ export default function HomePage() {
       ) : (
         /* Contenedor Principal */
         <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6 animate-in fade-in duration-300">
+          {/* Título principal para SEO y lectores de pantalla */}
+          <h1 className="sr-only">
+            Cátedra de Estadística y SySO — I.E.S. de Belén: tablas de frecuencias, indicadores SRT y apuntes
+          </h1>
+
           {/* Mensaje de Error si aplica */}
           {errorMessage && (
-            <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 font-medium">
+            <div
+              role="alert"
+              className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-800 text-xs text-red-700 dark:text-red-300 font-medium"
+            >
               {errorMessage}
             </div>
           )}
@@ -281,9 +348,8 @@ export default function HomePage() {
               2. VISTA MOBILE (< 768px / md:hidden): SISTEMA DE ACORDEONES COLAPSABLES
               ========================================================================= */}
           <div className="md:hidden space-y-3">
-            {mobileModules.map((item) => {
+            {MODULES.map((item) => {
               const isOpen = activeTab === item.id;
-              const Icon = item.icon;
 
               return (
                 <div
@@ -298,6 +364,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => handleMobileAccordionToggle(item.id)}
+                    aria-expanded={isOpen}
                     className="w-full p-4 flex items-center justify-between gap-3 text-left cursor-pointer select-none transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
@@ -314,11 +381,11 @@ export default function HomePage() {
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <h3 className={`text-sm font-bold tracking-wide transition-colors ${
+                          <h2 className={`text-sm font-bold tracking-wide transition-colors ${
                             isOpen ? 'text-[#0F2942] dark:text-white' : 'text-slate-700 dark:text-slate-200'
                           }`}>
                             {item.title}
-                          </h3>
+                          </h2>
                           {item.badge && (
                             <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold transition-colors ${
                               isOpen
@@ -351,7 +418,7 @@ export default function HomePage() {
                   >
                     <div className="overflow-hidden">
                       <div className="p-3.5 pt-0 sm:p-5 sm:pt-0 border-t border-slate-100 dark:border-slate-800/80 mt-1">
-                        {item.render()}
+                        {renderModule(item.id)}
                       </div>
                     </div>
                   </div>
@@ -361,83 +428,19 @@ export default function HomePage() {
           </div>
 
           {/* =========================================================================
-              3. VISTA DESKTOP (>= 768px / hidden md:block): RENDERIZADO DIRECTO DEL MÓDULO
+              3. VISTA DESKTOP (>= 768px / hidden md:block)
+              Todos los módulos permanecen MONTADOS (ocultos con CSS) para que el
+              trabajo del alumno no se pierda al cambiar de pestaña.
               ========================================================================= */}
           <div className="hidden md:block">
-            {/* 1. MÓDULO DE FRECUENCIAS SIMPLES */}
-            {activeTab === 'simple' && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                <DataInputSection
-                  variableName={variableName}
-                  setVariableName={setVariableName}
-                  unit={unit}
-                  setUnit={setUnit}
-                  rawInput={rawInput}
-                  setRawInput={setRawInput}
-                  rango={rango}
-                  setRango={setRango}
-                  kValue={kValue}
-                  setKValue={setKValue}
-                  amplitud={amplitud}
-                  setAmplitud={setAmplitud}
-                  mode="simple"
-                  variableType={variableType}
-                  setVariableType={setVariableType}
-                  groupedVariableType={groupedVariableType}
-                  setGroupedVariableType={setGroupedVariableType}
-                  onCalculateWithValues={handleCalculate}
-                />
-
-                {simpleResult && <SimpleFrequenciesModule data={simpleResult} />}
+            {MODULES.map((item) => (
+              <div
+                key={item.id}
+                className={activeTab === item.id ? 'animate-in fade-in duration-200' : 'hidden'}
+              >
+                {renderModule(item.id)}
               </div>
-            )}
-
-            {/* 2. MÓDULO DE FRECUENCIAS AGRUPADAS */}
-            {activeTab === 'grouped' && (
-              <div className="space-y-6 animate-in fade-in duration-200">
-                <DataInputSection
-                  variableName={variableName}
-                  setVariableName={setVariableName}
-                  unit={unit}
-                  setUnit={setUnit}
-                  rawInput={rawInput}
-                  setRawInput={setRawInput}
-                  rango={rango}
-                  setRango={setRango}
-                  kValue={kValue}
-                  setKValue={setKValue}
-                  amplitud={amplitud}
-                  setAmplitud={setAmplitud}
-                  mode="grouped"
-                  groupedVariableType={groupedVariableType}
-                  setGroupedVariableType={setGroupedVariableType}
-                  onCalculateWithValues={handleCalculate}
-                />
-
-                {groupedResult && <GroupedFrequenciesModule data={groupedResult} />}
-              </div>
-            )}
-
-            {/* 3. MÓDULO DE INDICADORES OFICIALES DE SINIESTRALIDAD (TEMA 4 - UNIDAD 1) */}
-            {activeTab === 'indicators' && (
-              <div className="animate-in fade-in duration-200">
-                <SafetyIndicatorsModule />
-              </div>
-            )}
-
-            {/* 4. MÓDULO DE TABLA DE CONTINGENCIA */}
-            {activeTab === 'contingency' && (
-              <div className="animate-in fade-in duration-200">
-                <ContingencyTableModule />
-              </div>
-            )}
-
-            {/* 5. MÓDULO DE APUNTES DE CÁTEDRA */}
-            {activeTab === 'notes' && (
-              <div className="animate-in fade-in duration-200">
-                <CourseNotesModule />
-              </div>
-            )}
+            ))}
           </div>
         </main>
       )}
@@ -449,7 +452,7 @@ export default function HomePage() {
       />
 
       {/* 4. FOOTER ESTRUCTURADO A 3 COLUMNAS */}
-      <Footer 
+      <Footer
         onOpenGlossary={() => setIsGlossaryOpen(true)}
         onSelectTab={handleTabChange}
       />

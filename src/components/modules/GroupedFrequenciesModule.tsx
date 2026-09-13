@@ -1,7 +1,7 @@
 // src/components/modules/GroupedFrequenciesModule.tsx
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { GroupedFrequencyTableResult } from '@/types/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
@@ -13,13 +13,13 @@ import {
   Info,
   ChevronDown,
   ChevronUp,
-  FileSpreadsheet,
   Sparkles,
   Maximize2
 } from 'lucide-react';
 import { StatisticalLoader } from '@/components/ui/StatisticalLoader';
 import { FloatingRowDetailSheet } from '@/components/ui/FloatingRowDetailSheet';
 import { FloatingTableModal } from '@/components/ui/FloatingTableModal';
+import { ExcelExportButton } from '@/components/ui/ExcelExportButton';
 
 const HistogramVisualizer = dynamic(
   () => import('./ChartVisualizer').then((mod) => mod.HistogramVisualizer),
@@ -46,6 +46,9 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
   const [showDerivation, setShowDerivation] = useState<boolean>(true);
   const [isFloatingTableOpen, setIsFloatingTableOpen] = useState(false);
   const [isRowDetailOpen, setIsRowDetailOpen] = useState(false);
+  // Estado para la interactividad pedagógica en tiempo real (Hover transitorio y Fijación persistente con Clic)
+  const [hoveredStep, setHoveredStep] = useState<'mc' | 'fr' | 'p' | 'acum' | null>(null);
+  const [pinnedStep, setPinnedStep] = useState<'mc' | 'fr' | 'p' | 'acum' | null>(null);
 
   // Escucha clics fuera del módulo para deseleccionar y mostrar el gráfico completo
   useEffect(() => {
@@ -60,10 +63,6 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
       document.removeEventListener('click', handleDocumentClick);
     };
   }, []);
-  
-  // Estado para la interactividad pedagógica en tiempo real (Hover transitorio y Fijación persistente con Clic)
-  const [hoveredStep, setHoveredStep] = useState<'mc' | 'fr' | 'p' | 'acum' | null>(null);
-  const [pinnedStep, setPinnedStep] = useState<'mc' | 'fr' | 'p' | 'acum' | null>(null);
 
   // El paso activo es el hover transitorio si existe, o el paso fijado por clic
   const activeStep = hoveredStep || pinnedStep;
@@ -87,13 +86,13 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
   };
 
   // Transformar datos para los gráficos multi-tipo
-  const chartData = data.rows.map((row) => ({
+  const chartData = useMemo(() => data.rows.map((row) => ({
     intervalLabel: row.intervalLabel,
     marcaDeClase: row.marcaDeClase,
     fa: row.frecuenciaAbsoluta,
     p: row.porcentaje,
     Fa: row.frecuenciaAbsolutaAcumulada,
-  }));
+  })), [data.rows]);
 
   const selectedRow = selectedRowIndex !== null ? (data.rows.find((r) => r.index === selectedRowIndex) || null) : null;
 
@@ -465,16 +464,8 @@ export const GroupedFrequenciesModule: React.FC<GroupedFrequenciesModuleProps> =
               <span className="hidden sm:inline">Flotante</span>
             </button>
 
-            {/* BOTÓN EXPORTAR A EXCEL */}
-            <button
-              type="button"
-              onClick={() => exportGroupedTableToExcel(data)}
-              className="group flex items-center gap-1.5 bg-[#1B8A5A] hover:bg-[#15734A] active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
-              title="Descargar tabla en formato Excel (.xlsx)"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
-              <span className="hidden sm:inline">Excel</span>
-            </button>
+            {/* BOTÓN EXPORTAR A EXCEL (con feedback de progreso/error) */}
+            <ExcelExportButton onExport={() => exportGroupedTableToExcel(data)} />
 
             <span className="text-xs font-mono bg-[#15385B] dark:bg-[#1E293B] px-2.5 py-1 rounded text-slate-200 border border-[#1C4874] dark:border-slate-700 hidden sm:inline">
               k = {data.parameters.k} | A = {data.parameters.amplitud}

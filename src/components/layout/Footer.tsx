@@ -3,18 +3,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  ShieldCheck, 
-  BookOpen, 
-  UserCheck, 
   ArrowUp, 
   Sun, 
   Moon, 
   FileText, 
   Sigma, 
-  Layers, 
-  Activity, 
-  Sparkles,
-  ExternalLink
+  Sparkles
 } from 'lucide-react';
 import { HeaderLogo } from './HeaderLogo';
 import { getInitialTheme, applyTheme, ThemeMode } from '@/lib/utils';
@@ -28,18 +22,18 @@ export const Footer: React.FC<FooterProps> = ({
   onOpenGlossary,
   onSelectTab,
 }) => {
-  const [theme, setTheme] = useState<ThemeMode>('light');
+  const [theme, setTheme] = useState<ThemeMode>(() => getInitialTheme());
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const initial = getInitialTheme();
-    setTheme(initial);
-    setMounted(true);
-
-    const handleThemeChange = (e: any) => {
-      if (e.detail) setTheme(e.detail);
+    const handleThemeChange = (e: Event) => {
+      const detail = (e as CustomEvent<ThemeMode>).detail;
+      if (detail === 'dark' || detail === 'light') setTheme(detail);
     };
     window.addEventListener('theme-change', handleThemeChange);
+    // Guarda de hidratación: el icono correcto (Sol/Luna) solo puede decidirse en el cliente.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
     return () => window.removeEventListener('theme-change', handleThemeChange);
   }, []);
 
@@ -90,7 +84,7 @@ export const Footer: React.FC<FooterProps> = ({
                 Plan Nuevo 2° Año / Plan Viejo 3° Año
               </span>
               <span className="text-[11px] font-medium text-slate-300 flex items-center gap-1 bg-[#132A42] px-2.5 py-1 rounded-md border border-slate-700">
-                <UserCheck className="w-3 h-3 text-amber-400" />
+                <span className="text-amber-400 font-bold">👤</span>
                 Prof. Pacheco E. Joaquín
               </span>
             </div>
@@ -111,7 +105,7 @@ export const Footer: React.FC<FooterProps> = ({
                   className="footer-link text-slate-300 hover:text-emerald-400 cursor-pointer text-left"
                 >
                   <span className="text-emerald-400">▸</span>
-                  <span>Regla de Sturges y Regla de la Raíz (<code className="font-mono text-[11px] text-emerald-300">k = √n</code>)</span>
+                  <span>Regla de Sturges y Regla de la Raíz (<code className="font-mono text-xs text-emerald-300">k = √n</code>)</span>
                 </button>
               </li>
 
@@ -122,7 +116,7 @@ export const Footer: React.FC<FooterProps> = ({
                   className="footer-link text-slate-300 hover:text-emerald-400 cursor-pointer text-left"
                 >
                   <span className="text-emerald-400">▸</span>
-                  <span>Índice de Frecuencia SRT (<code className="font-mono text-[11px] text-cyan-300">IF = N·10⁶ / HHT</code>)</span>
+                  <span>Índice de Frecuencia SRT (<code className="font-mono text-xs text-cyan-300">IF = N·10⁶ / HHT</code>)</span>
                 </button>
               </li>
 
@@ -133,7 +127,7 @@ export const Footer: React.FC<FooterProps> = ({
                   className="footer-link text-slate-300 hover:text-emerald-400 cursor-pointer text-left"
                 >
                   <span className="text-emerald-400">▸</span>
-                  <span>Índice de Gravedad e Incidencia (<code className="font-mono text-[11px] text-cyan-300">IG · II · DM</code>)</span>
+                  <span>Índice de Gravedad e Incidencia (<code className="font-mono text-xs text-cyan-300">IG · II · DM</code>)</span>
                 </button>
               </li>
 
@@ -144,7 +138,7 @@ export const Footer: React.FC<FooterProps> = ({
                   className="footer-link text-slate-300 hover:text-emerald-400 cursor-pointer text-left"
                 >
                   <span className="text-emerald-400">▸</span>
-                  <span>Tabla de Contingencia Bivariada (<code className="font-mono text-[11px] text-amber-300">X × Y</code>)</span>
+                  <span>Tabla de Contingencia Bivariada (<code className="font-mono text-xs text-amber-300">X × Y</code>)</span>
                 </button>
               </li>
 
@@ -222,7 +216,7 @@ export const Footer: React.FC<FooterProps> = ({
           <div>
             © {new Date().getFullYear()} Cátedra de Estadística - I.E.S. de Belén · Catamarca, Argentina.
           </div>
-          <div className="flex items-center gap-3 text-[11px] text-slate-400">
+          <div className="flex items-center gap-3 text-xs text-slate-400">
             <span>Material Didáctico Académico</span>
             <span>•</span>
             <span>Seguridad e Higiene Industrial</span>

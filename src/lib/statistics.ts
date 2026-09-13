@@ -474,25 +474,36 @@ export interface ContingencyDataEntry {
  * 2. Pares con frecuencias o multiplicadores:
  *    "Mecanizado, Cumple Siempre: 12" o "12x Soldadura, Uso Parcial"
  * 3. Copiado y pegado directo desde Excel (delimitado por tabulaciones '\t')
+ * 4. Mezcla de saltos de línea y ';' como separadores de registros.
  */
 export function parseContingencyDataString(input: string): ContingencyDataEntry[] {
   if (!input || !input.trim()) return [];
 
-  let rawLines: string[] = [];
-  if (input.includes('\n')) {
-    rawLines = input.split('\n');
-  } else if (input.includes(';')) {
-    rawLines = input.split(';');
-  } else {
-    rawLines = [input];
+  // Separadores de par (dentro de un registro): tabulación, coma, |, " - ", " / ", ";"
+  const hasPairSeparator = (line: string) =>
+    /[,\t|]| - | \/ /.test(line);
+
+  // Dividir el input en registros:
+  // - Los saltos de línea siempre separan registros.
+  // - Si una línea contiene ';' además de un separador de par, el ';' separa registros.
+  const rawRecords: string[] = [];
+  for (const rawLine of input.split('\n')) {
+    const trimmed = rawLine.trim();
+    if (!trimmed) continue;
+    if (trimmed.includes(';') && hasPairSeparator(trimmed)) {
+      for (const part of trimmed.split(';')) {
+        const p = part.trim();
+        if (p) rawRecords.push(p);
+      }
+    } else {
+      rawRecords.push(trimmed);
+    }
   }
 
   const entries: ContingencyDataEntry[] = [];
 
-  for (const rawLine of rawLines) {
-    let line = rawLine.trim();
-    if (!line) continue;
-
+  for (const record of rawRecords) {
+    let line = record;
     let count = 1;
 
     // Multiplicador inicial: ej. "12x Mecanizado, Cumple" o "12 * Mecanizado, Cumple"
@@ -522,15 +533,17 @@ export function parseContingencyDataString(input: string): ContingencyDataEntry[
           count = parseInt(parts[2], 10) || count;
         }
       }
-    } else if (line.includes(' | ') || line.includes('|')) {
-      const parts = line.split('|').map((p) => p.trim()).filter((p) => p.length > 0);
+    } else if (line.includes(',')) {
+      // La coma tiene prioridad: las categorías pueden contener " / ", " - " o "|" internos
+      const parts = line.split(',').map((p) => p.trim()).filter((p) => p.length > 0);
       if (parts.length >= 2) {
         x = parts[0];
-        y = parts[1];
-        if (parts.length >= 3 && !isNaN(Number(parts[2]))) {
-          count = parseInt(parts[2], 10) || count;
-        }
+        y = parts.slice(1).join(', ');
       }
+    } else if (line.includes(' | ')) {
+      const parts = line.split(' | ').map((p) => p.trim());
+      x = parts[0];
+      y = parts.slice(1).join(' | ');
     } else if (line.includes(' - ')) {
       const parts = line.split(' - ').map((p) => p.trim());
       x = parts[0];
@@ -539,24 +552,8 @@ export function parseContingencyDataString(input: string): ContingencyDataEntry[
       const parts = line.split(' / ').map((p) => p.trim());
       x = parts[0];
       y = parts.slice(1).join(' / ');
-    } else if (line.includes(',')) {
-      const parts = line.split(',').map((p) => p.trim());
-      if (parts.length === 2) {
-        x = parts[0];
-        y = parts[1];
-      } else if (parts.length >= 3) {
-        const lastPart = parts[parts.length - 1];
-        if (!isNaN(Number(lastPart)) && count === 1) {
-          count = parseInt(lastPart, 10) || 1;
-          x = parts[0];
-          y = parts.slice(1, -1).join(', ');
-        } else {
-          x = parts[0];
-          y = parts.slice(1).join(', ');
-        }
-      }
     } else if (line.includes(';')) {
-      const parts = line.split(';').map((p) => p.trim());
+      const parts = line.split(';').map((p) => p.trim()).filter((p) => p.length > 0);
       if (parts.length >= 2) {
         x = parts[0];
         y = parts[1];
@@ -701,6 +698,28 @@ export function generateContingencyTable(
 /**
  * CASOS PRÁCTICOS DE HIGIENE, SEGURIDAD Y MEDIO AMBIENTE
  */
+
+/**
+ * Generador declarativo de pares bivariados a partir de una matriz de conteos.
+ * Evita duplicar bucles anidados en cada preset de contingencia.
+ */
+function makeBivariateGenerator(
+  rows: string[],
+  cols: string[],
+  counts: Record<string, Record<string, number>>
+): () => { x: string; y: string }[] {
+  return () => {
+    const data: { x: string; y: string }[] = [];
+    for (const row of rows) {
+      for (const col of cols) {
+        const count = counts[row]?.[col] ?? 0;
+        for (let i = 0; i < count; i++) data.push({ x: row, y: col });
+      }
+    }
+    return data;
+  };
+}
+
 export const SAFETY_PRESETS: SafetyPreset[] = [
   // --- FRECUENCIAS SIMPLES: CUALITATIVAS ---
   {
@@ -947,24 +966,16 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     defaultXName: 'Sector de Planta',
     defaultYName: 'Grado de Uso de EPP',
     dataGenerator: () => [],
-    bivariateDataGenerator: () => {
-      const data: { x: string; y: string }[] = [];
-      const sectors = ['Mecanizado', 'Soldadura', 'Pintura', 'Depósito'];
-      const compliance = ['Cumple Siempre', 'Uso Parcial', 'No Cumple'];
-      const counts: Record<string, Record<string, number>> = {
+    bivariateDataGenerator: makeBivariateGenerator(
+      ['Mecanizado', 'Soldadura', 'Pintura', 'Depósito'],
+      ['Cumple Siempre', 'Uso Parcial', 'No Cumple'],
+      {
         'Mecanizado': { 'Cumple Siempre': 12, 'Uso Parcial': 3, 'No Cumple': 1 },
         'Soldadura': { 'Cumple Siempre': 9, 'Uso Parcial': 4, 'No Cumple': 2 },
         'Pintura': { 'Cumple Siempre': 7, 'Uso Parcial': 2, 'No Cumple': 0 },
         'Depósito': { 'Cumple Siempre': 3, 'Uso Parcial': 1, 'No Cumple': 1 },
-      };
-      for (const s of sectors) {
-        for (const c of compliance) {
-          const count = counts[s][c];
-          for (let i = 0; i < count; i++) data.push({ x: s, y: c });
-        }
       }
-      return data;
-    },
+    ),
   },
   {
     id: 'contingencia-turnos',
@@ -979,23 +990,15 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     defaultXName: 'Turno de Trabajo',
     defaultYName: 'Severidad del Incidente',
     dataGenerator: () => [],
-    bivariateDataGenerator: () => {
-      const data: { x: string; y: string }[] = [];
-      const turnos = ['Turno Mañana', 'Turno Tarde', 'Turno Noche'];
-      const severidades = ['Leve (Sin Baja)', 'Moderado (1 a 10 días)', 'Grave (>10 días)'];
-      const counts: Record<string, Record<string, number>> = {
+    bivariateDataGenerator: makeBivariateGenerator(
+      ['Turno Mañana', 'Turno Tarde', 'Turno Noche'],
+      ['Leve (Sin Baja)', 'Moderado (1 a 10 días)', 'Grave (>10 días)'],
+      {
         'Turno Mañana': { 'Leve (Sin Baja)': 11, 'Moderado (1 a 10 días)': 4, 'Grave (>10 días)': 1 },
         'Turno Tarde': { 'Leve (Sin Baja)': 8, 'Moderado (1 a 10 días)': 5, 'Grave (>10 días)': 2 },
         'Turno Noche': { 'Leve (Sin Baja)': 3, 'Moderado (1 a 10 días)': 4, 'Grave (>10 días)': 2 },
-      };
-      for (const t of turnos) {
-        for (const s of severidades) {
-          const count = counts[t][s];
-          for (let i = 0; i < count; i++) data.push({ x: t, y: s });
-        }
       }
-      return data;
-    },
+    ),
   },
   {
     id: 'contingencia-permisos',
@@ -1010,24 +1013,16 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     defaultXName: 'Tipo de Tarea Crítica',
     defaultYName: 'Estado de Permiso ATS',
     dataGenerator: () => [],
-    bivariateDataGenerator: () => {
-      const data: { x: string; y: string }[] = [];
-      const tareas = ['Trabajo en Altura', 'Espacios Confinados', 'Corte y Soldadura', 'Alta Tensión'];
-      const estados = ['ATS Aprobado y Firmado', 'ATS En Revisión', 'Sin ATS (No Conforme)'];
-      const counts: Record<string, Record<string, number>> = {
+    bivariateDataGenerator: makeBivariateGenerator(
+      ['Trabajo en Altura', 'Espacios Confinados', 'Corte y Soldadura', 'Alta Tensión'],
+      ['ATS Aprobado y Firmado', 'ATS En Revisión', 'Sin ATS (No Conforme)'],
+      {
         'Trabajo en Altura': { 'ATS Aprobado y Firmado': 10, 'ATS En Revisión': 2, 'Sin ATS (No Conforme)': 0 },
         'Espacios Confinados': { 'ATS Aprobado y Firmado': 6, 'ATS En Revisión': 1, 'Sin ATS (No Conforme)': 1 },
         'Corte y Soldadura': { 'ATS Aprobado y Firmado': 8, 'ATS En Revisión': 3, 'Sin ATS (No Conforme)': 0 },
         'Alta Tensión': { 'ATS Aprobado y Firmado': 4, 'ATS En Revisión': 0, 'Sin ATS (No Conforme)': 0 },
-      };
-      for (const t of tareas) {
-        for (const e of estados) {
-          const count = counts[t][e];
-          for (let i = 0; i < count; i++) data.push({ x: t, y: e });
-        }
       }
-      return data;
-    },
+    ),
   },
   {
     id: 'contingencia-lesion-cuerpo',
@@ -1042,24 +1037,16 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     defaultXName: 'Tipo de Lesión Ocurrida',
     defaultYName: 'Zona Corporal Afectada',
     dataGenerator: () => [],
-    bivariateDataGenerator: () => {
-      const data: { x: string; y: string }[] = [];
-      const lesiones = ['Corte / Laceración', 'Contusión / Golpe', 'Quemadura', 'Esguince'];
-      const zonas = ['Manos y Dedos', 'Ojos y Rostro', 'Espalda / Columna', 'Miembros Inferiores'];
-      const counts: Record<string, Record<string, number>> = {
+    bivariateDataGenerator: makeBivariateGenerator(
+      ['Corte / Laceración', 'Contusión / Golpe', 'Quemadura', 'Esguince'],
+      ['Manos y Dedos', 'Ojos y Rostro', 'Espalda / Columna', 'Miembros Inferiores'],
+      {
         'Corte / Laceración': { 'Manos y Dedos': 14, 'Ojos y Rostro': 2, 'Espalda / Columna': 0, 'Miembros Inferiores': 3 },
         'Contusión / Golpe': { 'Manos y Dedos': 6, 'Ojos y Rostro': 1, 'Espalda / Columna': 4, 'Miembros Inferiores': 5 },
         'Quemadura': { 'Manos y Dedos': 4, 'Ojos y Rostro': 3, 'Espalda / Columna': 0, 'Miembros Inferiores': 1 },
         'Esguince': { 'Manos y Dedos': 1, 'Ojos y Rostro': 0, 'Espalda / Columna': 3, 'Miembros Inferiores': 1 },
-      };
-      for (const l of lesiones) {
-        for (const z of zonas) {
-          const count = counts[l][z];
-          for (let i = 0; i < count; i++) data.push({ x: l, y: z });
-        }
       }
-      return data;
-    },
+    ),
   },
   {
     id: 'contingencia-antiguedad-desvios',
@@ -1074,23 +1061,15 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     defaultXName: 'Antigüedad del Trabajador',
     defaultYName: 'Tipo de Acto Inseguro Detectado',
     dataGenerator: () => [],
-    bivariateDataGenerator: () => {
-      const data: { x: string; y: string }[] = [];
-      const antiguedades = ['< 1 Año (Ingresante)', '1 a 5 Años (Intermedio)', '> 5 Años (Experimentado)'];
-      const actos = ['Omisión de EPP', 'Uso Indebido de Herramienta', 'Exceso de Confianza', 'Operación a Velocidad Insegura'];
-      const counts: Record<string, Record<string, number>> = {
+    bivariateDataGenerator: makeBivariateGenerator(
+      ['< 1 Año (Ingresante)', '1 a 5 Años (Intermedio)', '> 5 Años (Experimentado)'],
+      ['Omisión de EPP', 'Uso Indebido de Herramienta', 'Exceso de Confianza', 'Operación a Velocidad Insegura'],
+      {
         '< 1 Año (Ingresante)': { 'Omisión de EPP': 8, 'Uso Indebido de Herramienta': 6, 'Exceso de Confianza': 1, 'Operación a Velocidad Insegura': 2 },
         '1 a 5 Años (Intermedio)': { 'Omisión de EPP': 4, 'Uso Indebido de Herramienta': 3, 'Exceso de Confianza': 4, 'Operación a Velocidad Insegura': 3 },
         '> 5 Años (Experimentado)': { 'Omisión de EPP': 2, 'Uso Indebido de Herramienta': 1, 'Exceso de Confianza': 6, 'Operación a Velocidad Insegura': 2 },
-      };
-      for (const a of antiguedades) {
-        for (const act of actos) {
-          const count = counts[a][act];
-          for (let i = 0; i < count; i++) data.push({ x: a, y: act });
-        }
       }
-      return data;
-    },
+    ),
   },
   {
     id: 'contingencia-ruido-proteccion',
@@ -1105,23 +1084,15 @@ export const SAFETY_PRESETS: SafetyPreset[] = [
     defaultXName: 'Nivel de Ruido en el Sector',
     defaultYName: 'Uso de Protección Auditiva',
     dataGenerator: () => [],
-    bivariateDataGenerator: () => {
-      const data: { x: string; y: string }[] = [];
-      const niveles = ['Alto Riesgo (>85 dBA)', 'Riesgo Moderado (80-85 dBA)', 'Área Confort (<80 dBA)'];
-      const usos = ['Uso Continuo y Correcto', 'Uso Intermitente', 'No Utiliza'];
-      const counts: Record<string, Record<string, number>> = {
+    bivariateDataGenerator: makeBivariateGenerator(
+      ['Alto Riesgo (>85 dBA)', 'Riesgo Moderado (80-85 dBA)', 'Área Confort (<80 dBA)'],
+      ['Uso Continuo y Correcto', 'Uso Intermitente', 'No Utiliza'],
+      {
         'Alto Riesgo (>85 dBA)': { 'Uso Continuo y Correcto': 12, 'Uso Intermitente': 3, 'No Utiliza': 1 },
         'Riesgo Moderado (80-85 dBA)': { 'Uso Continuo y Correcto': 6, 'Uso Intermitente': 7, 'No Utiliza': 2 },
         'Área Confort (<80 dBA)': { 'Uso Continuo y Correcto': 1, 'Uso Intermitente': 2, 'No Utiliza': 6 },
-      };
-      for (const n of niveles) {
-        for (const u of usos) {
-          const count = counts[n][u];
-          for (let i = 0; i < count; i++) data.push({ x: n, y: u });
-        }
       }
-      return data;
-    },
+    ),
   },
 ];
 
@@ -1169,8 +1140,8 @@ export const THEMATIC_UNITS: ThematicUnit[] = [
           { name: 'Proporción (Parte - Todo)', formula: '\\text{Proporción} = \\frac{A}{N} \\quad (0 \\le \\text{Prop.} \\le 1)', note: 'El numerador está incluido en el denominador.' },
           { name: 'Razón (Parte - Parte)', formula: '\\text{Razón} = \\frac{A}{B}', note: 'Compara dos grupos independientes (ej. operarios por técnico).' },
           { name: 'Tasa General', formula: '\\text{Tasa} = \\left( \\frac{\\text{Eventos}}{\\text{Exposición}} \\right) \\cdot K', note: 'K es una constante estandarizada (1.000 o 1.000.000).' },
-          { name: 'Índice de Frecuencia (IF)', formula: 'IF = \\frac{\\text{N° Accidentes con Baja} \\cdot 1.000.000}{\\text{Horas-Hombre Trabajadas (HHT)}}', note: 'Accidentes con baja médica por cada millón de horas trabajadas.' },
-          { name: 'Índice de Gravedad (IG)', formula: 'IG = \\frac{\\text{Total Días Perdidos} \\cdot 1.000.000}{\\text{Horas-Hombre Trabajadas (HHT)}}', note: 'Jornadas perdidas por cada millón de horas trabajadas.' },
+          { name: 'Índice de Frecuencia (IF)', formula: 'IF = \\frac{\\text{N° Accidentes con Baja} \\cdot 1.000.000}{\\text{Horas-Hombre Trabajadas (HHT)}}', note: 'Accidentes con baja médica por cada millón de horas trabajadas (constante k = 1.000.000; para PyME se admite k = 1.000).' },
+          { name: 'Índice de Gravedad (IG)', formula: 'IG = \\frac{\\text{Total Días Perdidos} \\cdot 1.000.000}{\\text{Horas-Hombre Trabajadas (HHT)}}', note: 'Jornadas perdidas por cada millón de horas trabajadas (constante k = 1.000.000; para PyME se admite k = 1.000).' },
           { name: 'Índice de Incidencia (II)', formula: 'II = \\frac{\\text{N° Accidentes con Baja} \\cdot 1.000}{\\text{N° Promedio Trabajadores Expuestos}}', note: 'Accidentes por cada mil trabajadores expuestos.' },
           { name: 'Duración Media de las Bajas (DM)', formula: 'DM = \\frac{\\text{Total Días Perdidos}}{\\text{N° Accidentes con Baja}}', note: 'Promedio de días de baja médica por cada accidente.' },
           { name: 'Relación entre Indicadores', formula: 'IG = IF \\cdot DM', note: 'Coherencia matemática entre gravedad, frecuencia y duración media.' },
@@ -1336,7 +1307,6 @@ export function calculateSafetyIndicators(input: SafetyIndicatorsInput): SafetyI
     factorK = 1000000,
     // Retrocompatibilidad
     trabajadoresExpuestos,
-    horasHombreTrabajadas,
   } = input;
 
   const trab = Math.max(1, Number(cantidadTrabajadores ?? trabajadoresExpuestos) || 1);
@@ -1368,6 +1338,18 @@ export function calculateSafetyIndicators(input: SafetyIndicatorsInput): SafetyI
 
   // 4. Duración Media de las Bajas (DM) = J / N
   const duracionMedia = N > 0 ? roundTo(J / N, 2) : 0;
+
+  // Valores EXACTOS (sin redondeo) para la verificación de coherencia IG = IF × DM
+  const indiceFrecuenciaRaw = (N * k) / horasPersonaTrabajo;
+  const indiceGravedadRaw = (J * k) / horasPersonaTrabajo;
+  const duracionMediaRaw = N > 0 ? J / N : 0;
+  const productoCoherencia = indiceFrecuenciaRaw * duracionMediaRaw;
+  const coherencia = {
+    producto: productoCoherencia,
+    igExacto: indiceGravedadRaw,
+    // La identidad IG = IF × DM es exacta: (N·k/HPT) × (J/N) = J·k/HPT (con N > 0)
+    verifica: N > 0 && Math.abs(productoCoherencia - indiceGravedadRaw) < 1e-6,
+  };
 
   // Medidas relativas previas
   const proporcionAccidentados = roundTo(N / trab, 4);
@@ -1415,7 +1397,7 @@ export function calculateSafetyIndicators(input: SafetyIndicatorsInput): SafetyI
   // Diagnóstico técnico institucional
   const diagnostico = {
     severidad: `Durante el período evaluado (${periodo}), en el establecimiento "${establecimiento}", se registró un Índice de Frecuencia de ${indiceFrecuencia.toFixed(2)} accidentes con baja laboral ${baseTextHHT}, junto a un Índice de Incidencia de ${indiceIncidencia.toFixed(2)} accidentes por cada 1.000 trabajadores. Esto indica que el ${porcentajeAccidentados.toFixed(2)}% de la nómina laboral sufrió algún evento incapacitante durante el período.`,
-    tiempoPerdido: `La Duración Media de las Bajas (DM) se ubicó en ${duracionMedia.toFixed(2)} días perdidos por accidente, generando un Índice de Gravedad (IG) acumulado de ${indiceGravedad.toFixed(2)} jornadas perdidas ${baseTextHHT}. La relación matemática IG = IF × DM (${indiceFrecuencia.toFixed(2)} × ${duracionMedia.toFixed(2)} = ${(indiceFrecuencia * duracionMedia).toFixed(2)}) confirma la coherencia global de las métricas de severidad.`,
+    tiempoPerdido: `La Duración Media de las Bajas (DM) se ubicó en ${duracionMedia.toFixed(2)} días perdidos por accidente, generando un Índice de Gravedad (IG) acumulado de ${indiceGravedad.toFixed(2)} jornadas perdidas ${baseTextHHT}. La relación matemática IG = IF × DM (${indiceFrecuenciaRaw.toFixed(4)} × ${duracionMediaRaw.toFixed(4)} = ${productoCoherencia.toFixed(4)} ≈ ${indiceGravedad.toFixed(2)}) confirma la coherencia global de las métricas de severidad.`,
     recomendacion: `El impacto de ${J} días de inactividad médica representa una pérdida sustancial de capacidad operativa y costos de la seguridad asociados. Con una base de cálculo de ${hptFormatted} Horas Persona Trabajo (derivadas de ${horasTeoricas.toLocaleString('es-AR')} hs teóricas + ${extras.toLocaleString('es-AR')} hs extras - ${noTrab.toLocaleString('es-AR')} hs no trabajadas), se recomienda concentrar las inspecciones preventivas en las áreas de mayor siniestralidad.`
   };
 
@@ -1441,6 +1423,11 @@ export function calculateSafetyIndicators(input: SafetyIndicatorsInput): SafetyI
     indiceGravedad,
     indiceIncidencia,
     duracionMedia,
+    // Valores exactos sin redondeo (verificación de coherencia IG = IF × DM)
+    indiceFrecuenciaRaw,
+    indiceGravedadRaw,
+    duracionMediaRaw,
+    coherencia,
     baseTextHHT,
     kLabel,
     kUnit,

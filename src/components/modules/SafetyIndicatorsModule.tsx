@@ -4,7 +4,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
   ShieldCheck, 
-  FileSpreadsheet, 
   Activity, 
   Clock, 
   AlertTriangle, 
@@ -30,9 +29,36 @@ import {
 } from '@/lib/statistics';
 import { exportSafetyIndicatorsToExcel } from '@/lib/excelExport';
 import { MathFormula } from '@/components/ui/math-formula';
+import { ExcelExportButton } from '@/components/ui/ExcelExportButton';
+
+/** Campos numéricos del formulario (se guardan como texto para permitir vaciarlos al editar) */
+type NumericField =
+  | 'trabajadores'
+  | 'diasLaborales'
+  | 'horasJornada'
+  | 'horasExtras'
+  | 'horasNoTrabajadas'
+  | 'conBaja'
+  | 'sinBaja'
+  | 'diasPerdidos';
+
+type IndicatorKey = 'if' | 'ig' | 'ii' | 'dm';
+
+/** Convierte un borrador de texto a número seguro (vacío o inválido → 0) */
+function parseDraft(value: string): number {
+  if (value.trim() === '') return 0;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const EMPTY_FLIPS: Record<IndicatorKey, boolean> = {
+  if: false,
+  ig: false,
+  ii: false,
+  dm: false,
+};
 
 interface FlipCardProps {
-  cardKey: 'if' | 'ig' | 'ii' | 'dm';
   numberLabel: string;
   title: string;
   badgeText: string;
@@ -48,7 +74,6 @@ interface FlipCardProps {
 }
 
 const FlipIndicatorCard: React.FC<FlipCardProps> = ({
-  cardKey,
   numberLabel,
   title,
   badgeText,
@@ -124,7 +149,7 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
               <span className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase tracking-wide">
                 {numberLabel}. {title}
               </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shadow-2xs ${colorStyles.badge}`}>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border whitespace-nowrap shadow-2xs ${colorStyles.badge}`}>
                 {badgeText}
               </span>
             </div>
@@ -148,7 +173,7 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
               <RotateCw className="w-3.5 h-3.5 transition-transform duration-300 group-hover:rotate-180" />
               Toca para ver fórmula y desarrollo
             </span>
-            <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+            <span className="text-[11px] uppercase font-mono px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
               3D Dorso
             </span>
           </div>
@@ -161,14 +186,14 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
               <span className={`text-xs font-bold uppercase tracking-wide ${colorStyles.backHeader}`}>
                 {title} · Desarrollo Paso a Paso
               </span>
-              <span className="text-[9.5px] font-mono text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-mono text-slate-300 bg-slate-800/90 px-2 py-0.5 rounded-full">
                 Cátedra SySO
               </span>
             </div>
 
             {/* Fórmula KaTeX */}
             <div className={`p-2 rounded-xl border ${colorStyles.boxBg}`}>
-              <span className="text-[9.5px] uppercase font-bold text-slate-400 block mb-1">
+              <span className="text-[11px] uppercase font-bold text-slate-400 block mb-1">
                 Fórmula Teórica Oficial:
               </span>
               <MathFormula formula={formulaLatex} />
@@ -176,13 +201,13 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
 
             {/* Reemplazo Numérico Paso a Paso */}
             <div className={`p-2 rounded-xl border ${colorStyles.boxBg}`}>
-              <span className={`text-[9.5px] uppercase font-bold block mb-1 ${colorStyles.backHeader}`}>
+              <span className={`text-[11px] uppercase font-bold block mb-1 ${colorStyles.backHeader}`}>
                 Reemplazo Numérico con Datos Reales:
               </span>
               <MathFormula formula={substitutionLatex} />
             </div>
 
-            <p className="text-[10.5px] text-slate-300 leading-snug">
+            <p className="text-xs text-slate-300 leading-snug">
               {formulaExplanation}
             </p>
           </div>
@@ -192,7 +217,7 @@ const FlipIndicatorCard: React.FC<FlipCardProps> = ({
               <RotateCw className="w-3.5 h-3.5 transition-transform duration-300 group-hover:-rotate-180" />
               Toca para volver al resultado
             </span>
-            <span className="text-[10px] text-slate-400 font-mono">
+            <span className="text-[11px] text-slate-400 font-mono">
               Frente ↺
             </span>
           </div>
@@ -210,24 +235,25 @@ export const SafetyIndicatorsModule: React.FC = () => {
   const [establecimiento, setEstablecimiento] = useState<string>(defaultPreset.establecimiento);
   const [periodo, setPeriodo] = useState<string>(defaultPreset.periodo);
   
-  // 9 Parámetros Solicitados
-  const [cantidadTrabajadores, setCantidadTrabajadores] = useState<number>(defaultPreset.cantidadTrabajadores);
-  const [diasLaborales, setDiasLaborales] = useState<number>(defaultPreset.diasLaborales);
-  const [horasJornada, setHorasJornada] = useState<number>(defaultPreset.horasJornada);
-  const [horasExtras, setHorasExtras] = useState<number>(defaultPreset.horasExtras);
-  const [horasNoTrabajadas, setHorasNoTrabajadas] = useState<number>(defaultPreset.horasNoTrabajadas);
-  const [accidentesConBaja, setAccidentesConBaja] = useState<number>(defaultPreset.accidentesConBaja);
-  const [accidentesSinBaja, setAccidentesSinBaja] = useState<number>(defaultPreset.accidentesSinBaja);
-  const [diasPerdidos, setDiasPerdidos] = useState<number>(defaultPreset.diasPerdidos);
+  // Parámetros numéricos como borradores de texto (se pueden vaciar mientras se edita)
+  const [drafts, setDrafts] = useState<Record<NumericField, string>>({
+    trabajadores: String(defaultPreset.cantidadTrabajadores),
+    diasLaborales: String(defaultPreset.diasLaborales),
+    horasJornada: String(defaultPreset.horasJornada),
+    horasExtras: String(defaultPreset.horasExtras),
+    horasNoTrabajadas: String(defaultPreset.horasNoTrabajadas),
+    conBaja: String(defaultPreset.accidentesConBaja),
+    sinBaja: String(defaultPreset.accidentesSinBaja),
+    diasPerdidos: String(defaultPreset.diasPerdidos),
+  });
   const [factorK, setFactorK] = useState<1000 | 1000000>(defaultPreset.factorK);
 
+  const setDraft = (field: NumericField, value: string) => {
+    setDrafts(prev => ({ ...prev, [field]: value }));
+  };
+
   // Estado de tarjetas giratorias 3D
-  const [flippedCards, setFlippedCards] = useState<Record<string, boolean>>({
-    if: false,
-    ig: false,
-    ii: false,
-    dm: false,
-  });
+  const [flippedCards, setFlippedCards] = useState<Record<IndicatorKey, boolean>>({ ...EMPTY_FLIPS });
 
   const [showDidacticSteps, setShowDidacticSteps] = useState<boolean>(true);
 
@@ -236,48 +262,40 @@ export const SafetyIndicatorsModule: React.FC = () => {
     const input: SafetyIndicatorsInput = {
       establecimiento,
       periodo,
-      cantidadTrabajadores,
-      diasLaborales,
-      horasJornada,
-      horasExtras,
-      horasNoTrabajadas,
-      accidentesConBaja,
-      accidentesSinBaja,
-      diasPerdidos,
+      cantidadTrabajadores: parseDraft(drafts.trabajadores),
+      diasLaborales: parseDraft(drafts.diasLaborales),
+      horasJornada: parseDraft(drafts.horasJornada),
+      horasExtras: parseDraft(drafts.horasExtras),
+      horasNoTrabajadas: parseDraft(drafts.horasNoTrabajadas),
+      accidentesConBaja: parseDraft(drafts.conBaja),
+      accidentesSinBaja: parseDraft(drafts.sinBaja),
+      diasPerdidos: parseDraft(drafts.diasPerdidos),
       factorK,
     };
     return calculateSafetyIndicators(input);
-  }, [
-    establecimiento, 
-    periodo, 
-    cantidadTrabajadores, 
-    diasLaborales, 
-    horasJornada, 
-    horasExtras, 
-    horasNoTrabajadas, 
-    accidentesConBaja, 
-    accidentesSinBaja, 
-    diasPerdidos, 
-    factorK
-  ]);
+  }, [establecimiento, periodo, drafts, factorK]);
 
   // Manejo de carga de preset
   const handleLoadPreset = (preset: SafetyIndicatorPreset) => {
     setSelectedPresetId(preset.id);
     setEstablecimiento(preset.establecimiento);
     setPeriodo(preset.periodo);
-    setCantidadTrabajadores(preset.cantidadTrabajadores);
-    setDiasLaborales(preset.diasLaborales);
-    setHorasJornada(preset.horasJornada);
-    setHorasExtras(preset.horasExtras);
-    setHorasNoTrabajadas(preset.horasNoTrabajadas);
-    setAccidentesConBaja(preset.accidentesConBaja);
-    setAccidentesSinBaja(preset.accidentesSinBaja);
-    setDiasPerdidos(preset.diasPerdidos);
+    setDrafts({
+      trabajadores: String(preset.cantidadTrabajadores),
+      diasLaborales: String(preset.diasLaborales),
+      horasJornada: String(preset.horasJornada),
+      horasExtras: String(preset.horasExtras),
+      horasNoTrabajadas: String(preset.horasNoTrabajadas),
+      conBaja: String(preset.accidentesConBaja),
+      sinBaja: String(preset.accidentesSinBaja),
+      diasPerdidos: String(preset.diasPerdidos),
+    });
     setFactorK(preset.factorK);
+    // Las tarjetas vuelven a su frente al cambiar de caso
+    setFlippedCards({ ...EMPTY_FLIPS });
   };
 
-  const toggleFlip = (cardKey: 'if' | 'ig' | 'ii' | 'dm') => {
+  const toggleFlip = (cardKey: IndicatorKey) => {
     setFlippedCards(prev => ({
       ...prev,
       [cardKey]: !prev[cardKey],
@@ -312,15 +330,10 @@ export const SafetyIndicatorsModule: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => exportSafetyIndicatorsToExcel(result)}
-              className="group flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl transition-all duration-200 shadow-xs hover:shadow-md cursor-pointer"
-              title="Descargar informe oficial en Excel (.xlsx)"
-            >
-              <FileSpreadsheet className="w-3.5 h-3.5 transition-transform duration-200 group-hover:scale-110 group-hover:-translate-y-0.5" />
-              <span className="hidden sm:inline">Exportar a Excel</span>
-            </button>
+            <ExcelExportButton
+              onExport={() => exportSafetyIndicatorsToExcel(result)}
+              label="Exportar a Excel"
+            />
 
             <button
               type="button"
@@ -424,7 +437,7 @@ export const SafetyIndicatorsModule: React.FC = () => {
                   k = 1.000
                 </button>
               </div>
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
                 {factorK === 1000000 ? 'Norma General / OIT (por cada millón HHT)' : 'Criterio PyME / Talleres (por cada mil HHT)'}
               </span>
             </div>
@@ -446,74 +459,84 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
               <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   1. Cantidad de Trabajadores
                 </label>
                 <input
                   type="number"
                   min={1}
-                  value={cantidadTrabajadores}
-                  onChange={(e) => setCantidadTrabajadores(Math.max(1, Number(e.target.value)))}
+                  value={drafts.trabajadores}
+                  onChange={(e) => setDraft('trabajadores', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Cantidad de trabajadores expuestos"
                   className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
                 />
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Nómina expuesta</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Nómina expuesta</span>
               </div>
 
               <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   2. Días Laborales
                 </label>
                 <input
                   type="number"
                   min={1}
-                  value={diasLaborales}
-                  onChange={(e) => setDiasLaborales(Math.max(1, Number(e.target.value)))}
+                  value={drafts.diasLaborales}
+                  onChange={(e) => setDraft('diasLaborales', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Días laborales del período"
                   className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
                 />
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Días hábiles del período</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Días hábiles del período</span>
               </div>
 
               <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   3. Horas por Jornada
                 </label>
                 <input
                   type="number"
-                  min={1}
+                  min={0.5}
                   step={0.5}
-                  value={horasJornada}
-                  onChange={(e) => setHorasJornada(Math.max(0.5, Number(e.target.value)))}
+                  value={drafts.horasJornada}
+                  onChange={(e) => setDraft('horasJornada', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Horas por jornada de trabajo"
                   className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
                 />
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Hs normales por día</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Hs normales por día</span>
               </div>
 
               <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   4. Horas Extras (+)
                 </label>
                 <input
                   type="number"
                   min={0}
-                  value={horasExtras}
-                  onChange={(e) => setHorasExtras(Math.max(0, Number(e.target.value)))}
+                  value={drafts.horasExtras}
+                  onChange={(e) => setDraft('horasExtras', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Horas extras trabajadas"
                   className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
                 />
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Suman horas efectivas</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Suman horas efectivas</span>
               </div>
 
               <div className="bg-white dark:bg-[#0A1322] p-3 rounded-xl border border-slate-200 dark:border-slate-700">
-                <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
+                <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase mb-1">
                   5. Horas No Trabajadas (-)
                 </label>
                 <input
                   type="number"
                   min={0}
-                  value={horasNoTrabajadas}
-                  onChange={(e) => setHorasNoTrabajadas(Math.max(0, Number(e.target.value)))}
+                  value={drafts.horasNoTrabajadas}
+                  onChange={(e) => setDraft('horasNoTrabajadas', e.target.value)}
+                  onFocus={(e) => e.target.select()}
+                  aria-label="Horas no trabajadas"
                   className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
                 />
-                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Ausentismo / Licencias</span>
+                <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Ausentismo / Licencias</span>
               </div>
             </div>
 
@@ -521,7 +544,7 @@ export const SafetyIndicatorsModule: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
               <div className="p-3 bg-white dark:bg-[#0A1322] rounded-xl border border-slate-200 dark:border-slate-700 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
+                  <span className="text-[11px] uppercase font-bold text-slate-500 dark:text-slate-400 block">
                     Horas Teóricas (Trabajadores × Días × Horas/Jornada)
                   </span>
                   <span className="text-xs text-slate-600 dark:text-slate-300 font-mono">
@@ -535,7 +558,7 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
               <div className="p-3 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-emerald-800 dark:text-emerald-300 block">
+                  <span className="text-[11px] uppercase font-bold text-emerald-800 dark:text-emerald-300 block">
                     Horas Persona Trabajo Efectivas (HPT)
                   </span>
                   <span className="text-xs text-emerald-700 dark:text-emerald-400 font-mono">
@@ -552,47 +575,53 @@ export const SafetyIndicatorsModule: React.FC = () => {
           {/* Bloque: Registro de Accidentabilidad y Días Perdidos */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="p-3.5 bg-slate-50 dark:bg-[#131C2E] rounded-xl border border-slate-200 dark:border-slate-800">
-              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
                 6. Cantidad de Accidentes con Baja
               </label>
               <input
                 type="number"
                 min={0}
-                value={accidentesConBaja}
-                onChange={(e) => setAccidentesConBaja(Math.max(0, Number(e.target.value)))}
+                value={drafts.conBaja}
+                onChange={(e) => setDraft('conBaja', e.target.value)}
+                onFocus={(e) => e.target.select()}
+                aria-label="Cantidad de accidentes con baja"
                 className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
               />
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Casos con baja médica (N)</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Casos con baja médica (N)</span>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-[#131C2E] rounded-xl border border-slate-200 dark:border-slate-800">
-              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
                 7. Cantidad de Accidentes sin Baja
               </label>
               <input
                 type="number"
                 min={0}
-                value={accidentesSinBaja}
-                onChange={(e) => setAccidentesSinBaja(Math.max(0, Number(e.target.value)))}
+                value={drafts.sinBaja}
+                onChange={(e) => setDraft('sinBaja', e.target.value)}
+                onFocus={(e) => e.target.select()}
+                aria-label="Cantidad de accidentes sin baja"
                 className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
               />
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">
                 Primeros auxilios / Total eventos: {result.totalAccidentes}
               </span>
             </div>
 
             <div className="p-3.5 bg-slate-50 dark:bg-[#131C2E] rounded-xl border border-slate-200 dark:border-slate-800">
-              <label className="block text-[10px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
+              <label className="block text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase mb-1">
                 8. Días Perdidos / Baja (J)
               </label>
               <input
                 type="number"
                 min={0}
-                value={diasPerdidos}
-                onChange={(e) => setDiasPerdidos(Math.max(0, Number(e.target.value)))}
+                value={drafts.diasPerdidos}
+                onChange={(e) => setDraft('diasPerdidos', e.target.value)}
+                onFocus={(e) => e.target.select()}
+                aria-label="Días perdidos por bajas"
                 className="w-full text-sm font-mono font-bold px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-[#0F2942] dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] outline-none"
               />
-              <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-1 block">Jornadas laborales no trabajadas</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 block">Jornadas laborales no trabajadas</span>
             </div>
           </div>
 
@@ -616,7 +645,6 @@ export const SafetyIndicatorsModule: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Tarjeta 1: IF */}
           <FlipIndicatorCard
-            cardKey="if"
             numberLabel="1"
             title="Índice de Frecuencia (IF)"
             badgeText={result.baseTextHHT}
@@ -633,7 +661,6 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
           {/* Tarjeta 2: IG */}
           <FlipIndicatorCard
-            cardKey="ig"
             numberLabel="2"
             title="Índice de Gravedad (IG)"
             badgeText={result.baseTextHHT}
@@ -650,7 +677,6 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
           {/* Tarjeta 3: II */}
           <FlipIndicatorCard
-            cardKey="ii"
             numberLabel="3"
             title="Índice de Incidencia (II)"
             badgeText="por cada mil trab."
@@ -667,7 +693,6 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
           {/* Tarjeta 4: DM */}
           <FlipIndicatorCard
-            cardKey="dm"
             numberLabel="4"
             title="Duración Media (DM)"
             badgeText="Severidad media"
@@ -686,9 +711,12 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
       {/* 2. DESGLOSE DIDÁCTICO PASO A PASO */}
       <div className="bg-white dark:bg-[#0F172A] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-xs overflow-hidden">
-        <div 
-          onClick={() => setShowDidacticSteps(!showDidacticSteps)}
-          className="px-4 sm:px-5 py-3.5 bg-slate-50 dark:bg-[#0A1322] flex items-center justify-between cursor-pointer border-b border-slate-100 dark:border-slate-800"
+        <button
+          type="button"
+          onClick={() => setShowDidacticSteps(prev => !prev)}
+          aria-expanded={showDidacticSteps}
+          aria-controls="didactic-breakdown-panel"
+          className="w-full px-4 sm:px-5 py-3.5 bg-slate-50 dark:bg-[#0A1322] flex items-center justify-between cursor-pointer border-b border-slate-100 dark:border-slate-800 text-left"
         >
           <div className="flex items-center gap-2 text-[#0F2942] dark:text-slate-200">
             <Info className="w-4 h-4 text-[#E67E22] dark:text-amber-400" />
@@ -696,16 +724,16 @@ export const SafetyIndicatorsModule: React.FC = () => {
               Desglose Didáctico: Proporción, Razón, Tasa y Relación de Coherencia
             </span>
           </div>
-          <button type="button" className="text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 cursor-pointer">
+          <span className="text-slate-400 dark:text-slate-500" aria-hidden="true">
             {showDidacticSteps ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-          </button>
-        </div>
+          </span>
+        </button>
 
         {showDidacticSteps && (
-          <div className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/50 dark:bg-[#131C2E]">
+          <div id="didactic-breakdown-panel" className="p-4 sm:p-5 grid grid-cols-1 md:grid-cols-3 gap-3 bg-slate-50/50 dark:bg-[#131C2E]">
             {/* Paso 1: Proporción */}
             <div className="bg-white dark:bg-[#0A1322] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block">
+              <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 block">
                 A) Proporción (Parte - Todo)
               </span>
               <p className="text-xs text-slate-700 dark:text-slate-300">
@@ -721,7 +749,7 @@ export const SafetyIndicatorsModule: React.FC = () => {
 
             {/* Paso 2: Razón */}
             <div className="bg-white dark:bg-[#0A1322] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block">
+              <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 block">
                 B) Razón (Parte - Parte)
               </span>
               <p className="text-xs text-slate-700 dark:text-slate-300">
@@ -735,9 +763,9 @@ export const SafetyIndicatorsModule: React.FC = () => {
               </p>
             </div>
 
-            {/* Paso 3: Coherencia Matemática */}
+            {/* Paso 3: Coherencia Matemática (valores exactos, sin redondeo) */}
             <div className="bg-white dark:bg-[#0A1322] p-4 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
-              <span className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 block">
+              <span className="text-[11px] font-bold uppercase text-slate-500 dark:text-slate-400 block">
                 C) Verificación de Coherencia
               </span>
               <p className="text-xs text-slate-700 dark:text-slate-300">
@@ -746,11 +774,17 @@ export const SafetyIndicatorsModule: React.FC = () => {
               <div className="font-mono text-xs text-[#1B8A5A] dark:text-emerald-400 bg-slate-50 dark:bg-[#131C2E] p-2 rounded border border-slate-200 dark:border-slate-800">
                 IG = IF × DM
                 <br />
-                {result.indiceFrecuencia.toFixed(2)} × {result.duracionMedia.toFixed(2)} = {(result.indiceFrecuencia * result.duracionMedia).toFixed(2)}
+                {result.indiceFrecuenciaRaw.toFixed(4)} × {result.duracionMediaRaw.toFixed(4)} = {result.coherencia.producto.toFixed(4)}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 italic">
-                Verifica la exactitud matemática de las métricas de severidad.
-              </p>
+              {result.coherencia.verifica ? (
+                <p className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  ✓ Verifica exactamente: {result.coherencia.producto.toFixed(4)} ≈ IG = {result.indiceGravedad.toFixed(2)}
+                </p>
+              ) : (
+                <p className="text-[11px] text-amber-700 dark:text-amber-400">
+                  Sin accidentes con baja (N = 0): la Duración Media no está definida y la relación no aplica.
+                </p>
+              )}
             </div>
           </div>
         )}

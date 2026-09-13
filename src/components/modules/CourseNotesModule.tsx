@@ -5,18 +5,14 @@ import React, { useState } from 'react';
 import { THEMATIC_UNITS } from '@/lib/statistics';
 import { ThematicUnit } from '@/types/statistics';
 import { MathFormula } from '@/components/ui/math-formula';
-import { 
-  BookOpen, 
-  FileText, 
-  Download, 
-  Eye, 
-  CheckCircle, 
-  GraduationCap, 
-  Sparkles, 
+import { useDialog } from '@/lib/useDialog';
+import {
+  BookOpen,
+  FileText,
+  GraduationCap,
   X,
   Printer,
   ChevronRight,
-  ShieldAlert
 } from 'lucide-react';
 
 export const CourseNotesModule: React.FC = () => {
@@ -25,9 +21,17 @@ export const CourseNotesModule: React.FC = () => {
     type: 'theory' | 'tp';
   } | null>(null);
 
+  const dialogRef = useDialog(Boolean(activeModal), () => setActiveModal(null));
+
   const handlePrint = () => {
     window.print();
   };
+
+  const modalTitle = activeModal
+    ? activeModal.type === 'theory'
+      ? activeModal.unit.theoreticalNote.title
+      : activeModal.unit.practicalGuide.title
+    : '';
 
   return (
     <div className="space-y-8">
@@ -59,7 +63,7 @@ export const CourseNotesModule: React.FC = () => {
       </div>
 
       {/* Cuadrícula de Unidades Temáticas */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {THEMATIC_UNITS.map((unit) => (
           <div
             key={unit.id}
@@ -95,7 +99,7 @@ export const CourseNotesModule: React.FC = () => {
                   {unit.topics.map((topic, i) => (
                     <li key={i} className="flex items-start gap-1.5">
                       <ChevronRight className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400 flex-shrink-0 mt-0.5" />
-                      <span className="line-clamp-1">{topic.title}</span>
+                      <span className="line-clamp-1" title={topic.title}>{topic.title}</span>
                     </li>
                   ))}
                 </ul>
@@ -106,44 +110,24 @@ export const CourseNotesModule: React.FC = () => {
             {/* Botones de Acción: Apunte Teórico y Guía de TPs */}
             <div className="p-4 bg-slate-50 dark:bg-[#131C2E] border-t border-slate-200 dark:border-slate-800 space-y-2.5">
               {/* Botón Apunte Teórico */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveModal({ unit, type: 'theory' })}
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#0F2942] dark:bg-[#1E293B] hover:bg-[#15385B] dark:hover:bg-[#334155] text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all shadow-2xs cursor-pointer"
-                >
-                  <BookOpen className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400" />
-                  <span>Apunte Teórico</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal({ unit, type: 'theory' })}
-                  className="p-2 rounded-lg bg-white dark:bg-[#0A1322] border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
-                  title="Vista Previa de Apunte"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal({ unit, type: 'theory' })}
+                className="w-full flex items-center justify-center gap-1.5 bg-[#0F2942] dark:bg-[#1E293B] hover:bg-[#15385B] dark:hover:bg-[#334155] text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all shadow-2xs cursor-pointer"
+              >
+                <BookOpen className="w-3.5 h-3.5 text-[#1B8A5A] dark:text-emerald-400" />
+                <span>Abrir Apunte Teórico</span>
+              </button>
 
               {/* Botón Guía de TPs */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveModal({ unit, type: 'tp' })}
-                  className="flex-1 flex items-center justify-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all shadow-2xs cursor-pointer"
-                >
-                  <FileText className="w-3.5 h-3.5 text-white" />
-                  <span>Guía de TPs ({unit.practicalGuide.tpNumber})</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal({ unit, type: 'tp' })}
-                  className="p-2 rounded-lg bg-white dark:bg-[#0A1322] border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer"
-                  title="Vista Previa de Guía de TPs"
-                >
-                  <Eye className="w-4 h-4" />
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setActiveModal({ unit, type: 'tp' })}
+                className="w-full flex items-center justify-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-3 rounded-lg transition-all shadow-2xs cursor-pointer"
+              >
+                <FileText className="w-3.5 h-3.5 text-white" />
+                <span>Abrir Guía de TPs ({unit.practicalGuide.tpNumber})</span>
+              </button>
             </div>
           </div>
         ))}
@@ -151,8 +135,23 @@ export const CourseNotesModule: React.FC = () => {
 
       {/* MODAL DE LECTURA Y DESCARGA DIDÁCTICA */}
       {activeModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white dark:bg-[#0F172A] w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop decorativo: cierra al hacer clic fuera del panel */}
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-xs"
+            onClick={() => setActiveModal(null)}
+            aria-hidden="true"
+          />
+
+          <div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`${activeModal.type === 'theory' ? 'Apunte Teórico' : 'Guía de Trabajos Prácticos'}: ${modalTitle}`}
+            tabIndex={-1}
+            onClick={(e) => e.stopPropagation()}
+            className="relative bg-white dark:bg-[#0F172A] w-full max-w-4xl rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden max-h-[90vh] flex flex-col outline-none"
+          >
             {/* Header del Modal */}
             <div className="bg-[#0F2942] dark:bg-[#080D1A] p-4 sm:p-5 text-white flex items-center justify-between gap-4 flex-shrink-0 border-b border-[#1C4874] dark:border-slate-800">
               <div className="flex items-center gap-3">
@@ -185,15 +184,18 @@ export const CourseNotesModule: React.FC = () => {
                   type="button"
                   onClick={handlePrint}
                   className="flex items-center gap-1 text-xs bg-[#15385B] dark:bg-[#1E293B] hover:bg-[#1C4874] dark:hover:bg-[#334155] text-slate-200 px-3 py-1.5 rounded-lg border border-[#1C4874] dark:border-slate-700 cursor-pointer"
-                  title="Imprimir o Guardar en PDF"
+                  title={activeModal.type === 'theory' ? 'Imprimir Apunte' : 'Imprimir Guía'}
                 >
                   <Printer className="w-4 h-4" />
-                  <span className="hidden sm:inline">Imprimir / PDF</span>
+                  <span className="hidden sm:inline">
+                    {activeModal.type === 'theory' ? 'Imprimir Apunte' : 'Imprimir Guía'}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setActiveModal(null)}
+                  aria-label={activeModal.type === 'theory' ? 'Cerrar apunte teórico' : 'Cerrar guía de trabajos prácticos'}
                   className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
@@ -201,8 +203,8 @@ export const CourseNotesModule: React.FC = () => {
               </div>
             </div>
 
-            {/* Cuerpo del Documento Académico */}
-            <div className="p-5 sm:p-8 overflow-y-auto space-y-6 text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
+            {/* Cuerpo del Documento Académico (área de impresión) */}
+            <div className="print-area p-5 sm:p-8 overflow-y-auto space-y-6 text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
               {/* Membrete Institucional para Impresión */}
               <div className="border-b-2 border-[#0F2942] dark:border-slate-700 pb-4 flex items-center justify-between text-xs text-slate-600 dark:text-slate-400">
                 <div>
@@ -255,7 +257,7 @@ export const CourseNotesModule: React.FC = () => {
                                     {kf.note}
                                   </span>
                                 </div>
-                                <div className="text-sm font-mono text-[#1B8A5A] dark:text-emerald-300 bg-white dark:bg-[#0A1322] px-3 py-1 rounded border border-slate-200 dark:border-slate-700 shadow-2xs">
+                                <div className="text-sm font-mono text-[#1B8A5A] dark:text-emerald-300 bg-white dark:bg-[#0A1322] px-3 py-1 rounded border border-slate-200 dark:border-slate-700 shadow-2xs max-w-full overflow-x-auto">
                                   <MathFormula formula={kf.formula} />
                                 </div>
                               </div>
@@ -301,7 +303,7 @@ export const CourseNotesModule: React.FC = () => {
 
                     {activeModal.unit.practicalGuide.sampleExercises.map((ex) => (
                       <div key={ex.number} className="bg-white dark:bg-[#0A1322] p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-2xs space-y-3">
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between gap-2 flex-wrap">
                           <span className="font-bold text-[#0F2942] dark:text-slate-100 text-sm bg-slate-100 dark:bg-[#131C2E] px-2.5 py-1 rounded">
                             Ejercicio N° {ex.number}
                           </span>
@@ -350,8 +352,8 @@ export const CourseNotesModule: React.FC = () => {
                   onClick={handlePrint}
                   className="flex items-center gap-1.5 bg-[#1B8A5A] dark:bg-emerald-600 hover:bg-[#15734A] dark:hover:bg-emerald-700 text-white font-semibold px-4 py-2 rounded-lg transition-all shadow-sm cursor-pointer"
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  <span>Descargar / Imprimir Formato Cátedra</span>
+                  <Printer className="w-3.5 h-3.5" />
+                  <span>Imprimir / Guardar PDF</span>
                 </button>
               </div>
             </div>

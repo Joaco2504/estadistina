@@ -2,11 +2,11 @@
 'use client';
 
 import React from 'react';
-import { 
-  Split, 
-  Dices, 
-  Sparkles, 
-  Layers, 
+import {
+  Split,
+  Dices,
+  Sparkles,
+  Layers,
   AlertCircle,
   HelpCircle
 } from 'lucide-react';
@@ -24,10 +24,10 @@ interface ContingencyDataInputSectionProps {
   selectedPresetId: string;
   onLoadPreset: (presetId: string) => void;
   onGenerateRandomSample: (targetN?: number) => void;
-  onUpdateTable: (customInput?: string, customX?: string, customY?: string) => void;
-  detectedRows: string[];
-  detectedCols: string[];
-  totalParsedN: number;
+  onUpdateTable: () => void;
+  rowCategories: string[];
+  colCategories: string[];
+  grandTotal: number;
   errorMessage?: string | null;
 }
 
@@ -44,9 +44,9 @@ export const ContingencyDataInputSection: React.FC<ContingencyDataInputSectionPr
   onLoadPreset,
   onGenerateRandomSample,
   onUpdateTable,
-  detectedRows,
-  detectedCols,
-  totalParsedN,
+  rowCategories,
+  colCategories,
+  grandTotal,
   errorMessage,
 }) => {
   const contingencyPresets = SAFETY_PRESETS.filter(p => p.recommendedType === 'contingency');
@@ -185,14 +185,14 @@ export const ContingencyDataInputSection: React.FC<ContingencyDataInputSectionPr
           <div className="flex flex-wrap items-center justify-between gap-2 mb-1.5">
             <label className="text-[11px] font-bold text-slate-600 dark:text-slate-300 uppercase flex items-center gap-1.5">
               <span>Datos Bivariados en Bruto (Pares X, Y)</span>
-              <span className="text-[10px] font-normal text-slate-400 lowercase hidden sm:inline">
+              <span className="text-xs font-normal text-slate-400 lowercase hidden sm:inline">
                 (un par por línea o separados por punto y coma)
               </span>
             </label>
 
             <div className="flex items-center gap-2">
               <span className="text-[11px] font-mono text-[#1B8A5A] dark:text-emerald-300 font-semibold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
-                n actual = {totalParsedN} observaciones
+                n actual = {grandTotal} observaciones
               </span>
             </div>
           </div>
@@ -205,12 +205,12 @@ export const ContingencyDataInputSection: React.FC<ContingencyDataInputSectionPr
             className="w-full text-xs font-mono p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0A1322] text-slate-800 dark:text-slate-100 focus:ring-1 focus:ring-[#1B8A5A] dark:focus:ring-emerald-500 outline-none leading-relaxed resize-y shadow-2xs"
           />
 
-          {/* Categorías detectadas en vivo */}
+          {/* Categorías de la matriz canónica */}
           <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px]">
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-bold text-slate-500 dark:text-slate-400">Filas (X):</span>
-              {detectedRows.length > 0 ? (
-                detectedRows.map((row, idx) => (
+              {rowCategories.length > 0 ? (
+                rowCategories.map((row, idx) => (
                   <span
                     key={`det-row-${idx}`}
                     className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded-md font-medium border border-blue-200/80 dark:border-blue-800/60"
@@ -219,14 +219,14 @@ export const ContingencyDataInputSection: React.FC<ContingencyDataInputSectionPr
                   </span>
                 ))
               ) : (
-                <span className="text-slate-400 italic">Sin categorías de fila detectadas</span>
+                <span className="text-slate-400 italic">Sin categorías de fila</span>
               )}
             </div>
 
             <div className="flex flex-wrap items-center gap-1.5">
               <span className="font-bold text-slate-500 dark:text-slate-400">Columnas (Y):</span>
-              {detectedCols.length > 0 ? (
-                detectedCols.map((col, idx) => (
+              {colCategories.length > 0 ? (
+                colCategories.map((col, idx) => (
                   <span
                     key={`det-col-${idx}`}
                     className="bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 px-2 py-0.5 rounded-md font-medium border border-emerald-200/80 dark:border-emerald-800/60"
@@ -235,27 +235,27 @@ export const ContingencyDataInputSection: React.FC<ContingencyDataInputSectionPr
                   </span>
                 ))
               ) : (
-                <span className="text-slate-400 italic">Sin categorías de columna detectadas</span>
+                <span className="text-slate-400 italic">Sin categorías de columna</span>
               )}
             </div>
           </div>
 
           {/* Ayuda de Formato Didáctico */}
-          <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-400 space-y-1">
+          <div className="mt-2.5 p-2.5 rounded-xl bg-slate-50 dark:bg-[#131C2E] border border-slate-200/80 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
               <HelpCircle className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
               <span>Formatos admitidos para el ingreso bivariado:</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-[10.5px]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1 font-mono text-xs">
               <div className="bg-white dark:bg-[#0A1322] p-1.5 rounded border border-slate-200 dark:border-slate-700">
                 <strong className="text-emerald-600 dark:text-emerald-400 block font-sans">1. Pares Individuales:</strong>
                 <code>Sector, Cumplimiento</code><br />
-                <span className="text-slate-400 font-sans">Uno por línea o con ';'</span>
+                <span className="text-slate-400 font-sans">Uno por línea o con {"';'"}</span>
               </div>
               <div className="bg-white dark:bg-[#0A1322] p-1.5 rounded border border-slate-200 dark:border-slate-700">
                 <strong className="text-blue-600 dark:text-blue-400 block font-sans">2. Pares con Conteo:</strong>
                 <code>Sector, Cumplimiento: 12</code><br />
-                <span className="text-slate-400 font-sans">O '12x Sector, Cumplimiento'</span>
+                <span className="text-slate-400 font-sans">O {"'12x Sector, Cumplimiento'"}</span>
               </div>
               <div className="bg-white dark:bg-[#0A1322] p-1.5 rounded border border-slate-200 dark:border-slate-700">
                 <strong className="text-amber-600 dark:text-amber-400 block font-sans">3. Pegado desde Excel:</strong>

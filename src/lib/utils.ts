@@ -17,7 +17,7 @@ export function getInitialTheme(): ThemeMode {
     if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
       return 'dark';
     }
-  } catch (e) {
+  } catch {
     // Ignore storage errors
   }
   return 'light';
@@ -34,7 +34,7 @@ export function applyTheme(theme: ThemeMode) {
   try {
     localStorage.setItem(THEME_STORAGE_KEY, theme);
     window.dispatchEvent(new CustomEvent('theme-change', { detail: theme }));
-  } catch (e) {
+  } catch {
     // Ignore
   }
 }

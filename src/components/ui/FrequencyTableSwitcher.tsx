@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import { ArrowRight, BarChart2, Table2 } from 'lucide-react';
+import { BarChart2, Table2 } from 'lucide-react';
 
 interface FrequencyTableSwitcherProps {
   activeMode: 'simple' | 'grouped';
